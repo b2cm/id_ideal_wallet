@@ -9,8 +9,7 @@ import 'package:id_ideal_wallet/main.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xmpp_stone/xmpp_stone.dart';
 
-ServiceEndpoint myService = ServiceEndpoint(
-    id: 'id', type: 'XmppService', serviceEndpoint: 'xmpp:testuser@localhost');
+String myService = 'xmpp:testuser@localhost';
 
 Future<bool> handleDidcommMessage(WalletStore wallet, String message,
     BuildContext context, MessageHandler xmppHandler) async {
@@ -162,7 +161,6 @@ Future<bool> _handleOfferCredential(OfferCredential message, WalletStore wallet,
   } else {
     myDid = entry.myDid;
   }
-  myService.id = '$myDid/xmpp';
 
   //check, if we control did
   Map<String, dynamic> subject = credential.credentialSubject;
@@ -197,12 +195,12 @@ _sendRequestCredential(OfferCredential offer, WalletStore wallet, String myDid,
                 proofType: offer.detail!.first.options.proofType,
                 challenge: const Uuid().v4()))
       ],
-      responseTo: myService,
+      replyUrl: myService,
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!]);
   _sendMessage(
-      myDid, offer.responseTo!, wallet, xmppHandler, message, offer.from!);
+      myDid, offer.replyUrl!, wallet, xmppHandler, message, offer.from!);
 }
 
 _sendProposeCredential(OfferCredential offer, WalletStore wallet, String myDid,
@@ -226,7 +224,7 @@ _sendProposeCredential(OfferCredential offer, WalletStore wallet, String myDid,
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!],
-      responseTo: myService,
+      replyUrl: myService,
       detail: [
         LdProofVcDetail(
             credential: newCred, options: offer.detail!.first.options)
@@ -237,12 +235,12 @@ _sendProposeCredential(OfferCredential offer, WalletStore wallet, String myDid,
     await a.data.sign(wallet, credDid);
   }
   _sendMessage(
-      myDid, offer.responseTo!, wallet, xmppHandler, message, offer.from!);
+      myDid, offer.replyUrl!, wallet, xmppHandler, message, offer.from!);
 }
 
 _sendMessage(
     String myDid,
-    ServiceEndpoint otherEndpoint,
+    String otherEndpoint,
     WalletStore wallet,
     MessageHandler xmppHandler,
     DidcommPlaintextMessage message,
@@ -262,11 +260,10 @@ _sendMessage(
       ],
       plaintext: message);
 
-  if (otherEndpoint.type == 'XmppService') {
-    print(otherEndpoint.serviceEndpoint.split(':').last);
+  if (otherEndpoint.startsWith('xmpp')) {
+    print(otherEndpoint.split(':').last);
     xmppHandler.sendMessage(
-        Jid.fromFullJid(otherEndpoint.serviceEndpoint.split(':').last),
-        encrypted.toString());
+        Jid.fromFullJid(otherEndpoint.split(':').last), encrypted.toString());
   } else {
     throw Exception('We do not support other transports');
   }
@@ -333,7 +330,7 @@ Future<bool> _handleIssueCredential(IssueCredential message, WalletStore wallet,
         await wallet.storeCredential(cred.toString(), '', storageCred.hdPath);
         await wallet.storeConversationEntry(message, entry.myDid);
         var ack = EmptyMessage(ack: [message.id]);
-        _sendMessage(entry.myDid, message.responseTo!, wallet, xmppHandler, ack,
+        _sendMessage(entry.myDid, message.replyUrl!, wallet, xmppHandler, ack,
             message.from!);
         return true;
       } else {
@@ -419,7 +416,7 @@ Future<bool> _handleRequestPresentation(
         finalShow, wallet, message.presentationDefinition.first.challenge);
     var presentationMessage = Presentation(
         verifiablePresentation: [VerifiablePresentation.fromJson(vp)]);
-    _sendMessage(myDid, message.responseTo!, wallet, xmppHandler,
+    _sendMessage(myDid, message.replyUrl!, wallet, xmppHandler,
         presentationMessage, message.from!);
   }
   return false;
