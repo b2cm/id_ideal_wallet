@@ -79,6 +79,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
       //For now we expect one message here
       if (oob.attachments!.isNotEmpty) {
         for (var a in oob.attachments!) {
+          print(a.data.links);
           await a.data.resolveData();
         }
         try {
@@ -211,7 +212,7 @@ _sendProposeCredential(OfferCredential offer, WalletStore wallet, String myDid,
   var credSubject = offeredCred.credentialSubject;
   credSubject['id'] = credDid;
   var newCred = VerifiableCredential(
-      id: offeredCred.id,
+      id: credDid,
       context: offeredCred.context,
       type: offeredCred.type,
       issuer: offeredCred.issuer,
@@ -363,6 +364,7 @@ Future<bool> _handleRequestPresentation(
   } else {
     threadId = message.id;
   }
+  print(threadId);
   //Are there any previous messages?
   var entry = wallet.getConversationEntry(threadId);
   String myDid;
@@ -380,6 +382,8 @@ Future<bool> _handleRequestPresentation(
   var definition = message.presentationDefinition.first.presentationDefinition;
 
   var filtered = searchCredentialsForPresentationDefinition(creds, definition);
+  print(filtered.length);
+  print(filtered.first.credentials.length);
   if (filtered.isNotEmpty) {
     List<FilterResult> finalShow = [];
     //filter List of credentials -> check for duplicates by type
@@ -407,60 +411,52 @@ Future<bool> _handleRequestPresentation(
     }
 
     print(finalShow);
-    var res = await showDialog(
-        context: context,
-        builder: (BuildContext context) =>
-            _showRequestedCreds(finalShow, context));
+    // var res = await showDialog(
+    //     context: context,
+    //     builder: (BuildContext context) => StatefulBuilder(
+    //         builder: (context, setState) =>
+    //             _showRequestedCreds(finalShow, context)));
 
-    var vp = await buildPresentation(
-        finalShow, wallet, message.presentationDefinition.first.challenge);
-    var presentationMessage = Presentation(
-        verifiablePresentation: [VerifiablePresentation.fromJson(vp)]);
-    _sendMessage(myDid, message.replyUrl!, wallet, xmppHandler,
-        presentationMessage, message.from!);
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => PresentationRequestDialog(
+              xmppHandler: xmppHandler,
+              wallet: wallet,
+              message: message,
+              otherEndpoint: message.replyUrl!,
+              receiverDid: message.from!,
+              myDid: myDid,
+              results: finalShow,
+            )));
+
+    //   var vp = await buildPresentation(
+    //       finalShow, wallet, message.presentationDefinition.first.challenge);
+    //   var presentationMessage = Presentation(
+    //       verifiablePresentation: [VerifiablePresentation.fromJson(vp)]);
+    //   _sendMessage(myDid, message.replyUrl!, wallet, xmppHandler,
+    //       presentationMessage, message.from!);
+    // }
   }
   return false;
 }
 
-Widget _showRequestedCreds(List<FilterResult> results, BuildContext context) {
-  List<Widget> childList = [];
-  for (var result in results) {
-    if (result.submissionRequirement != null) {
-      childList.add(Text(result.submissionRequirement!.name ?? 'Default'));
-    }
-    for (var v in result.credentials) {
-      childList.add(Card(
-        child: Column(
-          children: [
-                Text(v.type.last),
-                const SizedBox(
-                  height: 10,
-                )
-              ] +
-              buildCredSubject(v.credentialSubject),
-        ),
-      ));
-    }
-  }
-  return AlertDialog(
-    title: Text('Folgende Credentials wurden angefragt:'),
-    content: Column(
-      children: childList,
-    ),
-    actions: [
-      TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Abbrechen')),
-      TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Ok'))
-    ],
-  );
-}
+// Widget _showRequestedCreds(List<FilterResult> results, BuildContext context) {
+//   return AlertDialog(
+//     title: Text('Folgende Credentials wurden angefragt:'),
+//     content: PresentationRequestDialog(results: results),
+//     actions: [
+//       TextButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           child: const Text('Abbrechen')),
+//       TextButton(
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           child: const Text('Ok'))
+//     ],
+//   );
+// }
 
 bool _handlePresentation(Presentation message, WalletStore wallet) {
   return false;
@@ -468,4 +464,143 @@ bool _handlePresentation(Presentation message, WalletStore wallet) {
 
 bool _handleProblemReport(ProblemReport message, WalletStore wallet) {
   return false;
+}
+
+class PresentationRequestDialog extends StatefulWidget {
+  List<FilterResult> results;
+  String myDid;
+  String otherEndpoint;
+  WalletStore wallet;
+  MessageHandler xmppHandler;
+  String receiverDid;
+  RequestPresentation message;
+  PresentationRequestDialog(
+      {Key? key,
+      required this.results,
+      required this.xmppHandler,
+      required this.wallet,
+      required this.receiverDid,
+      required this.myDid,
+      required this.otherEndpoint,
+      required this.message})
+      : super(key: key);
+
+  @override
+  _PresentationRequestDialogState createState() =>
+      _PresentationRequestDialogState();
+}
+
+class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
+  Map<String, bool> selectedCredsPerResult = {};
+
+  @override
+  initState() {
+    super.initState();
+    int outerPos = 0;
+    int innerPos = 0;
+    for (var res in widget.results) {
+      for (var c in res.credentials) {
+        selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+        innerPos++;
+      }
+      outerPos++;
+    }
+    print(selectedCredsPerResult);
+  }
+
+  List<Widget> buildChilds() {
+    List<Widget> childList = [];
+    int outerPos = 0;
+    int innerPos = 0;
+
+    for (var result in widget.results) {
+      bool all = false;
+      if (result.submissionRequirement != null) {
+        childList.add(Text(result.submissionRequirement!.name ?? 'Default'));
+        if (result.submissionRequirement!.rule ==
+            SubmissionRequirementRule.all) {
+          all = true;
+          childList.add(const Text('Diese Credentials werden alle benötigt'));
+        } else {
+          if (result.submissionRequirement!.count != null) {
+            childList.add(Text(
+                'Wähle ${result.submissionRequirement!.count!} Credential(s) aus'));
+          } else if (result.submissionRequirement!.min != null) {
+            childList.add(Text(
+                'Wähle mindestens ${result.submissionRequirement!.min!} Credential(s) aus'));
+          }
+        }
+      }
+
+      for (var v in result.credentials) {
+        var key = 'o${outerPos}i$innerPos';
+        print('out: ${selectedCredsPerResult[key]}');
+        childList.add(
+          ExpansionTile(
+            leading: Checkbox(
+                onChanged: (bool? newValue) {
+                  print('change');
+                  setState(() {
+                    if (newValue != null) {
+                      selectedCredsPerResult[key] = all ? true : newValue;
+                    }
+                    print(selectedCredsPerResult[key]);
+                  });
+                },
+                value: selectedCredsPerResult[key]),
+            title: Text(v.type.last),
+            children: buildCredSubject(v.credentialSubject),
+          ),
+        );
+        innerPos++;
+      }
+      outerPos++;
+    }
+    return childList;
+  }
+
+  Future<void> sendAnswer() async {
+    List<FilterResult> finalSend = [];
+    int outerPos = 0;
+    int innerPos = 0;
+    print(selectedCredsPerResult);
+    for (var result in widget.results) {
+      List<VerifiableCredential> credList = [];
+      for (var cred in result.credentials) {
+        if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
+          credList.add(cred);
+        }
+        innerPos++;
+      }
+      outerPos++;
+      finalSend.add(FilterResult(
+          credentials: credList,
+          matchingDescriptorIds: result.matchingDescriptorIds,
+          presentationDefinitionId: result.presentationDefinitionId,
+          submissionRequirement: result.submissionRequirement));
+    }
+    var vp = await buildPresentation(finalSend, widget.wallet,
+        widget.message.presentationDefinition.first.challenge);
+    var presentationMessage = Presentation(
+        verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+        threadId: widget.message.threadId ?? widget.message.id);
+    _sendMessage(widget.myDid, widget.otherEndpoint, widget.wallet,
+        widget.xmppHandler, presentationMessage, widget.receiverDid);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+          title: const Text('Presentation Request'),
+          automaticallyImplyLeading: false),
+      body: Column(
+        children: buildChilds(),
+      ),
+      persistentFooterButtons: [
+        TextButton(onPressed: sendAnswer, child: const Text('Senden'))
+      ],
+    );
+  }
 }
