@@ -1,7 +1,7 @@
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:random_password_generator/random_password_generator.dart';
 
 Future<bool> openWallet(WalletStore wallet) async {
@@ -17,7 +17,7 @@ Future<bool> openWallet(WalletStore wallet) async {
     var didAuthWork = await auth.authenticate(
         localizedReason:
             'Zum Öffnen des Wallets ist Ihre Authentifizierung nötig',
-        androidAuthStrings: messages);
+        authMessages: [messages]);
     if (didAuthWork) {
       const storage = FlutterSecureStorage();
       String? pw = await storage.read(key: 'password');

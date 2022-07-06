@@ -5,6 +5,7 @@ import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/main.dart';
 import 'package:uuid/uuid.dart';
 import 'package:xmpp_stone/xmpp_stone.dart';
@@ -196,7 +197,7 @@ _sendRequestCredential(OfferCredential offer, WalletStore wallet, String myDid,
                 proofType: offer.detail!.first.options.proofType,
                 challenge: const Uuid().v4()))
       ],
-      replyUrl: myService,
+      replyUrl: 'http://localhost:8888/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!]);
@@ -225,7 +226,7 @@ _sendProposeCredential(OfferCredential offer, WalletStore wallet, String myDid,
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!],
-      replyUrl: myService,
+      replyUrl: 'http://localhost:8888/buffer/$myDid',
       detail: [
         LdProofVcDetail(
             credential: newCred, options: offer.detail!.first.options)
@@ -251,7 +252,7 @@ _sendMessage(
   var recipientDDO = (await resolveDidDocument(receiverDid))
       .resolveKeyIds()
       .convertAllKeysToJwk();
-  if (message.type != 'https://didcomm.org/reserved/2.0/empty') {
+  if (message.type != 'https://didcomm.org/empty/1.0') {
     await wallet.storeConversationEntry(message, myDid);
   }
   var encrypted = DidcommEncryptedMessage.fromPlaintext(
@@ -265,6 +266,8 @@ _sendMessage(
     print(otherEndpoint.split(':').last);
     xmppHandler.sendMessage(
         Jid.fromFullJid(otherEndpoint.split(':').last), encrypted.toString());
+  } else if (otherEndpoint.startsWith('http')) {
+    post(Uri.parse(otherEndpoint), body: encrypted.toString());
   } else {
     throw Exception('We do not support other transports');
   }

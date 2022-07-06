@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/util.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -68,6 +70,7 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
   late Future<bool> _initFuture;
   late xmpp.Connection _connection;
   bool isScanner = false;
+  late Timer poller;
 
   @override
   initState() {
@@ -86,6 +89,26 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
     setState(() {});
   }
 
+  Future<void> _timerFunction(Timer t) async {
+    if (widget.wallet.isWalletOpen()) {
+      var connectionDids = widget.wallet.getAllConnections();
+      for (var did in connectionDids.keys.toList()) {
+        var serverAnswer =
+            await get(Uri.parse('http://localhost:8888/get/$did'));
+        if (serverAnswer.statusCode == 200) {
+          List messages = jsonDecode(serverAnswer.body);
+          for (var m in messages) {
+            handleDidcommMessage(widget.wallet, jsonEncode(m), context,
+                    xmpp.MessageHandler.getInstance(_connection))
+                .then((value) {
+              if (value) setState(() {});
+            });
+          }
+        }
+      }
+    }
+  }
+
   Future<bool> _init() async {
     if (await openWallet(widget.wallet)) {
       if (!widget.wallet.isInitialized()) {
@@ -94,10 +117,9 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
                 'female exotic side crack letter mass payment winner special close endless swamp');
         print(m);
       }
-      var connectionDid =
-          await widget.wallet.getNextConnectionDID(KeyType.x25519);
 
-      connectXmpp();
+      poller = Timer.periodic(const Duration(seconds: 15), _timerFunction);
+      //connectXmpp();
 
       return true;
     } else {
