@@ -30,8 +30,9 @@ dependencies:
   flutter:
     sdk: flutter
   dart_ssi:
-    path: ../flutter_ssi_wallet
-  xmpp_stone: 0.4.1-dev.1
+    git:
+      url: https://github.com/b2cm/dart_ssi
+      ref: didcomm
   path_provider: any
   local_auth: 2.1.0
   flutter_secure_storage:

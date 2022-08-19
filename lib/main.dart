@@ -10,7 +10,6 @@ import 'package:id_ideal_wallet/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/util.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xmpp_stone/xmpp_stone.dart' as xmpp;
 
 void main() {
   runApp(App());
@@ -66,9 +65,9 @@ class MainPage extends StatefulWidget {
   }
 }
 
-class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
+class _MainPageState extends State<MainPage> {
   late Future<bool> _initFuture;
-  late xmpp.Connection _connection;
+
   bool isScanner = false;
   late Timer poller;
 
@@ -76,13 +75,6 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
   initState() {
     super.initState();
     _initFuture = _init();
-    var userAtDomain = 'testuser@localhost';
-    var password = 'passwort';
-    var jid = xmpp.Jid.fromFullJid(userAtDomain);
-    var account = xmpp.XmppAccountSettings(
-        userAtDomain, jid.local, jid.domain, password, 5222,
-        resource: 'xmppstone');
-    _connection = xmpp.Connection(account);
   }
 
   void _repaint() {
@@ -98,8 +90,7 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
         if (serverAnswer.statusCode == 200) {
           List messages = jsonDecode(serverAnswer.body);
           for (var m in messages) {
-            handleDidcommMessage(widget.wallet, jsonEncode(m), context,
-                    xmpp.MessageHandler.getInstance(_connection))
+            handleDidcommMessage(widget.wallet, jsonEncode(m), context)
                 .then((value) {
               if (value) setState(() {});
             });
@@ -118,28 +109,12 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
         print(m);
       }
 
-      poller = Timer.periodic(const Duration(seconds: 15), _timerFunction);
-      //connectXmpp();
+      poller = Timer.periodic(const Duration(seconds: 10), _timerFunction);
 
       return true;
     } else {
       return false;
     }
-  }
-
-  Future<void> connectXmpp() async {
-    _connection.connect();
-    _connection.authenticating();
-    //xmpp.MessagesListener messagesListener = ExampleMessagesListener(
-    //    context, xmpp.MessageHandler.getInstance(_connection), widget.wallet);
-    ExampleConnectionStateChangedListener(_connection, this);
-    var presenceManager = xmpp.PresenceManager.getInstance(_connection);
-    presenceManager.subscriptionStream.listen((streamEvent) {
-      if (streamEvent.type == xmpp.SubscriptionEventType.REQUEST) {
-        print('Accepting presence request');
-        presenceManager.acceptSubscription(streamEvent.jid);
-      }
-    });
   }
 
   Widget _buildCredentialOverview() {
@@ -179,8 +154,7 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
             final String code = barcode.rawValue!;
             debugPrint('Barcode found! $code');
             isScanner = false;
-            handleDidcommMessage(widget.wallet, code, context,
-                xmpp.MessageHandler.getInstance(_connection));
+            handleDidcommMessage(widget.wallet, code, context);
             setState(() {});
           }
         });
@@ -215,72 +189,6 @@ class _MainPageState extends State<MainPage> implements xmpp.MessagesListener {
           },
           child: const Icon(Icons.qr_code)),
     );
-  }
-
-  @override
-  void onNewMessage(xmpp.MessageStanza? message) {
-    if (message != null) {
-      if (message.body != null) {
-        print(message.body);
-        handleDidcommMessage(widget.wallet, message.body!, context,
-                xmpp.MessageHandler.getInstance(_connection))
-            .then((value) {
-          if (value) setState(() {});
-        });
-      }
-    }
-  }
-}
-
-class ExampleConnectionStateChangedListener
-    implements xmpp.ConnectionStateChangedListener {
-  late xmpp.Connection _connection;
-  late xmpp.MessagesListener _messagesListener;
-
-  late StreamSubscription<String> subscription;
-
-  ExampleConnectionStateChangedListener(
-      xmpp.Connection connection, xmpp.MessagesListener messagesListener) {
-    _connection = connection;
-    _messagesListener = messagesListener;
-    _connection.connectionStateStream.listen(onConnectionStateChanged);
-  }
-
-  @override
-  void onConnectionStateChanged(xmpp.XmppConnectionState state) {
-    print(state);
-    if (state == xmpp.XmppConnectionState.Ready) {
-      print('Connected');
-      var vCardManager = xmpp.VCardManager(_connection);
-      vCardManager.getSelfVCard().then((vCard) {
-        if (vCard != null) {
-          print('Your info' + vCard.buildXmlString());
-        }
-      });
-      var messageHandler = xmpp.MessageHandler.getInstance(_connection);
-      var rosterManager = xmpp.RosterManager.getInstance(_connection);
-      messageHandler.messagesStream.listen(_messagesListener.onNewMessage);
-      sleep(const Duration(seconds: 1));
-      var receiver = 'testuser2@localhost';
-      var receiverJid = xmpp.Jid.fromFullJid(receiver);
-      rosterManager.addRosterItem(xmpp.Buddy(receiverJid)).then((result) {
-        if (result.description != null) {
-          print('add roster');
-        }
-      });
-      sleep(const Duration(seconds: 1));
-      vCardManager.getVCardFor(receiverJid).then((vCard) {
-        if (vCard != null) {
-          print('Receiver info' + vCard.buildXmlString());
-        }
-      });
-      var presenceManager = xmpp.PresenceManager.getInstance(_connection);
-      presenceManager.presenceStream.listen(onPresence);
-    }
-  }
-
-  void onPresence(xmpp.PresenceData event) {
-    print(event);
   }
 }
 
