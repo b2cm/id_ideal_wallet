@@ -88,7 +88,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   });
                 },
                 value: selectedCredsPerResult[key]),
-            title: Text(v.type.last),
+            title: Text(v.type
+                .firstWhere((element) => element != 'VerifiableCredential')),
             children: buildCredSubject(v.credentialSubject),
           ),
         );

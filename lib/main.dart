@@ -131,7 +131,7 @@ class _MainPageState extends State<MainPage> {
   Widget _buildCredentialCard(String credential) {
     var asVc = VerifiableCredential.fromJson(credential);
     List<Widget> content = [
-      Text(asVc.type.last,
+      Text(asVc.type.firstWhere((element) => element != 'VerifiableCredential'),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       const SizedBox(
         height: 10,

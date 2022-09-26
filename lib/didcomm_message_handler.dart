@@ -307,6 +307,8 @@ _sendProposeCredential(
       credentialSchema: offeredCred.credentialSchema,
       expirationDate: offeredCred.expirationDate);
 
+  print(newCred);
+
   var message = ProposeCredential(
       threadId: offer.threadId ?? offer.id,
       from: myDid,
