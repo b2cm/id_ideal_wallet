@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/util.dart';
+import 'package:ln_wallet/ln_wallet.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -67,7 +68,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late Future<bool> _initFuture;
-
+  bool isCred = true;
   bool isScanner = false;
   late Timer poller;
 
@@ -160,18 +161,56 @@ class _MainPageState extends State<MainPage> {
         });
   }
 
+  Drawer _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        // Important: Remove any padding from the ListView.
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+            child: Text('Menü'),
+          ),
+          ListTile(
+            title: const Text('Credential-Übersicht'),
+            onTap: () {
+              isCred = true;
+              setState(() {});
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Lightning Wallet'),
+            onTap: () {
+              isCred = false;
+              setState(() {});
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Übersicht'),
       ),
+      drawer: _buildDrawer(),
       body: FutureBuilder(
         future: _initFuture,
         builder: (context, AsyncSnapshot<bool> snapshot) {
           if (snapshot.hasData) {
             if (snapshot.data!) {
-              return isScanner ? _buildScanner() : _buildCredentialOverview();
+              return isScanner
+                  ? _buildScanner()
+                  : isCred
+                      ? _buildCredentialOverview()
+                      : const LnWalletMainPage(title: 'Lightning wallet');
             } else {
               return const Text('beim Öffnen ging was schief');
             }

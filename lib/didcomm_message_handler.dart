@@ -17,6 +17,8 @@ List<String> _supportedAttachments = [
   'aries/ld-proof-vc-detail@v1.0',
 ];
 
+String? lnAuthToken;
+
 Future<bool> handleDidcommMessage(
     WalletStore wallet, String message, BuildContext context) async {
   var plaintext = await getPlaintext(message, wallet);
@@ -212,6 +214,20 @@ Future<bool> _handleDiscoverFeatureQuery(
   return false;
 }
 
+Future<void> getLnAuthToken() async {
+  var login = '5a9ec88b1677a8e4a14e';
+  var password = '968394acb0ceeaf993c8';
+  var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/auth'),
+      body: {'login': login, 'password': password});
+  if (res.statusCode == 200) {
+    var decodedResponse = jsonDecode(res.body);
+    lnAuthToken = decodedResponse['access_token'];
+    print(lnAuthToken);
+  } else {
+    throw Exception('cant get access token for lndhub');
+  }
+}
+
 Future<bool> _handleOfferCredential(
     OfferCredential message, WalletStore wallet, BuildContext context) async {
   String threadId;
@@ -225,6 +241,40 @@ Future<bool> _handleOfferCredential(
   var entry = wallet.getConversationEntry(threadId);
   var credential = message.detail!.first.credential;
   String myDid;
+
+  //payment requested?
+  String? toPay;
+  String? invoice;
+  if (message.attachments!.length > 1) {
+    print('with payment');
+    var paymentReq = message.attachments!.firstWhere(
+        (element) => element.format != null && element.format == 'lnInvoice');
+    if (lnAuthToken == null) {
+      await getLnAuthToken();
+      print('authToken $lnAuthToken');
+    }
+    invoice = paymentReq.data.json!['lnInvoive'];
+    print(invoice);
+    var res = await get(
+        Uri.https(
+          'ln.pixeldev.eu',
+          'lndhub/decodeinvoice',
+          {'invoice': invoice},
+        ),
+        headers: {
+          'Authorization': 'Bearer $lnAuthToken',
+          'Content-Type': 'application/json'
+        });
+
+    if (res.statusCode == 200) {
+      var decoded = jsonDecode(res.body);
+      print(decoded);
+      toPay = decoded['num_satoshis'];
+      print(toPay);
+    } else {
+      throw Exception('cant decode invoice: ${res.body}');
+    }
+  }
   //No
   if (entry == null ||
       entry.protocol == DidcommProtocol.discoverFeature.value) {
@@ -232,9 +282,24 @@ Future<bool> _handleOfferCredential(
     var res = await showDialog(
         context: context,
         builder: (BuildContext context) =>
-            _buildOfferCredentialDialog(context, credential));
+            _buildOfferCredentialDialog(context, credential, toPay));
 
     print(res);
+    //pay the credential
+    if (invoice != null) {
+      if (lnAuthToken == null) {
+        await getLnAuthToken();
+        print('authToken $lnAuthToken');
+      }
+      var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
+          body: {'invoice': invoice},
+          headers: {'Authorization': 'Bearer $lnAuthToken'});
+      if (res.statusCode == 200) {
+        print('erfolgreich bezahlt');
+      } else {
+        throw Exception('payment error: ${res.body}');
+      }
+    }
   }
 
   if (entry == null) {
@@ -352,15 +417,21 @@ sendMessage(String myDid, String otherEndpoint, WalletStore wallet,
 }
 
 Widget _buildOfferCredentialDialog(
-    BuildContext context, VerifiableCredential credential) {
+    BuildContext context, VerifiableCredential credential, String? toPay) {
   List<Widget> contentData = [];
-  contentData.add(Text(credential.type.last,
+  contentData.add(Text(
+      credential.type
+          .firstWhere((element) => element != 'VerifiableCredential'),
       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)));
   contentData.add(const SizedBox(
     height: 10,
   ));
   var subject = buildCredSubject(credential.credentialSubject);
   contentData += subject;
+  if (toPay != null) {
+    contentData.add(
+        Text('Für die Austellung wird eine Zahlung von $toPay Satoshi nötig.'));
+  }
   return AlertDialog(
     title: const Text('Ihnen wird ein Credential angeboten'),
     content: Card(
