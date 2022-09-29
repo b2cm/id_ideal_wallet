@@ -6,9 +6,9 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/util.dart';
 import 'package:ln_wallet/ln_wallet.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 
