@@ -1,6 +1,6 @@
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QrScanner extends StatelessWidget {

@@ -3,8 +3,8 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 
-import 'didcomm_message_handler.dart';
-import 'main.dart';
+import '../functions/didcomm_message_handler.dart';
+import '../main.dart';
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -124,7 +124,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         widget.message.presentationDefinition.first.challenge);
     var presentationMessage = Presentation(
         verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
-        threadId: widget.message.threadId ?? widget.message.id);
+        threadId: widget.message.threadId ?? widget.message.id,
+        parentThreadId: widget.message.parentThreadId);
     sendMessage(widget.myDid, widget.otherEndpoint, widget.wallet,
         presentationMessage, widget.receiverDid);
     Navigator.of(context).pop();
