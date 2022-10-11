@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:uuid/uuid.dart';
 
+import '../functions/lightning_utils.dart';
 import '../views/offer_credential_dialog.dart';
 import 'didcomm_message_handler.dart';
 
@@ -28,6 +32,40 @@ Future<bool> handleOfferCredential(
   var entry = wallet.getConversationEntry(threadId);
   var credential = message.detail!.first.credential;
   String myDid;
+
+  //payment requested?
+  String? toPay;
+  String? invoice;
+  if (message.attachments!.length > 1) {
+    print('with payment');
+    var paymentReq = message.attachments!.firstWhere(
+        (element) => element.format != null && element.format == 'lnInvoice');
+    if (lnAuthToken == null) {
+      await getLnAuthToken();
+      print('authToken $lnAuthToken');
+    }
+    invoice = paymentReq.data.json!['lnInvoice'];
+    print(invoice);
+    var res = await get(
+        Uri.https(
+          'ln.pixeldev.eu',
+          'lndhub/decodeinvoice',
+          {'invoice': invoice},
+        ),
+        headers: {
+          'Authorization': 'Bearer $lnAuthToken',
+          'Content-Type': 'application/json'
+        });
+
+    if (res.statusCode == 200) {
+      var decoded = jsonDecode(res.body);
+      print(decoded);
+      toPay = decoded['num_satoshis'];
+      print(toPay);
+    } else {
+      throw Exception('cant decode invoice: ${res.body}');
+    }
+  }
   //No
   if (entry == null ||
       entry.protocol == DidcommProtocol.discoverFeature.value) {
@@ -35,9 +73,30 @@ Future<bool> handleOfferCredential(
     var res = await showDialog(
         context: context,
         builder: (BuildContext context) =>
-            buildOfferCredentialDialog(context, credential));
+            buildOfferCredentialDialog(context, credential, toPay));
 
     print(res);
+    //pay the credential
+    if (res) {
+      if (invoice != null) {
+        if (lnAuthToken == null) {
+          await getLnAuthToken();
+          print('authToken $lnAuthToken');
+        }
+        var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
+            body: {'invoice': invoice},
+            headers: {'Authorization': 'Bearer $lnAuthToken'});
+        if (res.statusCode == 200) {
+          print('erfolgreich bezahlt');
+        } else {
+          throw Exception('payment error: ${res.body}');
+        }
+      }
+    } else {
+      print('user declined credential');
+      // TODO: send problem report
+      return false;
+    }
   }
 
   if (entry == null) {
