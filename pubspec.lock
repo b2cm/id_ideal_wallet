@@ -116,12 +116,10 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "."
-      ref: didcomm
-      resolved-ref: "29acdc5a79e7d6183427ebc2fd39bf22a89ca0ec"
-      url: "https://github.com/b2cm/dart_ssi"
-    source: git
-    version: "1.0.1"
+      name: dart_ssi
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.3"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -632,6 +630,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.1"
+  x509b:
+    dependency: "direct main"
+    description:
+      path: "../x509"
+      relative: true
+    source: path
+    version: "0.2.10"
   xdg_directories:
     dependency: transitive
     description:

@@ -10,6 +10,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:x509b/x509.dart' as x509;
 
 void main() {
   runApp(App());
@@ -137,6 +138,34 @@ class _MainPageState extends State<MainPage> {
         height: 10,
       )
     ];
+    if (asVc.issuer is Map && asVc.issuer.containsKey('certificate')) {
+      var certIt = x509.parsePem(
+          '-----BEGIN CERTIFICATE-----\n${asVc.issuer['certificate']}\n-----END CERTIFICATE-----');
+      var cert = certIt.first as x509.X509Certificate;
+
+      var commonNameMap = cert.tbsCertificate.subject?.names.firstWhere(
+          (element) =>
+              element.containsKey(const x509.ObjectIdentifier([2, 5, 4, 3])),
+          orElse: () => {
+                const x509.ObjectIdentifier([2, 5, 4, 3]): ''
+              });
+      String commonName =
+          commonNameMap![const x509.ObjectIdentifier([2, 5, 4, 3])];
+      var orgMap = cert.tbsCertificate.subject?.names.firstWhere(
+          (element) =>
+              element.containsKey(const x509.ObjectIdentifier([2, 5, 4, 10])),
+          orElse: () => {
+                const x509.ObjectIdentifier([2, 5, 4, 10]): ''
+              });
+      String org = orgMap![const x509.ObjectIdentifier([2, 5, 4, 10])];
+      if (org.isEmpty) {
+        org = commonName;
+      }
+      content.add(Text('Verifizierter Aussteller: $org'));
+      content.add(const SizedBox(
+        height: 10,
+      ));
+    }
     var additional = buildCredSubject(asVc.credentialSubject);
     content += additional;
     return Card(
