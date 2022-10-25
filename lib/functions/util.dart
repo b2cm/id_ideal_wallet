@@ -1,8 +1,10 @@
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:random_password_generator/random_password_generator.dart';
+import 'package:x509b/x509.dart' as x509;
 
 Future<bool> openWallet(WalletStore wallet) async {
   if (!wallet.isWalletOpen()) {
@@ -38,4 +40,10 @@ Future<bool> openWallet(WalletStore wallet) async {
     return true;
   }
   return true;
+}
+
+Future<bool> verifyIssuerCert(x509.X509Certificate issuerCert) async {
+  var certChain = await x509.buildCertificateChain(issuerCert, rootCerts);
+  var verify = await x509.verifyCertificateChain(certChain);
+  return verify;
 }

@@ -128,6 +128,15 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         parentThreadId: widget.message.parentThreadId);
     sendMessage(widget.myDid, widget.otherEndpoint, widget.wallet,
         presentationMessage, widget.receiverDid);
+    for (var pres in presentationMessage.verifiablePresentation) {
+      for (var cred in pres.verifiableCredential) {
+        await widget.wallet.storeExchangeHistoryEntry(
+            getHolderDidFromCredential(cred.toJson()),
+            DateTime.now(),
+            'present',
+            widget.receiverDid);
+      }
+    }
     Navigator.of(context).pop();
   }
 

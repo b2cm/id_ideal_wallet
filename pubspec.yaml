@@ -37,6 +37,7 @@ dependencies:
     path: ../flutter_ssi_wallet
   ln_wallet:
     git: http://suc-1.hs-mittweida.de/erik/flutter_ln_wallet
+  dart_ssi: ^1.0.3
   path_provider: any
   local_auth: 2.1.0
   flutter_secure_storage:
@@ -44,6 +45,8 @@ dependencies:
   uuid: any
   mobile_scanner: ^2.0.0
   http: any
+  x509b:
+    path: ../x509
 
 
   # The following adds the Cupertino Icons font to your application.

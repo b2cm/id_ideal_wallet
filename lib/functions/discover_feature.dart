@@ -1,6 +1,7 @@
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 
 List<String> _supportedAttachments = [
@@ -48,7 +49,7 @@ Future<bool> handleDiscoverFeatureQuery(
   var answer = DiscloseMessage(
       disclosures: features,
       from: myDid,
-      replyUrl: 'http://localhost:8888/buffer/$myDid',
+      replyUrl: '$relay/buffer/$myDid',
       threadId: message.threadId ?? message.id,
       to: [message.from!]);
 

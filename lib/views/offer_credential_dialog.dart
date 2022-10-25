@@ -1,6 +1,7 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/views/issuer_info.dart';
 
 Widget buildOfferCredentialDialog(
     BuildContext context, VerifiableCredential credential, String? toPay) {
@@ -18,6 +19,11 @@ Widget buildOfferCredentialDialog(
     contentData.add(
         Text('Für die Austellung wird eine Zahlung von $toPay Satoshi nötig.'));
   }
+  contentData.add(const SizedBox(
+    height: 10,
+  ));
+  contentData.add(buildIssuerInfo(credential.issuer));
+
   return AlertDialog(
     title: const Text('Ihnen wird ein Credential angeboten'),
     content: Card(
