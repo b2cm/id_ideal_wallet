@@ -6,11 +6,13 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/views/credential_detail.dart';
+import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:x509b/x509.dart' as x509;
 
 void main() {
   runApp(App());
@@ -86,8 +88,7 @@ class _MainPageState extends State<MainPage> {
     if (widget.wallet.isWalletOpen()) {
       var connectionDids = widget.wallet.getAllConnections();
       for (var did in connectionDids.keys.toList()) {
-        var serverAnswer =
-            await get(Uri.parse('http://localhost:8888/get/$did'));
+        var serverAnswer = await get(Uri.parse('$relay/get/$did'));
         if (serverAnswer.statusCode == 200) {
           List messages = jsonDecode(serverAnswer.body);
           for (var m in messages) {
@@ -126,7 +127,13 @@ class _MainPageState extends State<MainPage> {
         credViews.add(_buildCredentialCard(cred.w3cCredential));
       }
     }
-    return SingleChildScrollView(child: Column(children: credViews));
+    return SingleChildScrollView(
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
+            child: Column(
+              children: credViews,
+              crossAxisAlignment: CrossAxisAlignment.center,
+            )));
   }
 
   Widget _buildCredentialCard(String credential) {
@@ -138,39 +145,24 @@ class _MainPageState extends State<MainPage> {
         height: 10,
       )
     ];
-    if (asVc.issuer is Map && asVc.issuer.containsKey('certificate')) {
-      var certIt = x509.parsePem(
-          '-----BEGIN CERTIFICATE-----\n${asVc.issuer['certificate']}\n-----END CERTIFICATE-----');
-      var cert = certIt.first as x509.X509Certificate;
-
-      var commonNameMap = cert.tbsCertificate.subject?.names.firstWhere(
-          (element) =>
-              element.containsKey(const x509.ObjectIdentifier([2, 5, 4, 3])),
-          orElse: () => {
-                const x509.ObjectIdentifier([2, 5, 4, 3]): ''
-              });
-      String commonName =
-          commonNameMap![const x509.ObjectIdentifier([2, 5, 4, 3])];
-      var orgMap = cert.tbsCertificate.subject?.names.firstWhere(
-          (element) =>
-              element.containsKey(const x509.ObjectIdentifier([2, 5, 4, 10])),
-          orElse: () => {
-                const x509.ObjectIdentifier([2, 5, 4, 10]): ''
-              });
-      String org = orgMap![const x509.ObjectIdentifier([2, 5, 4, 10])];
-      if (org.isEmpty) {
-        org = commonName;
-      }
-      content.add(Text('Verifizierter Aussteller: $org'));
-      content.add(const SizedBox(
-        height: 10,
-      ));
-    }
+    content.add(buildIssuerInfo(asVc.issuer));
+    content.add(const SizedBox(
+      height: 10,
+    ));
     var additional = buildCredSubject(asVc.credentialSubject);
     content += additional;
-    return Card(
-      child: Column(
-        children: content,
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) =>
+              CredentialDetailView(wallet: widget.wallet, credential: asVc))),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: content,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+          ),
+        ),
       ),
     );
   }
@@ -193,7 +185,22 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Übersicht'),
+        title:
+            isScanner ? const Text('QR-Code scannen') : const Text('Übersicht'),
+        actions: isScanner
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: GestureDetector(
+                    onTap: () {
+                      isScanner = false;
+                      setState(() {});
+                    },
+                    child: const Icon(Icons.close),
+                  ),
+                )
+              ]
+            : [],
       ),
       body: FutureBuilder(
         future: _initFuture,
@@ -211,13 +218,22 @@ class _MainPageState extends State<MainPage> {
           }
         },
       ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            isScanner = true;
-            setState(() {});
-          },
-          child: const Icon(Icons.qr_code)),
+      floatingActionButton: isScanner
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                isScanner = true;
+                setState(() {});
+              },
+              child: const Icon(Icons.qr_code)),
     );
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    poller.cancel();
   }
 }
 

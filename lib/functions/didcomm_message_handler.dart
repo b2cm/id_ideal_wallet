@@ -3,6 +3,7 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
@@ -162,7 +163,7 @@ Future<bool> handleInvitation(
         parentThreadId: invitation.id,
         from: myDid,
         to: [invitation.from!],
-        replyUrl: 'http://localhost:8888/buffer/$myDid');
+        replyUrl: '$relay/buffer/$myDid');
     await wallet.storeConversationEntry(propose, myDid);
 
     sendMessage(

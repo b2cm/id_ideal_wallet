@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:uuid/uuid.dart';
 
 import '../views/offer_credential_dialog.dart';
@@ -82,7 +83,7 @@ _sendRequestCredential(
                 proofType: offer.detail!.first.options.proofType,
                 challenge: const Uuid().v4()))
       ],
-      replyUrl: 'http://localhost:8888/buffer/$myDid',
+      replyUrl: '$relay/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!]);
@@ -116,7 +117,7 @@ _sendProposeCredential(
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!],
-      replyUrl: 'http://localhost:8888/buffer/$myDid',
+      replyUrl: '$relay/buffer/$myDid',
       detail: [
         LdProofVcDetail(
             credential: newCred, options: offer.detail!.first.options)
@@ -152,7 +153,10 @@ Future<bool> handleIssueCredential(
       print('Holder of credential: $credDid');
       var storageCred = wallet.getCredential(credDid);
       if (storageCred != null) {
-        await wallet.storeCredential(cred.toString(), '', storageCred.hdPath);
+        await wallet.storeCredential(cred.toString(), '', storageCred.hdPath,
+            keyType: KeyType.ed25519);
+        await wallet.storeExchangeHistoryEntry(
+            credDid, DateTime.now(), 'issue', message.from!);
         await wallet.storeConversationEntry(message, entry.myDid);
         var ack = EmptyMessage(
             ack: [message.id], threadId: message.threadId ?? message.id);
