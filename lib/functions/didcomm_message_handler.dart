@@ -134,9 +134,14 @@ Future<DidcommPlaintextMessage> getPlaintext(
           return getPlaintext(signed.payload.toString(), wallet);
         }
       } catch (e) {
-        print('Nothing: $e');
-        throw Exception(
-            'Unexpected message format - only expect Signed or encrypted messages');
+        print('Plain: $e');
+        try {
+          var plain = DidcommPlaintextMessage.fromJson(message);
+          return plain;
+        } catch (e) {
+          throw Exception(
+              'Unexpected message format - only expect Signed or encrypted messages');
+        }
       }
     }
   }

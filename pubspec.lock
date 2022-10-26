@@ -116,9 +116,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      name: dart_ssi
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: didcomm
+      resolved-ref: "8b0d19427b5596e77eba749ccba260601fb90acb"
+      url: "https://github.com/b2cm/dart_ssi"
+    source: git
     version: "1.0.3"
   ed25519_edwards:
     dependency: transitive
