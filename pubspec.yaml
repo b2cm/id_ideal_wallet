@@ -45,6 +45,7 @@ dependencies:
   uuid: any
   mobile_scanner: ^2.0.0
   http: any
+  qr_flutter: any
   x509b:
     git:
       url: https://github.com/SaOtto/x509/

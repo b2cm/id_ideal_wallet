@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
 import 'package:x509b/x509.dart' as x509;
 
 class CredentialDetailView extends StatefulWidget {
@@ -22,7 +23,7 @@ class _CredentialDetailState extends State<CredentialDetailView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Ihnen wird ein Credential angeboten'),
-        content: Card(
+        content: const Card(
             child: Text(
                 'Sind Sie sicher, dass sie dieses Credential löschen möchten?\n Dieser Vorgang kann nicht rückgängig gemacht werden.')),
         actions: [
@@ -150,6 +151,13 @@ class _CredentialDetailState extends State<CredentialDetailView> {
         ],
       ),
       body: _buildBody(),
+      persistentFooterButtons: [
+        TextButton(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => QrRender(
+                    credential: widget.credential, wallet: widget.wallet))),
+            child: const Text('zum Vorzeigen anbieten'))
+      ],
     );
   }
 
