@@ -46,7 +46,7 @@ Future<bool> handleDidcommMessage(
 
     case 'https://didcomm.org/present-proof/3.0/propose-presentation':
       return handleProposePresentation(
-          ProposePresentation.fromJson(plaintext.toJson()), wallet);
+          ProposePresentation.fromJson(plaintext.toJson()), wallet, context);
 
     case 'https://didcomm.org/present-proof/3.0/request-presentation':
       return handleRequestPresentation(
@@ -57,7 +57,7 @@ Future<bool> handleDidcommMessage(
 
     case 'https://didcomm.org/present-proof/3.0/presentation':
       return handlePresentation(
-          Presentation.fromJson(plaintext.toJson()), wallet);
+          Presentation.fromJson(plaintext.toJson()), wallet, context);
 
     case 'https://didcomm.org/report-problem/2.0/problem-report':
       return handleProblemReport(
@@ -92,8 +92,9 @@ Future<DidcommPlaintextMessage> getPlaintext(
           }
         }
         try {
+          dynamic jsonData = oob.attachments!.first.data.json!;
           var plain = DidcommPlaintextMessage.fromJson(
-              oob.attachments!.first.data.json!);
+              jsonData is List ? jsonData.first : jsonData);
           plain.from ??= oob.from;
           return plain;
         } catch (e) {

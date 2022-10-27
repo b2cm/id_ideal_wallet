@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
 import 'package:x509b/x509.dart' as x509;
 
@@ -166,4 +167,31 @@ class _CredentialDetailState extends State<CredentialDetailView> {
     // TODO: implement dispose
     super.dispose();
   }
+}
+
+Card buildCredentialCard(VerifiableCredential credential) {
+  List<Widget> content = [
+    Text(
+        credential.type
+            .firstWhere((element) => element != 'VerifiableCredential'),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+    const SizedBox(
+      height: 10,
+    )
+  ];
+  content.add(buildIssuerInfo(credential.issuer));
+  content.add(const SizedBox(
+    height: 10,
+  ));
+  var additional = buildCredSubject(credential.credentialSubject);
+  content += additional;
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: content,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+      ),
+    ),
+  );
 }

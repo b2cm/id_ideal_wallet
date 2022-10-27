@@ -4,13 +4,48 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/views/presentation_dialog.dart';
+import 'package:id_ideal_wallet/views/presentation_proposal_dialog.dart';
+import 'package:uuid/uuid.dart';
 
 import '../views/presentation_request.dart';
 import 'didcomm_message_handler.dart';
 
-bool handleProposePresentation(
-    ProposePresentation message, WalletStore wallet) {
-  throw Exception('We should never get such a message');
+Future<bool> handleProposePresentation(ProposePresentation message,
+    WalletStore wallet, BuildContext context) async {
+  var res = await showDialog(
+      context: context,
+      builder: (BuildContext context) => buildPresentationProposalDialog(
+          context, message.presentationDefinition!.first));
+
+  if (res) {
+    //It should be the first message
+    var myConnectionDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    List<PresentationDefinitionWithOptions> withOptions = [];
+    for (var definition in message.presentationDefinition!) {
+      var tmp = PresentationDefinitionWithOptions(
+          domain: 'domain',
+          challenge: Uuid().v4(),
+          presentationDefinition: definition);
+      withOptions.add(tmp);
+    }
+    var answer = RequestPresentation(
+        presentationDefinition: withOptions,
+        from: myConnectionDid,
+        to: [message.from!],
+        replyUrl: '$relay/buffer/$myConnectionDid');
+
+    await wallet.storeConversationEntry(answer, myConnectionDid);
+
+    sendMessage(
+        myConnectionDid,
+        determineReplyUrl(message.replyUrl, message.replyTo),
+        wallet,
+        answer,
+        message.from!);
+  }
+  return false;
 }
 
 Future<bool> handleRequestPresentation(
@@ -88,6 +123,28 @@ Future<bool> handleRequestPresentation(
   return false;
 }
 
-bool handlePresentation(Presentation message, WalletStore wallet) {
-  throw Exception('We should never get such a message');
+Future<bool> handlePresentation(
+    Presentation message, WalletStore wallet, BuildContext context) async {
+  var conversation =
+      wallet.getConversationEntry(message.threadId ?? message.id);
+  if (conversation == null) {
+    //TODO: send Problem Report
+    throw Exception('We have not requested a presentation');
+  }
+  var requestPresentation =
+      RequestPresentation.fromJson(conversation.lastMessage);
+  var challenge = requestPresentation.presentationDefinition.first.challenge;
+
+  var verified =
+      await verifyPresentation(message.verifiablePresentation.first, challenge);
+  if (verified) {
+    await showDialog(
+        context: context,
+        builder: (context) =>
+            buildPresentationDialog(message.verifiablePresentation, context));
+    return false;
+  } else {
+    //TODO: show to user
+    throw Exception('Presentation was wrong');
+  }
 }

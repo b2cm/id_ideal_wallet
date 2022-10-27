@@ -325,7 +325,7 @@ packages:
     source: hosted
     version: "1.0.0"
   json_path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: json_path
       url: "https://pub.dartlang.org"
@@ -339,7 +339,7 @@ packages:
     source: hosted
     version: "3.0.2"
   json_schema2:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: json_schema2
       url: "https://pub.dartlang.org"

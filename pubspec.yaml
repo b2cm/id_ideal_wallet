@@ -34,7 +34,7 @@ dependencies:
       url: https://github.com/b2cm/dart_ssi
       ref: didcomm
 #  dart_ssi:
-#   path: ../flutter_ssi_wallet
+#    path: ../flutter_ssi_wallet
   ln_wallet:
     git: http://suc-1.hs-mittweida.de/erik/flutter_ln_wallet
  # dart_ssi: ^1.0.3
@@ -46,6 +46,8 @@ dependencies:
   mobile_scanner: ^2.0.0
   http: any
   qr_flutter: any
+  json_path: any
+  json_schema2: any
   x509b:
     git:
       url: https://github.com/SaOtto/x509/

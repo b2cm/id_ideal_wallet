@@ -10,7 +10,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
-import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:ln_wallet/ln_wallet.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
@@ -106,9 +105,7 @@ class _MainPageState extends State<MainPage> {
   Future<bool> _init() async {
     if (await openWallet(widget.wallet)) {
       if (!widget.wallet.isInitialized()) {
-        var m = await widget.wallet.initialize(
-            mnemonic:
-                'female exotic side crack letter mass payment winner special close endless swamp');
+        var m = await widget.wallet.initialize();
         print(m);
       }
 
@@ -139,32 +136,11 @@ class _MainPageState extends State<MainPage> {
 
   Widget _buildCredentialCard(String credential) {
     var asVc = VerifiableCredential.fromJson(credential);
-    List<Widget> content = [
-      Text(asVc.type.firstWhere((element) => element != 'VerifiableCredential'),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      const SizedBox(
-        height: 10,
-      )
-    ];
-    content.add(buildIssuerInfo(asVc.issuer));
-    content.add(const SizedBox(
-      height: 10,
-    ));
-    var additional = buildCredSubject(asVc.credentialSubject);
-    content += additional;
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (context) =>
               CredentialDetailView(wallet: widget.wallet, credential: asVc))),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            children: content,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-          ),
-        ),
-      ),
+      child: buildCredentialCard(asVc),
     );
   }
 
