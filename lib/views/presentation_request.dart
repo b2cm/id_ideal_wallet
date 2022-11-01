@@ -140,6 +140,11 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     Navigator.of(context).pop();
   }
 
+  void reject() {
+    Navigator.of(context).pop();
+    //TODO: send Problem Report, if user rejects
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,6 +155,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         children: buildChilds(),
       ),
       persistentFooterButtons: [
+        TextButton(onPressed: reject, child: const Text('Ablehnen')),
         TextButton(onPressed: sendAnswer, child: const Text('Senden'))
       ],
     );

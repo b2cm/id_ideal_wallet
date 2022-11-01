@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
@@ -14,43 +13,21 @@ import 'package:ln_wallet/ln_wallet.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 
-void main() {
-  runApp(App());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final appDocumentDir = await getApplicationDocumentsDirectory();
+  runApp(App(
+    wallet: WalletStore(appDocumentDir.path),
+  ));
 }
 
 class App extends StatelessWidget {
-  const App({Key? key}) : super(key: key);
+  final WalletStore wallet;
+  const App({Key? key, required this.wallet}) : super(key: key);
 
   @override
   Widget build(context) {
-    return FutureBuilder(
-        future: getApplicationDocumentsDirectory(),
-        builder: (context, AsyncSnapshot<Directory> snapshot) {
-          if (snapshot.hasData) {
-            return MaterialApp(
-                home: MainPage(wallet: WalletStore(snapshot.data!.path)));
-          } else {
-            return const MaterialApp(
-              home: Waiting(),
-            );
-          }
-        });
-  }
-}
-
-class Waiting extends StatelessWidget {
-  const Waiting({Key? key}) : super(key: key);
-
-  @override
-  Widget build(context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lade Wallet'),
-      ),
-      body: const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return MaterialApp(home: MainPage(wallet: wallet));
   }
 }
 

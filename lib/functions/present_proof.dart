@@ -78,47 +78,76 @@ Future<bool> handleRequestPresentation(
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
 
-  var filtered = searchCredentialsForPresentationDefinition(creds, definition);
-  print(filtered.length);
-  print(filtered.first.credentials.length);
-  if (filtered.isNotEmpty) {
-    List<FilterResult> finalShow = [];
-    //filter List of credentials -> check for duplicates by type
-    for (var result in filtered) {
-      List<VerifiableCredential> filteredCreds = [];
-      for (var cred in result.credentials) {
-        if (filteredCreds.isEmpty) {
-          filteredCreds.add(cred);
-        } else {
-          bool typeFound = false;
-          for (var cred2 in filteredCreds) {
-            if (cred.isOfSameType(cred2)) {
-              typeFound = true;
-              break;
+  try {
+    var filtered =
+        searchCredentialsForPresentationDefinition(creds, definition);
+    print(filtered.length);
+    print(filtered.first.credentials.length);
+    if (filtered.isNotEmpty && filtered.first.credentials.isNotEmpty) {
+      List<FilterResult> finalShow = [];
+      //filter List of credentials -> check for duplicates by type
+      for (var result in filtered) {
+        List<VerifiableCredential> filteredCreds = [];
+        for (var cred in result.credentials) {
+          if (filteredCreds.isEmpty) {
+            filteredCreds.add(cred);
+          } else {
+            bool typeFound = false;
+            for (var cred2 in filteredCreds) {
+              if (cred.isOfSameType(cred2)) {
+                typeFound = true;
+                break;
+              }
             }
+            if (!typeFound) filteredCreds.add(cred);
           }
-          if (!typeFound) filteredCreds.add(cred);
         }
+        finalShow.add(FilterResult(
+            credentials: filteredCreds,
+            presentationDefinitionId: definition.id,
+            matchingDescriptorIds: result.matchingDescriptorIds,
+            submissionRequirement: result.submissionRequirement));
       }
-      finalShow.add(FilterResult(
-          credentials: filteredCreds,
-          presentationDefinitionId: definition.id,
-          matchingDescriptorIds: result.matchingDescriptorIds,
-          submissionRequirement: result.submissionRequirement));
+
+      print(finalShow);
+
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => PresentationRequestDialog(
+                wallet: wallet,
+                message: message,
+                otherEndpoint:
+                    determineReplyUrl(message.replyUrl, message.replyTo),
+                receiverDid: message.from!,
+                myDid: myDid,
+                results: finalShow,
+              )));
+    } else {
+      await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text('Keine Credentials gefunden'),
+                content: const Text(
+                    'Sie besitzen keine Credential, die der Anfrage entsprechen'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Ok'))
+                ],
+              ));
     }
-
-    print(finalShow);
-
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
-              wallet: wallet,
-              message: message,
-              otherEndpoint:
-                  determineReplyUrl(message.replyUrl, message.replyTo),
-              receiverDid: message.from!,
-              myDid: myDid,
-              results: finalShow,
-            )));
+  } catch (e) {
+    await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Keine Credentials gefunden'),
+              content: Text(
+                  'Sie besitzen keine Credential, die der Anfrage entsprechen ($e)'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Ok'))
+              ],
+            ));
   }
   return false;
 }
