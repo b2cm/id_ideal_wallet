@@ -1,8 +1,7 @@
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
-import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 
 List<String> _supportedAttachments = [
   'dif/presentation-exchange/definitions@v2.0',
@@ -12,8 +11,7 @@ List<String> _supportedAttachments = [
 
 Future<bool> handleDiscoverFeatureQuery(
   QueryMessage message,
-  WalletStore wallet,
-  BuildContext context,
+  WalletProvider wallet,
 ) async {
   print('Query message received');
   List<Disclosure> features = [];
@@ -44,7 +42,7 @@ Future<bool> handleDiscoverFeatureQuery(
   print('discoveredFeatures: $features');
 
   //TODO: for now we assume, that this is the first message from a Stranger (nothing else happened before)
-  var myDid = await wallet.getNextConnectionDID(KeyType.x25519);
+  var myDid = await wallet.newConnectionDid();
 
   var answer = DiscloseMessage(
       disclosures: features,

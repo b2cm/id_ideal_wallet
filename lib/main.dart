@@ -1,139 +1,41 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:dart_ssi/credentials.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
+import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:ln_wallet/ln_wallet.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final appDocumentDir = await getApplicationDocumentsDirectory();
-  runApp(App(
-    wallet: WalletStore(appDocumentDir.path),
+  runApp(ChangeNotifierProvider(
+    create: (context) => WalletProvider(appDocumentDir.path),
+    child: const App(),
   ));
 }
 
 class App extends StatelessWidget {
-  final WalletStore wallet;
-  const App({Key? key, required this.wallet}) : super(key: key);
+  const App({Key? key}) : super(key: key);
 
   @override
   Widget build(context) {
-    return MaterialApp(home: MainPage(wallet: wallet));
+    return MaterialApp(navigatorKey: navigatorKey, home: const MainPage());
   }
 }
 
 class MainPage extends StatefulWidget {
-  final WalletStore wallet;
-  const MainPage({Key? key, required this.wallet}) : super(key: key);
+  const MainPage({Key? key}) : super(key: key);
 
   @override
   _MainPageState createState() => _MainPageState();
-
-  static void repaint(BuildContext context) {
-    _MainPageState? state = context.findAncestorStateOfType<_MainPageState>();
-    print(state);
-    state?._repaint();
-  }
 }
 
 class _MainPageState extends State<MainPage> {
-  late Future<bool> _initFuture;
   bool isCred = true;
-  bool isScanner = false;
-  late Timer poller;
-
-  @override
-  initState() {
-    super.initState();
-    _initFuture = _init();
-  }
-
-  void _repaint() {
-    setState(() {});
-  }
-
-  Future<void> _timerFunction(Timer t) async {
-    if (widget.wallet.isWalletOpen()) {
-      var connectionDids = widget.wallet.getAllConnections();
-      for (var did in connectionDids.keys.toList()) {
-        var serverAnswer = await get(Uri.parse('$relay/get/$did'));
-        if (serverAnswer.statusCode == 200) {
-          List messages = jsonDecode(serverAnswer.body);
-          for (var m in messages) {
-            handleDidcommMessage(widget.wallet, jsonEncode(m), context)
-                .then((value) {
-              if (value) setState(() {});
-            });
-          }
-        }
-      }
-    }
-  }
-
-  Future<bool> _init() async {
-    if (await openWallet(widget.wallet)) {
-      if (!widget.wallet.isInitialized()) {
-        var m = await widget.wallet.initialize();
-        print(m);
-      }
-
-      poller = Timer.periodic(const Duration(seconds: 10), _timerFunction);
-
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Widget _buildCredentialOverview() {
-    var allCreds = widget.wallet.getAllCredentials();
-    List<Widget> credViews = [];
-    for (var cred in allCreds.values) {
-      if (cred.w3cCredential != null && cred.w3cCredential != '') {
-        credViews.add(_buildCredentialCard(cred.w3cCredential));
-      }
-    }
-    return SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
-            child: Column(
-              children: credViews,
-              crossAxisAlignment: CrossAxisAlignment.center,
-            )));
-  }
-
-  Widget _buildCredentialCard(String credential) {
-    var asVc = VerifiableCredential.fromJson(credential);
-    return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) =>
-              CredentialDetailView(wallet: widget.wallet, credential: asVc))),
-      child: buildCredentialCard(asVc),
-    );
-  }
-
-  Widget _buildScanner() {
-    return MobileScanner(
-        allowDuplicates: false,
-        onDetect: (barcode, args) {
-          if (barcode.rawValue != null) {
-            final String code = barcode.rawValue!;
-            debugPrint('Barcode found! $code');
-            isScanner = false;
-            handleDidcommMessage(widget.wallet, code, context);
-            setState(() {});
-          }
-        });
-  }
 
   Drawer _buildDrawer() {
     return Drawer(
@@ -170,62 +72,17 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title:
-            isScanner ? const Text('QR-Code scannen') : const Text('Übersicht'),
-        actions: isScanner
-            ? [
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: GestureDetector(
-                    onTap: () {
-                      isScanner = false;
-                      setState(() {});
-                    },
-                    child: const Icon(Icons.close),
-                  ),
-                )
-              ]
-            : [],
-      ),
-      drawer: _buildDrawer(),
-      body: FutureBuilder(
-        future: _initFuture,
-        builder: (context, AsyncSnapshot<bool> snapshot) {
-          if (snapshot.hasData) {
-            if (snapshot.data!) {
-              return isScanner
-                  ? _buildScanner()
-                  : isCred
-                      ? _buildCredentialOverview()
-                      : const LnWalletMainPage(title: 'Lightning wallet');
-            } else {
-              return const Text('beim Öffnen ging was schief');
-            }
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        },
-      ),
-      floatingActionButton: isScanner
-          ? null
-          : FloatingActionButton(
-              onPressed: () {
-                isScanner = true;
-                setState(() {});
-              },
-              child: const Icon(Icons.qr_code)),
+    return StyledScaffhold(
+      name: 'Max Mustermann',
+      nameOnTap: () {},
+      scanOnTap: () {
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => const QrScanner()));
+      },
+      child: isCred
+          ? const CredentialOverview()
+          : const LnWalletMainPage(title: 'Lightning wallet'),
     );
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    poller.cancel();
   }
 }
 
@@ -242,4 +99,57 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
     }
   });
   return children;
+}
+
+class CredentialOverview extends StatelessWidget {
+  const CredentialOverview({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WalletProvider>(builder: (context, wallet, child) {
+      if (wallet.isOpen()) {
+        var allCreds = wallet.allCredentials().values.toList();
+        return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 5),
+            itemCount: allCreds.length,
+            itemBuilder: (context, index) {
+              var cred = allCreds[index].w3cCredential;
+              if (cred != '') {
+                return CredentialCard(
+                    credential: VerifiableCredential.fromJson(cred));
+              } else {
+                return const SizedBox(
+                  height: 0,
+                );
+              }
+            });
+      } else {
+        wallet.openWallet();
+        return const Center(
+          child: Text('Wallet Öffnen'),
+        );
+      }
+    });
+  }
+}
+
+class CredentialCard extends StatelessWidget {
+  final VerifiableCredential credential;
+
+  const CredentialCard({Key? key, required this.credential}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => CredentialDetailView(credential: credential))),
+      child: IdCard(
+          cardTitle: credential.type
+              .firstWhere((element) => element != 'VerifiableCredential'),
+          subjectName:
+              '${credential.credentialSubject['givenName'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+          bottomLeftText: '',
+          bottomRightText: ''),
+    );
+  }
 }

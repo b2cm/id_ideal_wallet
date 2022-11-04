@@ -1,22 +1,23 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_path/json_path.dart';
 import 'package:json_schema2/json_schema2.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class QrRender extends StatelessWidget {
   final VerifiableCredential credential;
-  final WalletStore wallet;
 
-  const QrRender({Key? key, required this.credential, required this.wallet})
-      : super(key: key);
+  const QrRender({Key? key, required this.credential}) : super(key: key);
 
   Future<String> _proposePresentation() async {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
     var idField = InputDescriptorField(
         path: [JsonPath(r'$.id'), JsonPath(r'$.credentialSubject.id')],
         filter: JsonSchema.createSchema({
@@ -32,7 +33,7 @@ class QrRender extends StatelessWidget {
           'type': 'array',
           'contains': {'type': 'string', 'pattern': type}
         }));
-    var newConnDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    var newConnDid = await wallet.newConnectionDid();
     var message = ProposePresentation(
         from: newConnDid,
         replyUrl: '$relay/buffer/$newConnDid',
@@ -48,7 +49,7 @@ class QrRender extends StatelessWidget {
     var bufferId = Uuid().v4();
     await post(Uri.parse('$relay/buffer/$bufferId'), body: message.toString());
 
-    await wallet.storeConversationEntry(message, newConnDid);
+    wallet.storeConversation(message, newConnDid);
 
     var oob = OutOfBandMessage(from: newConnDid, attachments: [
       Attachment(

@@ -48,6 +48,9 @@ dependencies:
   qr_flutter: any
   json_path: any
   json_schema2: any
+  provider: ^6.0.4
+  id_wallet_design:
+    path: ../id_wallet_design
   x509b:
     git:
       url: https://github.com/SaOtto/x509/

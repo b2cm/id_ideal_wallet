@@ -1,7 +1,8 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../functions/didcomm_message_handler.dart';
 import '../main.dart';
@@ -10,14 +11,12 @@ class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
   final String myDid;
   final String otherEndpoint;
-  final WalletStore wallet;
   final String receiverDid;
   final RequestPresentation message;
 
   const PresentationRequestDialog(
       {Key? key,
       required this.results,
-      required this.wallet,
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
@@ -101,6 +100,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   }
 
   Future<void> sendAnswer() async {
+    var wallet = Provider.of<WalletProvider>(context, listen: false);
     List<FilterResult> finalSend = [];
     int outerPos = 0;
     int innerPos = 0;
@@ -120,17 +120,17 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
-    var vp = await buildPresentation(finalSend, widget.wallet,
+    var vp = await buildPresentation(finalSend, wallet.wallet,
         widget.message.presentationDefinition.first.challenge);
     var presentationMessage = Presentation(
         verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
         threadId: widget.message.threadId ?? widget.message.id,
         parentThreadId: widget.message.parentThreadId);
-    sendMessage(widget.myDid, widget.otherEndpoint, widget.wallet,
-        presentationMessage, widget.receiverDid);
+    sendMessage(widget.myDid, widget.otherEndpoint, wallet, presentationMessage,
+        widget.receiverDid);
     for (var pres in presentationMessage.verifiablePresentation) {
       for (var cred in pres.verifiableCredential) {
-        await widget.wallet.storeExchangeHistoryEntry(
+        wallet.storeExchangeHistoryEntry(
             getHolderDidFromCredential(cred.toJson()),
             DateTime.now(),
             'present',

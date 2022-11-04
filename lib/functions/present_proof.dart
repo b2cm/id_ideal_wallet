@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_dialog.dart';
 import 'package:id_ideal_wallet/views/presentation_proposal_dialog.dart';
 import 'package:uuid/uuid.dart';
@@ -12,16 +12,16 @@ import 'package:uuid/uuid.dart';
 import '../views/presentation_request.dart';
 import 'didcomm_message_handler.dart';
 
-Future<bool> handleProposePresentation(ProposePresentation message,
-    WalletStore wallet, BuildContext context) async {
+Future<bool> handleProposePresentation(
+    ProposePresentation message, WalletProvider wallet) async {
   var res = await showDialog(
-      context: context,
+      context: navigatorKey.currentContext!,
       builder: (BuildContext context) => buildPresentationProposalDialog(
           context, message.presentationDefinition!.first));
 
   if (res) {
     //It should be the first message
-    var myConnectionDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    var myConnectionDid = await wallet.newConnectionDid();
     List<PresentationDefinitionWithOptions> withOptions = [];
     for (var definition in message.presentationDefinition!) {
       var tmp = PresentationDefinitionWithOptions(
@@ -36,7 +36,7 @@ Future<bool> handleProposePresentation(ProposePresentation message,
         to: [message.from!],
         replyUrl: '$relay/buffer/$myConnectionDid');
 
-    await wallet.storeConversationEntry(answer, myConnectionDid);
+    wallet.storeConversation(answer, myConnectionDid);
 
     sendMessage(
         myConnectionDid,
@@ -49,10 +49,7 @@ Future<bool> handleProposePresentation(ProposePresentation message,
 }
 
 Future<bool> handleRequestPresentation(
-  RequestPresentation message,
-  WalletStore wallet,
-  BuildContext context,
-) async {
+    RequestPresentation message, WalletProvider wallet) async {
   print('Request Presentation message received');
 
   String threadId;
@@ -63,15 +60,15 @@ Future<bool> handleRequestPresentation(
   }
   print(threadId);
   //Are there any previous messages?
-  var entry = wallet.getConversationEntry(threadId);
+  var entry = wallet.getConversation(threadId);
   String myDid;
   if (entry == null) {
-    myDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    myDid = await wallet.newConnectionDid();
   } else {
     myDid = entry.myDid;
   }
 
-  var allCreds = wallet.getAllCredentials();
+  var allCreds = wallet.allCredentials();
   List<Map<String, dynamic>> creds = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') creds.add(jsonDecode(value.w3cCredential));
@@ -111,9 +108,8 @@ Future<bool> handleRequestPresentation(
 
       print(finalShow);
 
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
-                wallet: wallet,
                 message: message,
                 otherEndpoint:
                     determineReplyUrl(message.replyUrl, message.replyTo),
@@ -123,7 +119,7 @@ Future<bool> handleRequestPresentation(
               )));
     } else {
       await showDialog(
-          context: context,
+          context: navigatorKey.currentContext!,
           builder: (context) => AlertDialog(
                 title: const Text('Keine Credentials gefunden'),
                 content: const Text(
@@ -137,7 +133,7 @@ Future<bool> handleRequestPresentation(
     }
   } catch (e) {
     await showDialog(
-        context: context,
+        context: navigatorKey.currentContext!,
         builder: (context) => AlertDialog(
               title: const Text('Keine Credentials gefunden'),
               content: Text(
@@ -153,9 +149,8 @@ Future<bool> handleRequestPresentation(
 }
 
 Future<bool> handlePresentation(
-    Presentation message, WalletStore wallet, BuildContext context) async {
-  var conversation =
-      wallet.getConversationEntry(message.threadId ?? message.id);
+    Presentation message, WalletProvider wallet) async {
+  var conversation = wallet.getConversation(message.threadId ?? message.id);
   if (conversation == null) {
     //TODO: send Problem Report
     throw Exception('We have not requested a presentation');
@@ -168,7 +163,7 @@ Future<bool> handlePresentation(
       await verifyPresentation(message.verifiablePresentation.first, challenge);
   if (verified) {
     await showDialog(
-        context: context,
+        context: navigatorKey.currentContext!,
         builder: (context) =>
             buildPresentationDialog(message.verifiablePresentation, context));
     return false;

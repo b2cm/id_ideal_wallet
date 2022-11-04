@@ -1,16 +1,17 @@
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-Future<bool> handleDidcommMessage(
-    WalletStore wallet, String message, BuildContext context) async {
+Future<bool> handleDidcommMessage(String message) async {
+  var wallet =
+      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
   var plaintext = await getPlaintext(message, wallet);
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {
     for (var a in plaintext.attachments!) {
@@ -31,10 +32,7 @@ Future<bool> handleDidcommMessage(
 
     case 'https://didcomm.org/issue-credential/3.0/offer-credential':
       return handleOfferCredential(
-        OfferCredential.fromJson(plaintext.toJson()),
-        wallet,
-        context,
-      );
+          OfferCredential.fromJson(plaintext.toJson()), wallet);
 
     case 'https://didcomm.org/issue-credential/3.0/request-credential':
       return handleRequestCredential(
@@ -42,22 +40,19 @@ Future<bool> handleDidcommMessage(
 
     case 'https://didcomm.org/issue-credential/3.0/issue-credential':
       return handleIssueCredential(
-          IssueCredential.fromJson(plaintext.toJson()), wallet, context);
+          IssueCredential.fromJson(plaintext.toJson()), wallet);
 
     case 'https://didcomm.org/present-proof/3.0/propose-presentation':
       return handleProposePresentation(
-          ProposePresentation.fromJson(plaintext.toJson()), wallet, context);
+          ProposePresentation.fromJson(plaintext.toJson()), wallet);
 
     case 'https://didcomm.org/present-proof/3.0/request-presentation':
       return handleRequestPresentation(
-        RequestPresentation.fromJson(plaintext.toJson()),
-        wallet,
-        context,
-      );
+          RequestPresentation.fromJson(plaintext.toJson()), wallet);
 
     case 'https://didcomm.org/present-proof/3.0/presentation':
       return handlePresentation(
-          Presentation.fromJson(plaintext.toJson()), wallet, context);
+          Presentation.fromJson(plaintext.toJson()), wallet);
 
     case 'https://didcomm.org/report-problem/2.0/problem-report':
       return handleProblemReport(
@@ -65,10 +60,7 @@ Future<bool> handleDidcommMessage(
 
     case 'https://didcomm.org/discover-features/2.0/queries':
       return handleDiscoverFeatureQuery(
-        QueryMessage.fromJson(plaintext.toJson()),
-        wallet,
-        context,
-      );
+          QueryMessage.fromJson(plaintext.toJson()), wallet);
 
     default:
       throw Exception('Unsupported message type');
@@ -76,7 +68,7 @@ Future<bool> handleDidcommMessage(
 }
 
 Future<DidcommPlaintextMessage> getPlaintext(
-    String message, WalletStore wallet) async {
+    String message, WalletProvider wallet) async {
   print(message);
   try {
     var uri = Uri.parse(message);
@@ -110,7 +102,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
       print('No oob: $e');
       var encrypted = DidcommEncryptedMessage.fromJson(message);
       print('is encrypted');
-      var decrypted = await encrypted.decrypt(wallet);
+      var decrypted = await encrypted.decrypt(wallet.wallet);
       print('successfully decrypted');
       if (decrypted is DidcommPlaintextMessage) {
         decrypted.from ??= encrypted.protectedHeaderSkid!.split('#').first;
@@ -152,7 +144,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
 }
 
 Future<bool> handleInvitation(
-    OutOfBandMessage invitation, WalletStore wallet) async {
+    OutOfBandMessage invitation, WalletProvider wallet) async {
   if (invitation.accept != null &&
       !invitation.accept!.contains(DidcommProfiles.v2)) {
     //better: send problem report
@@ -162,7 +154,7 @@ Future<bool> handleInvitation(
   if (invitation.goalCode != null && invitation.goalCode == 'streamlined-vp') {
     // counterpart wants to ask for presentation
     var threadId = const Uuid().v4();
-    var myDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    var myDid = await wallet.newConnectionDid();
     var propose = ProposePresentation(
         id: threadId,
         threadId: threadId,
@@ -170,7 +162,7 @@ Future<bool> handleInvitation(
         from: myDid,
         to: [invitation.from!],
         replyUrl: '$relay/buffer/$myDid');
-    await wallet.storeConversationEntry(propose, myDid);
+    wallet.storeConversation(propose, myDid);
 
     sendMessage(
         myDid,
@@ -196,15 +188,15 @@ String determineReplyUrl(String? replyUrl, List<String>? replyTo) {
   throw Exception('cant find a replyUrl');
 }
 
-sendMessage(String myDid, String otherEndpoint, WalletStore wallet,
+sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
     DidcommPlaintextMessage message, String receiverDid) async {
-  var myPrivateKey = await wallet.getPrivateKeyForConnectionDidAsJwk(myDid);
+  var myPrivateKey = await wallet.privateKeyForConnectionDidAsJwk(myDid);
   print(receiverDid);
   var recipientDDO = (await resolveDidDocument(receiverDid))
       .resolveKeyIds()
       .convertAllKeysToJwk();
   if (message.type != DidcommMessages.emptyMessage.value) {
-    await wallet.storeConversationEntry(message, myDid);
+    wallet.storeConversation(message, myDid);
   }
   var encrypted = DidcommEncryptedMessage.fromPlaintext(
       senderPrivateKeyJwk: myPrivateKey!,
@@ -221,6 +213,6 @@ sendMessage(String myDid, String otherEndpoint, WalletStore wallet,
   }
 }
 
-bool handleProblemReport(ProblemReport message, WalletStore wallet) {
+bool handleProblemReport(ProblemReport message, WalletProvider wallet) {
   return false;
 }

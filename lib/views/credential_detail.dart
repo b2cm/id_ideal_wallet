@@ -1,17 +1,43 @@
 import 'package:dart_ssi/credentials.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
+import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 
+class HistoryEntries extends StatelessWidget {
+  const HistoryEntries({Key? key, required this.credDid}) : super(key: key);
+  final String credDid;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WalletProvider>(builder: (context, wallet, child) {
+      var historyEntries = wallet.historyEntriesForCredential(credDid);
+      List<Widget> entries = [];
+
+      for (var h in historyEntries) {
+        var tile = ListTile(
+          leading: Text(
+              '${h.timestamp.day}.${h.timestamp.month}.${h.timestamp.year}, ${h.timestamp.hour}:${h.timestamp.minute}'),
+          title: Text(h.action == 'issue' ? 'Ausgestellt' : 'Vorgezeigt'),
+        );
+        entries.add(tile);
+      }
+      return ExpansionTile(
+        title: const Text('Historie'),
+        children: entries,
+        childrenPadding: const EdgeInsets.all(10),
+      );
+    });
+  }
+}
+
 class CredentialDetailView extends StatefulWidget {
-  final WalletStore wallet;
   final VerifiableCredential credential;
 
-  const CredentialDetailView(
-      {Key? key, required this.wallet, required this.credential})
+  const CredentialDetailView({Key? key, required this.credential})
       : super(key: key);
 
   @override
@@ -20,6 +46,7 @@ class CredentialDetailView extends StatefulWidget {
 
 class _CredentialDetailState extends State<CredentialDetailView> {
   void _deleteCredential() {
+    var wallet = Provider.of<WalletProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -35,12 +62,12 @@ class _CredentialDetailState extends State<CredentialDetailView> {
               child: const Text('Abbrechen')),
           TextButton(
               onPressed: () async {
-                await widget.wallet.deleteCredential(widget.credential.id ??
+                wallet.deleteCredential(widget.credential.id ??
                     getHolderDidFromCredential(widget.credential.toJson()));
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => MainPage(wallet: widget.wallet)));
+                Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainPage()));
               },
               child: const Text('Löschen'))
         ],
@@ -92,23 +119,6 @@ class _CredentialDetailState extends State<CredentialDetailView> {
     return issuer;
   }
 
-  List<Widget> _buildHistory() {
-    var historyEntries = widget.wallet.getExchangeHistoryEntriesForCredential(
-        getHolderDidFromCredential(widget.credential.toJson()));
-    List<Widget> entries = [];
-    if (historyEntries != null) {
-      for (var h in historyEntries) {
-        var tile = ListTile(
-          leading: Text(
-              '${h.timestamp.day}.${h.timestamp.month}.${h.timestamp.year}, ${h.timestamp.hour}:${h.timestamp.minute}'),
-          title: Text(h.action == 'issue' ? 'Ausgestellt' : 'Vorgezeigt'),
-        );
-        entries.add(tile);
-      }
-    }
-    return entries;
-  }
-
   Widget _buildBody() {
     var personalData = ExpansionTile(
       title: const Text('Persönliche Daten'),
@@ -125,14 +135,17 @@ class _CredentialDetailState extends State<CredentialDetailView> {
       children: _buildIssuerData(),
       childrenPadding: const EdgeInsets.all(10),
     );
-    var history = ExpansionTile(
-      title: const Text('Historie'),
-      children: _buildHistory(),
-      childrenPadding: const EdgeInsets.all(10),
-    );
-    return Column(
-      children: [personalData, issuerData, otherData, history],
-    );
+
+    return SingleChildScrollView(
+        child: Column(
+      children: [
+        personalData,
+        issuerData,
+        otherData,
+        HistoryEntries(
+            credDid: getHolderDidFromCredential(widget.credential.toJson()))
+      ],
+    ));
   }
 
   @override
@@ -155,17 +168,10 @@ class _CredentialDetailState extends State<CredentialDetailView> {
       persistentFooterButtons: [
         TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => QrRender(
-                    credential: widget.credential, wallet: widget.wallet))),
+                builder: (context) => QrRender(credential: widget.credential))),
             child: const Text('zum Vorzeigen anbieten'))
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
   }
 }
 

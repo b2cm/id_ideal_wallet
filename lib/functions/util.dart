@@ -8,7 +8,6 @@ import 'package:x509b/x509.dart' as x509;
 
 Future<bool> openWallet(WalletStore wallet) async {
   if (!wallet.isWalletOpen()) {
-    print('try open');
     var messages = const AndroidAuthMessages(
         signInTitle: 'Wallet öffnen',
         cancelButton: 'Abbrechen',

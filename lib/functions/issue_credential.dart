@@ -2,26 +2,26 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../functions/lightning_utils.dart';
 import '../views/offer_credential_dialog.dart';
 import 'didcomm_message_handler.dart';
 
-bool handleProposeCredential(ProposeCredential message, WalletStore wallet) {
+bool handleProposeCredential(ProposeCredential message, WalletProvider wallet) {
   throw Exception('We should never get such a message');
 }
 
-bool handleRequestCredential(RequestCredential message, WalletStore wallet) {
+bool handleRequestCredential(RequestCredential message, WalletProvider wallet) {
   throw Exception('We should never get such a message');
 }
 
 Future<bool> handleOfferCredential(
-    OfferCredential message, WalletStore wallet, BuildContext context) async {
+    OfferCredential message, WalletProvider wallet) async {
   String threadId;
   print('Offer Credential received');
   if (message.threadId != null) {
@@ -30,7 +30,7 @@ Future<bool> handleOfferCredential(
     threadId = message.id;
   }
   //Are there any previous messages?
-  var entry = wallet.getConversationEntry(threadId);
+  var entry = wallet.getConversation(threadId);
   var credential = message.detail!.first.credential;
   String myDid;
 
@@ -72,7 +72,7 @@ Future<bool> handleOfferCredential(
       entry.protocol == DidcommProtocol.discoverFeature.value) {
     //show data to user
     var res = await showDialog(
-        context: context,
+        context: navigatorKey.currentContext!,
         builder: (BuildContext context) =>
             buildOfferCredentialDialog(context, credential, toPay));
 
@@ -101,7 +101,7 @@ Future<bool> handleOfferCredential(
   }
 
   if (entry == null) {
-    myDid = await wallet.getNextConnectionDID(KeyType.x25519);
+    myDid = await wallet.newConnectionDid();
   } else {
     myDid = entry.myDid;
   }
@@ -131,7 +131,7 @@ Future<bool> handleOfferCredential(
 
 _sendRequestCredential(
   OfferCredential offer,
-  WalletStore wallet,
+  WalletProvider wallet,
   String myDid,
 ) async {
   var message = RequestCredential(
@@ -152,10 +152,10 @@ _sendRequestCredential(
 
 _sendProposeCredential(
   OfferCredential offer,
-  WalletStore wallet,
+  WalletProvider wallet,
   String myDid,
 ) async {
-  var credDid = await wallet.getNextCredentialDID(KeyType.ed25519);
+  var credDid = await wallet.newCredentialDid();
   print('Meine credential did: $credDid');
   var offeredCred = offer.detail!.first.credential;
   var credSubject = offeredCred.credentialSubject;
@@ -184,18 +184,18 @@ _sendProposeCredential(
 
   //Sign attachment with credentialDid
   for (var a in message.attachments!) {
-    await a.data.sign(wallet, credDid);
+    await a.data.sign(wallet.wallet, credDid);
   }
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);
 }
 
 Future<bool> handleIssueCredential(
-    IssueCredential message, WalletStore wallet, BuildContext context) async {
+    IssueCredential message, WalletProvider wallet) async {
   print('Mir wurde ein Credential ausgesetllt');
   var cred = message.credentials!.first;
 
-  var entry = wallet.getConversationEntry(message.threadId!);
+  var entry = wallet.getConversation(message.threadId!);
   if (entry == null) {
     throw Exception(
         'Something went wrong. There could not be an issue message without request');
@@ -212,11 +212,10 @@ Future<bool> handleIssueCredential(
       print('Holder of credential: $credDid');
       var storageCred = wallet.getCredential(credDid);
       if (storageCred != null) {
-        await wallet.storeCredential(cred.toString(), '', storageCred.hdPath,
-            keyType: KeyType.ed25519);
-        await wallet.storeExchangeHistoryEntry(
+        wallet.storeCredential(cred.toString(), storageCred.hdPath);
+        wallet.storeExchangeHistoryEntry(
             credDid, DateTime.now(), 'issue', message.from!);
-        await wallet.storeConversationEntry(message, entry.myDid);
+        wallet.storeConversation(message, entry.myDid);
         var ack = EmptyMessage(
             ack: [message.id], threadId: message.threadId ?? message.id);
         sendMessage(

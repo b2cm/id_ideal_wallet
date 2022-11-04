@@ -116,9 +116,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "../flutter_ssi_wallet"
-      relative: true
-    source: path
+      path: "."
+      ref: didcomm
+      resolved-ref: a4f4f0c4c70a62b1a02e855466a40877735ab9a1
+      url: "https://github.com/b2cm/dart_ssi"
+    source: git
     version: "1.0.4"
   ed25519_edwards:
     dependency: transitive
@@ -289,6 +291,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.1"
+  id_wallet_design:
+    dependency: "direct main"
+    description:
+      path: "../id_wallet_design"
+      relative: true
+    source: path
+    version: "1.0.0+1"
   intl:
     dependency: transitive
     description:
@@ -431,6 +440,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   path:
     dependency: transitive
     description:
@@ -529,6 +545,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.2.4"
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "6.0.4"
   qr:
     dependency: transitive
     description:
@@ -782,5 +805,5 @@ packages:
     source: hosted
     version: "1.0.1+5"
 sdks:
-  dart: ">=2.17.6 <3.0.0"
+  dart: ">=2.18.2 <3.0.0"
   flutter: ">=3.0.0"
