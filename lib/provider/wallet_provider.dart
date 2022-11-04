@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 
 import '../functions/util.dart' as my_util;
 
@@ -14,6 +15,8 @@ class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   String qrData = '';
   late Timer t;
+  String? _lnAuthToken;
+  int balance = -1;
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -26,6 +29,14 @@ class WalletProvider extends ChangeNotifier {
       _wallet.initializeIssuer(KeyType.ed25519);
     }
 
+    _lnAuthToken = await getLnAuthToken();
+    balance = await getBalance(_lnAuthToken!);
+
+    notifyListeners();
+  }
+
+  void getLnBalance() async {
+    balance = await getBalance(_lnAuthToken ?? (await getLnAuthToken())!);
     notifyListeners();
   }
 

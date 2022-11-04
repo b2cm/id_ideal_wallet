@@ -1,6 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 
 Widget buildOfferCredentialDialog(
@@ -22,7 +22,7 @@ Widget buildOfferCredentialDialog(
   contentData.add(const SizedBox(
     height: 10,
   ));
-  contentData.add(buildIssuerInfo(credential.issuer));
+  contentData.add(IssuerInfo(issuer: credential.issuer));
 
   return AlertDialog(
     title: const Text('Ihnen wird ein Credential angeboten'),

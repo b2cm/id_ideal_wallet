@@ -2,10 +2,11 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_page.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 
 import '../functions/didcomm_message_handler.dart';
-import '../main.dart';
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -147,14 +148,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          title: const Text('Presentation Request'),
-          automaticallyImplyLeading: false),
-      body: Column(
+    return StyledScaffold(
+      child: Column(
         children: buildChilds(),
       ),
-      persistentFooterButtons: [
+      name: 'Anfrage',
+      nameOnTap: () {},
+      scanOnTap: () {},
+      footerButtons: [
         TextButton(onPressed: reject, child: const Text('Ablehnen')),
         TextButton(onPressed: sendAnswer, child: const Text('Senden'))
       ],

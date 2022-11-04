@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QrScanner extends StatelessWidget {
@@ -7,18 +8,19 @@ class QrScanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mobile Scanner')),
-      body: MobileScanner(
-          allowDuplicates: false,
-          onDetect: (barcode, args) {
-            if (barcode.rawValue != null) {
-              final String code = barcode.rawValue!;
-              debugPrint('Barcode found! $code');
-              handleDidcommMessage(code);
-              Navigator.of(context).pop();
-            }
-          }),
-    );
+    return StyledScaffold(
+        name: 'QR-Code Scanner',
+        nameOnTap: () {},
+        scanOnTap: () {},
+        child: MobileScanner(
+            allowDuplicates: false,
+            onDetect: (barcode, args) {
+              if (barcode.rawValue != null) {
+                final String code = barcode.rawValue!;
+                debugPrint('Barcode found! $code');
+                handleDidcommMessage(code);
+                Navigator.of(context).pop();
+              }
+            }));
   }
 }

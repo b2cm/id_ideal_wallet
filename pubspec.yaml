@@ -35,8 +35,6 @@ dependencies:
       ref: didcomm
 #  dart_ssi:
 #    path: ../flutter_ssi_wallet
-  ln_wallet:
-    git: http://suc-1.hs-mittweida.de/erik/flutter_ln_wallet
  # dart_ssi: ^1.0.3
   path_provider: any
   local_auth: 2.1.0

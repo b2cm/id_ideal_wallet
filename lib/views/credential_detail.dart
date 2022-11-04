@@ -1,9 +1,11 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
+import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 
@@ -66,8 +68,8 @@ class _CredentialDetailState extends State<CredentialDetailView> {
                     getHolderDidFromCredential(widget.credential.toJson()));
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
-                Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MainPage()));
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                    builder: (context) => const CredentialPage()));
               },
               child: const Text('Löschen'))
         ],
@@ -150,26 +152,20 @@ class _CredentialDetailState extends State<CredentialDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.credential.type
-            .firstWhere((element) => element != 'VerifiableCredential')),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: GestureDetector(
-              onTap: _deleteCredential,
-              child: const Icon(Icons.delete_forever),
-            ),
-          )
-        ],
-      ),
-      body: _buildBody(),
-      persistentFooterButtons: [
+    return StyledScaffold(
+      name: widget.credential.type
+          .firstWhere((element) => element != 'VerifiableCredential'),
+      nameOnTap: () => Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const CredentialPage())),
+      scanOnTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => const QrScanner())),
+      child: _buildBody(),
+      footerButtons: [
         TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => QrRender(credential: widget.credential))),
-            child: const Text('zum Vorzeigen anbieten'))
+            child: const Text('zum Vorzeigen anbieten')),
+        TextButton(onPressed: _deleteCredential, child: const Text('Löschen'))
       ],
     );
   }
@@ -185,7 +181,7 @@ Card buildCredentialCard(VerifiableCredential credential) {
       height: 10,
     )
   ];
-  content.add(buildIssuerInfo(credential.issuer));
+  content.add(IssuerInfo(issuer: credential.issuer));
   content.add(const SizedBox(
     height: 10,
   ));

@@ -239,13 +239,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.2"
-  flutter_stripe:
-    dependency: transitive
-    description:
-      name: flutter_stripe
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "5.1.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -256,13 +249,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  freezed_annotation:
-    dependency: transitive
-    description:
-      name: freezed_annotation
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.2.0"
   hex:
     dependency: transitive
     description:
@@ -312,13 +298,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.4"
-  json_annotation:
-    dependency: transitive
-    description:
-      name: json_annotation
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "4.7.0"
   json_class:
     dependency: transitive
     description:
@@ -361,15 +340,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.1"
-  ln_wallet:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: HEAD
-      resolved-ref: f5c5083b9b29cc7ba78a1c7aae55f763793e44c4
-      url: "http://suc-1.hs-mittweida.de/erik/flutter_ln_wallet"
-    source: git
-    version: "1.0.0+1"
   local_auth:
     dependency: "direct main"
     description:
@@ -594,62 +564,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.1"
-  shared_preferences:
-    dependency: transitive
-    description:
-      name: shared_preferences
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.15"
-  shared_preferences_android:
-    dependency: transitive
-    description:
-      name: shared_preferences_android
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.14"
-  shared_preferences_ios:
-    dependency: transitive
-    description:
-      name: shared_preferences_ios
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.1.1"
-  shared_preferences_linux:
-    dependency: transitive
-    description:
-      name: shared_preferences_linux
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.1.1"
-  shared_preferences_macos:
-    dependency: transitive
-    description:
-      name: shared_preferences_macos
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.4"
-  shared_preferences_platform_interface:
-    dependency: transitive
-    description:
-      name: shared_preferences_platform_interface
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.1.0"
-  shared_preferences_web:
-    dependency: transitive
-    description:
-      name: shared_preferences_web
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.4"
-  shared_preferences_windows:
-    dependency: transitive
-    description:
-      name: shared_preferences_windows
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.1.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -690,27 +604,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.1"
-  stripe_android:
-    dependency: transitive
-    description:
-      name: stripe_android
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "5.1.0"
-  stripe_ios:
-    dependency: transitive
-    description:
-      name: stripe_ios
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "5.1.0"
-  stripe_platform_interface:
-    dependency: transitive
-    description:
-      name: stripe_platform_interface
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "5.1.0"
   term_glyph:
     dependency: transitive
     description:
