@@ -89,6 +89,8 @@ Future<bool> handleOfferCredential(
             headers: {'Authorization': 'Bearer $lnAuthToken'});
         if (res.statusCode == 200) {
           print('erfolgreich bezahlt');
+          wallet.storePayment('-$toPay',
+              'Credential Ausstellung: ${credential.type.firstWhere((element) => element != 'VerifiableCredential')}');
         } else {
           throw Exception('payment error: ${res.body}');
         }

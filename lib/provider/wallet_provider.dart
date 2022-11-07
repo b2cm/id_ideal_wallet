@@ -17,6 +17,7 @@ class WalletProvider extends ChangeNotifier {
   late Timer t;
   String? _lnAuthToken;
   int balance = -1;
+  List<ExchangeHistoryEntry> lastPayments = [];
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -32,12 +33,46 @@ class WalletProvider extends ChangeNotifier {
     _lnAuthToken = await getLnAuthToken();
     balance = await getBalance(_lnAuthToken!);
 
+    _updateLastThreePayments();
+
     notifyListeners();
   }
 
   void getLnBalance() async {
     balance = await getBalance(_lnAuthToken ?? (await getLnAuthToken())!);
     notifyListeners();
+  }
+
+  void storePayment(String action, String otherParty) async {
+    _wallet.storeExchangeHistoryEntry(
+        'paymentHistory', DateTime.now(), action, otherParty);
+    _updateLastThreePayments();
+    notifyListeners();
+  }
+
+  void _updateLastThreePayments() {
+    var payments = getAllPayments();
+    if (payments.length > 1) {
+      payments.sort((e1, e2) {
+        if (e1.timestamp.isBefore(e2.timestamp)) {
+          return 1;
+        } else if (e1.timestamp.isAfter(e2.timestamp)) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+    }
+    if (payments.length <= 3) {
+      lastPayments = payments;
+    } else {
+      lastPayments = [payments.first, payments[1], payments[2]];
+    }
+  }
+
+  List<ExchangeHistoryEntry> getAllPayments() {
+    return _wallet.getExchangeHistoryEntriesForCredential('paymentHistory') ??
+        [];
   }
 
   void storeConversation(DidcommPlaintextMessage message, String myDid) {

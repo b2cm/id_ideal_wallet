@@ -64,6 +64,30 @@ class MainPage extends StatelessWidget {
                         symbol: 'sat',
                       ));
                 }
+              }),
+              const SizedBox(
+                height: 10,
+              ),
+              Consumer<WalletProvider>(builder: (context, wallet, child) {
+                if (wallet.lastPayments.isNotEmpty) {
+                  return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: wallet.lastPayments.length,
+                      itemBuilder: (context, index) {
+                        return TransactionPreview(
+                            title: wallet.lastPayments[index].otherParty,
+                            amount: CurrencyDisplay(
+                                amount: wallet.lastPayments[index].action,
+                                symbol: 'sat'));
+                      });
+                } else {
+                  return const TransactionPreview(
+                      title: 'Keine getätigten Zahlungen',
+                      amount: CurrencyDisplay(
+                        symbol: '',
+                        amount: '',
+                      ));
+                }
               })
             ],
           ),
