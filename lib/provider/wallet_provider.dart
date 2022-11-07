@@ -15,7 +15,7 @@ class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   String qrData = '';
   late Timer t;
-  String? _lnAuthToken;
+  String? lnAuthToken;
   int balance = -1;
   List<ExchangeHistoryEntry> lastPayments = [];
 
@@ -30,8 +30,18 @@ class WalletProvider extends ChangeNotifier {
       _wallet.initializeIssuer(KeyType.ed25519);
     }
 
-    _lnAuthToken = await getLnAuthToken();
-    balance = await getBalance(_lnAuthToken!);
+    var login = wallet.getConfigEntry('ln_login');
+    if (login == null) {
+      var account = await createAccount();
+      await wallet.storeConfigEntry('ln_login', account['ln_login']!);
+      await wallet.storeConfigEntry('ln_password', account['ln_password']!);
+    }
+
+    login = wallet.getConfigEntry('ln_login');
+    var password = wallet.getConfigEntry('ln_password');
+
+    lnAuthToken = await getLnAuthToken(login!, password!);
+    balance = await getBalance(lnAuthToken!);
 
     _updateLastThreePayments();
 
@@ -39,7 +49,7 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void getLnBalance() async {
-    balance = await getBalance(_lnAuthToken ?? (await getLnAuthToken())!);
+    balance = await getBalance(lnAuthToken!);
     notifyListeners();
   }
 

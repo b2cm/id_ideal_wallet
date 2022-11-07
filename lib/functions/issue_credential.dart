@@ -8,7 +8,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../functions/lightning_utils.dart';
 import '../views/offer_credential_dialog.dart';
 import 'didcomm_message_handler.dart';
 
@@ -41,10 +40,6 @@ Future<bool> handleOfferCredential(
     print('with payment');
     var paymentReq = message.attachments!.firstWhere(
         (element) => element.format != null && element.format == 'lnInvoice');
-    if (lnAuthToken == null) {
-      await getLnAuthToken();
-      print('authToken $lnAuthToken');
-    }
     invoice = paymentReq.data.json!['lnInvoice'];
     print(invoice);
     var res = await get(
@@ -54,7 +49,7 @@ Future<bool> handleOfferCredential(
           {'invoice': invoice},
         ),
         headers: {
-          'Authorization': 'Bearer $lnAuthToken',
+          'Authorization': 'Bearer ${wallet.lnAuthToken}',
           'Content-Type': 'application/json'
         });
 
@@ -80,13 +75,9 @@ Future<bool> handleOfferCredential(
     //pay the credential
     if (res) {
       if (invoice != null) {
-        if (lnAuthToken == null) {
-          await getLnAuthToken();
-          print('authToken $lnAuthToken');
-        }
         var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
             body: {'invoice': invoice},
-            headers: {'Authorization': 'Bearer $lnAuthToken'});
+            headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
         if (res.statusCode == 200) {
           print('erfolgreich bezahlt');
           wallet.storePayment('-$toPay',

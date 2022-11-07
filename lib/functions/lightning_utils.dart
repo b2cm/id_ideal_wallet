@@ -2,16 +2,18 @@ import 'dart:convert';
 
 import 'package:http/http.dart';
 
-String? lnAuthToken;
+Future<Map<String, dynamic>> createAccount() async {
+  var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/create'), body: {});
+  var decoded = jsonDecode(res.body);
+  return decoded;
+}
 
-Future<String?> getLnAuthToken() async {
-  var login = '5a9ec88b1677a8e4a14e';
-  var password = '968394acb0ceeaf993c8';
+Future<String?> getLnAuthToken(String login, String password) async {
   var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/auth'),
       body: {'login': login, 'password': password});
   if (res.statusCode == 200) {
     var decodedResponse = jsonDecode(res.body);
-    lnAuthToken = decodedResponse['access_token'];
+    var lnAuthToken = decodedResponse['access_token'];
 
     print(lnAuthToken);
     return lnAuthToken;
