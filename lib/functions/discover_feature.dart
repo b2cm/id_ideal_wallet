@@ -13,7 +13,7 @@ Future<bool> handleDiscoverFeatureQuery(
   QueryMessage message,
   WalletProvider wallet,
 ) async {
-  print('Query message received');
+  logger.d('Query message received');
   List<Disclosure> features = [];
 
   for (var q in message.queries) {
@@ -39,7 +39,7 @@ Future<bool> handleDiscoverFeatureQuery(
   //It is recommended to vary the answer
   features.shuffle();
 
-  print('discoveredFeatures: $features');
+  logger.d('discoveredFeatures: $features');
 
   //TODO: for now we assume, that this is the first message from a Stranger (nothing else happened before)
   var myDid = await wallet.newConnectionDid();

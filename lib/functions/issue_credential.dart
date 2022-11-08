@@ -22,7 +22,7 @@ bool handleRequestCredential(RequestCredential message, WalletProvider wallet) {
 Future<bool> handleOfferCredential(
     OfferCredential message, WalletProvider wallet) async {
   String threadId;
-  print('Offer Credential received');
+  logger.d('Offer Credential received');
   if (message.threadId != null) {
     threadId = message.threadId!;
   } else {
@@ -37,11 +37,10 @@ Future<bool> handleOfferCredential(
   String? toPay;
   String? invoice;
   if (message.attachments!.length > 1) {
-    print('with payment');
+    logger.d('with payment');
     var paymentReq = message.attachments!.firstWhere(
         (element) => element.format != null && element.format == 'lnInvoice');
     invoice = paymentReq.data.json!['lnInvoice'];
-    print(invoice);
     var res = await get(
         Uri.https(
           'ln.pixeldev.eu',
@@ -55,9 +54,7 @@ Future<bool> handleOfferCredential(
 
     if (res.statusCode == 200) {
       var decoded = jsonDecode(res.body);
-      print(decoded);
       toPay = decoded['num_satoshis'];
-      print(toPay);
     } else {
       throw Exception('cant decode invoice: ${res.body}');
     }
@@ -71,7 +68,6 @@ Future<bool> handleOfferCredential(
         builder: (BuildContext context) =>
             buildOfferCredentialDialog(context, credential, toPay));
 
-    print(res);
     //pay the credential
     if (res) {
       if (invoice != null) {
@@ -79,7 +75,7 @@ Future<bool> handleOfferCredential(
             body: {'invoice': invoice},
             headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
         if (res.statusCode == 200) {
-          print('erfolgreich bezahlt');
+          logger.d('erfolgreich bezahlt');
           wallet.storePayment('-$toPay',
               'Credential Ausstellung: ${credential.type.firstWhere((element) => element != 'VerifiableCredential')}');
         } else {
@@ -87,7 +83,7 @@ Future<bool> handleOfferCredential(
         }
       }
     } else {
-      print('user declined credential');
+      logger.d('user declined credential');
       // TODO: send problem report
       return false;
     }
@@ -149,7 +145,6 @@ _sendProposeCredential(
   String myDid,
 ) async {
   var credDid = await wallet.newCredentialDid();
-  print('Meine credential did: $credDid');
   var offeredCred = offer.detail!.first.credential;
   var credSubject = offeredCred.credentialSubject;
   credSubject['id'] = credDid;
@@ -162,8 +157,6 @@ _sendProposeCredential(
       issuanceDate: offeredCred.issuanceDate,
       credentialSchema: offeredCred.credentialSchema,
       expirationDate: offeredCred.expirationDate);
-
-  print(newCred);
 
   var message = ProposeCredential(
       threadId: offer.threadId ?? offer.id,
@@ -185,7 +178,7 @@ _sendProposeCredential(
 
 Future<bool> handleIssueCredential(
     IssueCredential message, WalletProvider wallet) async {
-  print('Mir wurde ein Credential ausgesetllt');
+  logger.d('Mir wurde ein Credential ausgestellt');
   var cred = message.credentials!.first;
 
   var entry = wallet.getConversation(message.threadId!);
@@ -194,15 +187,12 @@ Future<bool> handleIssueCredential(
         'Something went wrong. There could not be an issue message without request');
   }
   var previosMessage = DidcommPlaintextMessage.fromJson(entry.lastMessage);
-  print(previosMessage.type);
   if (previosMessage.type == DidcommMessages.requestCredential.value) {
     var req = RequestCredential.fromJson(previosMessage.toJson());
     var challenge = req.detail!.first.options.challenge;
     var verified = await verifyCredential(cred, expectedChallenge: challenge);
-    print(verified);
     if (verified) {
       var credDid = getHolderDidFromCredential(cred.toJson());
-      print('Holder of credential: $credDid');
       var storageCred = wallet.getCredential(credDid);
       if (storageCred != null) {
         wallet.storeCredential(cred.toString(), storageCred.hdPath);

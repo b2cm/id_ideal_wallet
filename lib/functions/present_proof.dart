@@ -26,7 +26,7 @@ Future<bool> handleProposePresentation(
     for (var definition in message.presentationDefinition!) {
       var tmp = PresentationDefinitionWithOptions(
           domain: 'domain',
-          challenge: Uuid().v4(),
+          challenge: const Uuid().v4(),
           presentationDefinition: definition);
       withOptions.add(tmp);
     }
@@ -50,7 +50,7 @@ Future<bool> handleProposePresentation(
 
 Future<bool> handleRequestPresentation(
     RequestPresentation message, WalletProvider wallet) async {
-  print('Request Presentation message received');
+  logger.d('Request Presentation message received');
 
   String threadId;
   if (message.threadId != null) {
@@ -58,7 +58,6 @@ Future<bool> handleRequestPresentation(
   } else {
     threadId = message.id;
   }
-  print(threadId);
   //Are there any previous messages?
   var entry = wallet.getConversation(threadId);
   String myDid;
@@ -78,8 +77,6 @@ Future<bool> handleRequestPresentation(
   try {
     var filtered =
         searchCredentialsForPresentationDefinition(creds, definition);
-    print(filtered.length);
-    print(filtered.first.credentials.length);
     if (filtered.isNotEmpty && filtered.first.credentials.isNotEmpty) {
       List<FilterResult> finalShow = [];
       //filter List of credentials -> check for duplicates by type
@@ -105,8 +102,6 @@ Future<bool> handleRequestPresentation(
             matchingDescriptorIds: result.matchingDescriptorIds,
             submissionRequirement: result.submissionRequirement));
       }
-
-      print(finalShow);
 
       Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(

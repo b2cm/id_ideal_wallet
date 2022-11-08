@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -110,7 +111,7 @@ class CredentialCardState extends State<CredentialCard> {
       image = Image.memory(base64Decode(imageData));
       setState(() {});
     } catch (e) {
-      print('cant decode image: $e');
+      logger.e('cant decode image: $e');
     }
   }
 

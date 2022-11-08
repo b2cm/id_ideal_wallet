@@ -47,6 +47,7 @@ dependencies:
   json_path: any
   json_schema2: any
   provider: ^6.0.4
+  logger: ^1.1.0
   id_wallet_design:
     path: ../id_wallet_design
   x509b:

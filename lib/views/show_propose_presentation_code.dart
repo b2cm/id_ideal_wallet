@@ -59,9 +59,8 @@ class QrRenderState extends State<QrRender> {
                     InputDescriptorConstraints(fields: [idField, typeField]))
           ])
         ]);
-    print(message);
 
-    var bufferId = Uuid().v4();
+    var bufferId = const Uuid().v4();
     await post(Uri.parse('$relay/buffer/$bufferId'), body: message.toString());
 
     wallet.storeConversation(message, newConnDid);

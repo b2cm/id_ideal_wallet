@@ -45,7 +45,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
       outerPos++;
     }
-    print(selectedCredsPerResult);
   }
 
   List<Widget> buildChilds() {
@@ -74,17 +73,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       for (var v in result.credentials) {
         var key = 'o${outerPos}i$innerPos';
-        print('out: ${selectedCredsPerResult[key]}');
         childList.add(
           ExpansionTile(
             leading: Checkbox(
                 onChanged: (bool? newValue) {
-                  print('change');
                   setState(() {
                     if (newValue != null) {
                       selectedCredsPerResult[key] = all ? true : newValue;
                     }
-                    print(selectedCredsPerResult[key]);
                   });
                 },
                 value: selectedCredsPerResult[key]),
@@ -105,7 +101,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     List<FilterResult> finalSend = [];
     int outerPos = 0;
     int innerPos = 0;
-    print(selectedCredsPerResult);
     for (var result in widget.results) {
       List<VerifiableCredential> credList = [];
       for (var cred in result.credentials) {

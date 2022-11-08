@@ -1,6 +1,7 @@
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:random_password_generator/random_password_generator.dart';
@@ -14,7 +15,7 @@ Future<bool> openWallet(WalletStore wallet) async {
         biometricHint: 'Verifizieren Sie Ihre Identität');
     var auth = LocalAuthentication();
     if (!await auth.isDeviceSupported()) return false;
-    print('device supported');
+    logger.d('device supported');
     var didAuthWork = await auth.authenticate(
         localizedReason:
             'Zum Öffnen des Wallets ist Ihre Authentifizierung nötig',

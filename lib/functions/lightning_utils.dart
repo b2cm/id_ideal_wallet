@@ -14,8 +14,6 @@ Future<String?> getLnAuthToken(String login, String password) async {
   if (res.statusCode == 200) {
     var decodedResponse = jsonDecode(res.body);
     var lnAuthToken = decodedResponse['access_token'];
-
-    print(lnAuthToken);
     return lnAuthToken;
   } else {
     throw Exception('cant get access token for lndhub');

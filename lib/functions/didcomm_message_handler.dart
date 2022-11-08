@@ -18,7 +18,7 @@ Future<bool> handleDidcommMessage(String message) async {
       try {
         await a.data.resolveData();
       } catch (e) {
-        print(e);
+        logger.e(e);
       }
     }
   }
@@ -69,17 +69,15 @@ Future<bool> handleDidcommMessage(String message) async {
 
 Future<DidcommPlaintextMessage> getPlaintext(
     String message, WalletProvider wallet) async {
-  print(message);
+  logger.d(message);
   try {
     var uri = Uri.parse(message);
-    print('oob');
     if (uri.queryParameters.containsKey('_oob')) {
       var oob = oobMessageFromUrl(message);
       //For now we expect one message here
       if (oob.attachments != null && oob.attachments!.isNotEmpty) {
         for (var a in oob.attachments!) {
           if (a.data.json == null) {
-            print(a.data.links);
             await a.data.resolveData();
           }
         }
@@ -90,7 +88,6 @@ Future<DidcommPlaintextMessage> getPlaintext(
           plain.from ??= oob.from;
           return plain;
         } catch (e) {
-          print('No oob: $e');
           throw Exception('OOB Message with no proper attachment');
         }
       } else {
@@ -99,11 +96,8 @@ Future<DidcommPlaintextMessage> getPlaintext(
     }
   } catch (e) {
     try {
-      print('No oob: $e');
       var encrypted = DidcommEncryptedMessage.fromJson(message);
-      print('is encrypted');
       var decrypted = await encrypted.decrypt(wallet.wallet);
-      print('successfully decrypted');
       if (decrypted is DidcommPlaintextMessage) {
         decrypted.from ??= encrypted.protectedHeaderSkid!.split('#').first;
         List<String> toDids = [];
@@ -118,7 +112,6 @@ Future<DidcommPlaintextMessage> getPlaintext(
         return getPlaintext(decrypted.toString(), wallet);
       }
     } catch (e) {
-      print('No encrypted: $e');
       try {
         var signed = DidcommSignedMessage.fromJson(message);
         if (signed.payload is DidcommPlaintextMessage) {
@@ -127,7 +120,6 @@ Future<DidcommPlaintextMessage> getPlaintext(
           return getPlaintext(signed.payload.toString(), wallet);
         }
       } catch (e) {
-        print('Plain: $e');
         try {
           var plain = DidcommPlaintextMessage.fromJson(message);
           return plain;
@@ -191,7 +183,6 @@ String determineReplyUrl(String? replyUrl, List<String>? replyTo) {
 sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
     DidcommPlaintextMessage message, String receiverDid) async {
   var myPrivateKey = await wallet.privateKeyForConnectionDidAsJwk(myDid);
-  print(receiverDid);
   var recipientDDO = (await resolveDidDocument(receiverDid))
       .resolveKeyIds()
       .convertAllKeysToJwk();
@@ -206,7 +197,7 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
       plaintext: message);
 
   if (otherEndpoint.startsWith('http')) {
-    print('send message to $otherEndpoint');
+    logger.d('send message to $otherEndpoint');
     post(Uri.parse(otherEndpoint), body: encrypted.toString());
   } else {
     throw Exception('We do not support other transports');
