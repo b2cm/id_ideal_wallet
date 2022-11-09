@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -8,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
+  HttpOverrides.global = DevHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   final appDocumentDir = await getApplicationDocumentsDirectory();
   runApp(ChangeNotifierProvider(
@@ -52,7 +55,8 @@ class MainPage extends StatelessWidget {
                       sendOnTap: () {},
                       balance: CurrencyDisplay(
                         amount: wallet.balance.toString(),
-                        symbol: 'sat',
+                        symbol: '€',
+                        mainFontSize: 40,
                       ));
                 } else {
                   wallet.openWallet();
@@ -61,7 +65,7 @@ class MainPage extends StatelessWidget {
                       sendOnTap: () {},
                       balance: const CurrencyDisplay(
                         amount: 'wird geladen',
-                        symbol: 'sat',
+                        symbol: '€',
                       ));
                 }
               }),
@@ -78,7 +82,7 @@ class MainPage extends StatelessWidget {
                             title: wallet.lastPayments[index].otherParty,
                             amount: CurrencyDisplay(
                                 amount: wallet.lastPayments[index].action,
-                                symbol: 'sat'));
+                                symbol: '€'));
                       });
                 } else {
                   return const TransactionPreview(

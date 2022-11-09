@@ -55,7 +55,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     for (var result in widget.results) {
       bool all = false;
       if (result.submissionRequirement != null) {
-        childList.add(Text(result.submissionRequirement!.name ?? 'Default'));
+        childList.add(Text(result.submissionRequirement?.purpose ??
+            result.submissionRequirement?.name ??
+            'Default'));
         if (result.submissionRequirement!.rule ==
             SubmissionRequirementRule.all) {
           all = true;

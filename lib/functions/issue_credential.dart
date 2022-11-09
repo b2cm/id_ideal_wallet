@@ -30,7 +30,7 @@ Future<bool> handleOfferCredential(
   }
   //Are there any previous messages?
   var entry = wallet.getConversation(threadId);
-  var credential = message.detail!.first.credential;
+  //var credential = message.detail!.first.credential;
   String myDid;
 
   //payment requested?
@@ -66,7 +66,7 @@ Future<bool> handleOfferCredential(
     var res = await showDialog(
         context: navigatorKey.currentContext!,
         builder: (BuildContext context) =>
-            buildOfferCredentialDialog(context, credential, toPay));
+            buildOfferCredentialDialog(context, message.detail!, toPay));
 
     //pay the credential
     if (res) {
@@ -77,7 +77,7 @@ Future<bool> handleOfferCredential(
         if (res.statusCode == 200) {
           logger.d('erfolgreich bezahlt');
           wallet.storePayment('-$toPay',
-              'Credential Ausstellung: ${credential.type.firstWhere((element) => element != 'VerifiableCredential')}');
+              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen');
         } else {
           throw Exception('payment error: ${res.body}');
         }
@@ -96,23 +96,25 @@ Future<bool> handleOfferCredential(
   }
 
   //check, if we control did
-  Map<String, dynamic> subject = credential.credentialSubject;
-  if (subject.containsKey('id')) {
-    String id = subject['id'];
-    String? private;
-    try {
-      private = await wallet.getPrivateKeyForCredentialDid(id);
-    } catch (e) {
+  for (var credDetail in message.detail!) {
+    var subject = credDetail.credential.credentialSubject;
+    if (subject.containsKey('id')) {
+      String id = subject['id'];
+      String? private;
+      try {
+        private = await wallet.getPrivateKeyForCredentialDid(id);
+      } catch (e) {
+        _sendProposeCredential(message, wallet, myDid);
+        return false;
+      }
+      if (private == null) {
+        _sendProposeCredential(message, wallet, myDid);
+        return false;
+      }
+    } else {
       _sendProposeCredential(message, wallet, myDid);
       return false;
     }
-    if (private == null) {
-      _sendProposeCredential(message, wallet, myDid);
-      return false;
-    }
-  } else {
-    _sendProposeCredential(message, wallet, myDid);
-    return false;
   }
   await _sendRequestCredential(message, wallet, myDid);
   return false;
@@ -123,14 +125,15 @@ _sendRequestCredential(
   WalletProvider wallet,
   String myDid,
 ) async {
+  List<LdProofVcDetail> detail = [];
+  for (var d in offer.detail!) {
+    detail.add(LdProofVcDetail(
+        credential: d.credential,
+        options: LdProofVcDetailOptions(
+            proofType: d.options.proofType, challenge: const Uuid().v4())));
+  }
   var message = RequestCredential(
-      detail: [
-        LdProofVcDetail(
-            credential: offer.detail!.first.credential,
-            options: LdProofVcDetailOptions(
-                proofType: offer.detail!.first.options.proofType,
-                challenge: const Uuid().v4()))
-      ],
+      detail: detail,
       replyUrl: '$relay/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
       from: myDid,
@@ -144,33 +147,38 @@ _sendProposeCredential(
   WalletProvider wallet,
   String myDid,
 ) async {
-  var credDid = await wallet.newCredentialDid();
-  var offeredCred = offer.detail!.first.credential;
-  var credSubject = offeredCred.credentialSubject;
-  credSubject['id'] = credDid;
-  var newCred = VerifiableCredential(
-      id: credDid,
-      context: offeredCred.context,
-      type: offeredCred.type,
-      issuer: offeredCred.issuer,
-      credentialSubject: credSubject,
-      issuanceDate: offeredCred.issuanceDate,
-      credentialSchema: offeredCred.credentialSchema,
-      expirationDate: offeredCred.expirationDate);
-
+  List<LdProofVcDetail> detail = [];
+  var firstDid = '';
+  for (int i = 0; i < offer.detail!.length; i++) {
+    var credDid = await wallet.newCredentialDid();
+    if (i == 0) {
+      firstDid = credDid;
+    }
+    var offeredCred = offer.detail![i].credential;
+    var credSubject = offeredCred.credentialSubject;
+    credSubject['id'] = credDid;
+    var newCred = VerifiableCredential(
+        id: credDid,
+        context: offeredCred.context,
+        type: offeredCred.type,
+        issuer: offeredCred.issuer,
+        credentialSubject: credSubject,
+        issuanceDate: offeredCred.issuanceDate,
+        credentialSchema: offeredCred.credentialSchema,
+        expirationDate: offeredCred.expirationDate);
+    detail.add(LdProofVcDetail(
+        credential: newCred, options: offer.detail!.first.options));
+  }
   var message = ProposeCredential(
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!],
       replyUrl: '$relay/buffer/$myDid',
-      detail: [
-        LdProofVcDetail(
-            credential: newCred, options: offer.detail!.first.options)
-      ]);
+      detail: detail);
 
   //Sign attachment with credentialDid
   for (var a in message.attachments!) {
-    await a.data.sign(wallet.wallet, credDid);
+    await a.data.sign(wallet.wallet, firstDid);
   }
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);

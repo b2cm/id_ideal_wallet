@@ -78,7 +78,11 @@ Future<DidcommPlaintextMessage> getPlaintext(
       if (oob.attachments != null && oob.attachments!.isNotEmpty) {
         for (var a in oob.attachments!) {
           if (a.data.json == null) {
-            await a.data.resolveData();
+            try {
+              await a.data.resolveData();
+            } catch (e) {
+              logger.e(e);
+            }
           }
         }
         try {
@@ -88,7 +92,8 @@ Future<DidcommPlaintextMessage> getPlaintext(
           plain.from ??= oob.from;
           return plain;
         } catch (e) {
-          throw Exception('OOB Message with no proper attachment');
+          logger.e(e);
+          throw Exception('OOB Message with no proper attachment: $e');
         }
       } else {
         return oob;
@@ -125,7 +130,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
           return plain;
         } catch (e) {
           throw Exception(
-              'Unexpected message format - only expect Signed or encrypted messages');
+              'Unexpected message format - only expect Signed or encrypted messages: $e');
         }
       }
     }
