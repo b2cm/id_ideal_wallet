@@ -32,9 +32,12 @@ class WalletProvider extends ChangeNotifier {
 
     var login = wallet.getConfigEntry('ln_login');
     if (login == null) {
-      var account = await createAccount();
-      await wallet.storeConfigEntry('ln_login', account['ln_login']!);
-      await wallet.storeConfigEntry('ln_password', account['ln_password']!);
+      // var account = await createAccount();
+      // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
+      // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
+
+      await wallet.storeConfigEntry('ln_login', '5a9ec88b1677a8e4a14e');
+      await wallet.storeConfigEntry('ln_password', '968394acb0ceeaf993c8');
     }
 
     login = wallet.getConfigEntry('ln_login');
