@@ -17,7 +17,7 @@ class CredentialPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffold(
-        name: 'Max Mustermann',
+        name: 'Meine Credentials',
         nameOnTap: () {},
         scanOnTap: () {
           Navigator.of(context)
@@ -35,8 +35,13 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
         List<Widget> subs = buildCredSubject(value, key);
         children.addAll(subs);
       } else {
-        children.add(Text(
-            '${before != null ? '$before.' : ''}$key: ${(value is String && value.startsWith('data:image')) ? '...' : value}'));
+        children.add(ListTile(
+          subtitle: Text('${before != null ? '$before.' : ''}$key'),
+          title: Text(
+              '${(value is String && value.startsWith('data:image')) ? '...' : value}'),
+        ));
+        // children.add(Text(
+        //     '${before != null ? '$before.' : ''}$key: ${(value is String && value.startsWith('data:image')) ? '...' : value}'));
       }
     }
   });

@@ -125,17 +125,20 @@ class _CredentialDetailState extends State<CredentialDetailView> {
     var personalData = ExpansionTile(
       title: const Text('Persönliche Daten'),
       children: buildCredSubject(widget.credential.credentialSubject),
-      childrenPadding: const EdgeInsets.all(10),
+      expandedAlignment: Alignment.centerLeft,
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
     );
     var otherData = ExpansionTile(
       title: const Text('Sonstige Daten'),
       children: _buildOtherData(),
-      childrenPadding: const EdgeInsets.all(10),
+      expandedAlignment: Alignment.centerLeft,
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
     );
     var issuerData = ExpansionTile(
       title: const Text('Aussteller'),
       children: _buildIssuerData(),
-      childrenPadding: const EdgeInsets.all(10),
+      expandedAlignment: Alignment.centerLeft,
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
     );
 
     return SingleChildScrollView(

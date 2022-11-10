@@ -56,11 +56,12 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void storePayment(String action, String otherParty) async {
-    _wallet.storeExchangeHistoryEntry(
-        'paymentHistory', DateTime.now(), action, otherParty);
+  void storePayment(String action, String otherParty,
+      [List<String>? belongingCredentials]) async {
+    _wallet.storeExchangeHistoryEntry('paymentHistory', DateTime.now(), action,
+        otherParty, belongingCredentials);
     _updateLastThreePayments();
-    notifyListeners();
+    getLnBalance();
   }
 
   void _updateLastThreePayments() {

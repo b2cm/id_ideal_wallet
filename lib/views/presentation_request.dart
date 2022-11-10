@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -8,6 +9,42 @@ import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 
 import '../functions/didcomm_message_handler.dart';
+
+class RequesterInfo extends StatefulWidget {
+  final String requesterUrl;
+
+  const RequesterInfo({Key? key, required this.requesterUrl}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => RequesterInfoState();
+}
+
+class RequesterInfoState extends State<RequesterInfo> {
+  String info = 'anonym';
+
+  @override
+  void initState() {
+    super.initState();
+    getInfo();
+  }
+
+  void getInfo() async {
+    try {
+      var certInfo = await getCertificateInfoFromUrl(widget.requesterUrl);
+      info = certInfo?.subjectOrganization ??
+          certInfo?.subjectCommonName ??
+          'anonym';
+      setState(() {});
+    } catch (e) {
+      logger.d('Problem bei Zertifikatsabfrage: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(info);
+  }
+}
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -53,12 +90,22 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int outerPos = 0;
     int innerPos = 0;
 
+    childList.add(const Text('Die Daten werden übermittelt an:'));
+    childList.add(RequesterInfo(requesterUrl: widget.otherEndpoint));
+    childList.add(const SizedBox(
+      height: 10,
+    ));
+
     for (var result in widget.results) {
       bool all = false;
       if (result.submissionRequirement != null) {
+        childList.add(const Text('Grund der Anfrage:'));
         childList.add(Text(result.submissionRequirement?.purpose ??
             result.submissionRequirement?.name ??
             'Default'));
+        childList.add(const SizedBox(
+          height: 10,
+        ));
         if (result.submissionRequirement!.rule ==
             SubmissionRequirementRule.all) {
           all = true;

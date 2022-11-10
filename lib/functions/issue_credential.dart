@@ -59,6 +59,7 @@ Future<bool> handleOfferCredential(
       throw Exception('cant decode invoice: ${res.body}');
     }
   }
+  Map<String, String> paymentDetails = {};
   //No
   if (entry == null ||
       entry.protocol == DidcommProtocol.discoverFeature.value) {
@@ -69,6 +70,7 @@ Future<bool> handleOfferCredential(
             buildOfferCredentialDialog(context, message.detail!, toPay));
 
     //pay the credential
+
     if (res) {
       if (invoice != null) {
         var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
@@ -76,8 +78,9 @@ Future<bool> handleOfferCredential(
             headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
         if (res.statusCode == 200) {
           logger.d('erfolgreich bezahlt');
-          wallet.storePayment('-$toPay',
-              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen');
+          paymentDetails['value'] = '-$toPay';
+          paymentDetails['note'] =
+              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
         } else {
           throw Exception('payment error: ${res.body}');
         }
@@ -104,15 +107,15 @@ Future<bool> handleOfferCredential(
       try {
         private = await wallet.getPrivateKeyForCredentialDid(id);
       } catch (e) {
-        _sendProposeCredential(message, wallet, myDid);
+        _sendProposeCredential(message, wallet, myDid, paymentDetails);
         return false;
       }
       if (private == null) {
-        _sendProposeCredential(message, wallet, myDid);
+        _sendProposeCredential(message, wallet, myDid, paymentDetails);
         return false;
       }
     } else {
-      _sendProposeCredential(message, wallet, myDid);
+      _sendProposeCredential(message, wallet, myDid, paymentDetails);
       return false;
     }
   }
@@ -142,11 +145,8 @@ _sendRequestCredential(
       message, offer.from!);
 }
 
-_sendProposeCredential(
-  OfferCredential offer,
-  WalletProvider wallet,
-  String myDid,
-) async {
+_sendProposeCredential(OfferCredential offer, WalletProvider wallet,
+    String myDid, Map<String, String> paymentDetails) async {
   List<LdProofVcDetail> detail = [];
   var firstDid = '';
   for (int i = 0; i < offer.detail!.length; i++) {
@@ -180,6 +180,12 @@ _sendProposeCredential(
   for (var a in message.attachments!) {
     await a.data.sign(wallet.wallet, firstDid);
   }
+
+  if (paymentDetails.isNotEmpty) {
+    wallet.storePayment(
+        paymentDetails['value']!, paymentDetails['note']!, [firstDid]);
+  }
+
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);
 }
