@@ -38,25 +38,27 @@ Future<bool> handleOfferCredential(
   String? invoice;
   if (message.attachments!.length > 1) {
     logger.d('with payment');
-    var paymentReq = message.attachments!.firstWhere(
+    var paymentReq = message.attachments!.where(
         (element) => element.format != null && element.format == 'lnInvoice');
-    invoice = paymentReq.data.json!['lnInvoice'];
-    var res = await get(
-        Uri.https(
-          'ln.pixeldev.eu',
-          'lndhub/decodeinvoice',
-          {'invoice': invoice},
-        ),
-        headers: {
-          'Authorization': 'Bearer ${wallet.lnAuthToken}',
-          'Content-Type': 'application/json'
-        });
+    if (paymentReq.isNotEmpty) {
+      invoice = paymentReq.first.data.json!['lnInvoice'];
+      var res = await get(
+          Uri.https(
+            'ln.pixeldev.eu',
+            'lndhub/decodeinvoice',
+            {'invoice': invoice},
+          ),
+          headers: {
+            'Authorization': 'Bearer ${wallet.lnAuthToken}',
+            'Content-Type': 'application/json'
+          });
 
-    if (res.statusCode == 200) {
-      var decoded = jsonDecode(res.body);
-      toPay = decoded['num_satoshis'];
-    } else {
-      throw Exception('cant decode invoice: ${res.body}');
+      if (res.statusCode == 200) {
+        var decoded = jsonDecode(res.body);
+        toPay = decoded['num_satoshis'];
+      } else {
+        throw Exception('cant decode invoice: ${res.body}');
+      }
     }
   }
   Map<String, String> paymentDetails = {};
@@ -192,44 +194,57 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
 
 Future<bool> handleIssueCredential(
     IssueCredential message, WalletProvider wallet) async {
-  logger.d('Mir wurde ein Credential ausgestellt');
-  var cred = message.credentials!.first;
+  logger.d('Mir wurden Credentials ausgestellt');
 
   var entry = wallet.getConversation(message.threadId!);
   if (entry == null) {
     throw Exception(
         'Something went wrong. There could not be an issue message without request');
   }
+
   var previosMessage = DidcommPlaintextMessage.fromJson(entry.lastMessage);
   if (previosMessage.type == DidcommMessages.requestCredential.value) {
-    var req = RequestCredential.fromJson(previosMessage.toJson());
-    var challenge = req.detail!.first.options.challenge;
-    var verified = await verifyCredential(cred, expectedChallenge: challenge);
-    if (verified) {
-      var credDid = getHolderDidFromCredential(cred.toJson());
-      var storageCred = wallet.getCredential(credDid);
-      if (storageCred != null) {
-        wallet.storeCredential(cred.toString(), storageCred.hdPath);
-        wallet.storeExchangeHistoryEntry(
-            credDid, DateTime.now(), 'issue', message.from!);
-        wallet.storeConversation(message, entry.myDid);
-        var ack = EmptyMessage(
-            ack: [message.id], threadId: message.threadId ?? message.id);
-        sendMessage(
-            entry.myDid,
-            determineReplyUrl(message.replyUrl, message.replyTo),
-            wallet,
-            ack,
-            message.from!);
-        return true;
+    for (int i = 0; i < message.credentials!.length; i++) {
+      var req = RequestCredential.fromJson(previosMessage.toJson());
+      var cred = message.credentials![i];
+      var challenge = req.detail![i].options.challenge;
+      var verified = await verifyCredential(cred, expectedChallenge: challenge);
+      if (verified) {
+        var credDid = getHolderDidFromCredential(cred.toJson());
+        var storageCred = wallet.getCredential(credDid);
+        if (storageCred == null) {
+          throw Exception(
+              'No hd path for credential found. Sure we control it?');
+        }
+
+        var type = cred.type
+            .firstWhere((element) => element != 'VerifiableCredential');
+
+        if (type == 'PaymentReceipt') {
+          wallet.storeCredential(cred.toString(), storageCred.hdPath,
+              cred.credentialSubject['receiptId']);
+        } else {
+          wallet.storeCredential(cred.toString(), storageCred.hdPath);
+          wallet.storeExchangeHistoryEntry(
+              credDid, DateTime.now(), 'issue', message.from!);
+        }
       } else {
-        throw Exception('No hd path for credential found. Sure we control it?');
+        throw Exception('Credential signature is wrong');
       }
-    } else {
-      throw Exception('Credential signature is wrong');
+
+      wallet.storeConversation(message, entry.myDid);
+      var ack = EmptyMessage(
+          ack: [message.id], threadId: message.threadId ?? message.id);
+      sendMessage(
+          entry.myDid,
+          determineReplyUrl(message.replyUrl, message.replyTo),
+          wallet,
+          ack,
+          message.from!);
     }
   } else {
     throw Exception(
         'Issue credential could only follow to request credential message');
   }
+  return false;
 }

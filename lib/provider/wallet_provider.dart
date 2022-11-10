@@ -113,8 +113,9 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getCredential(did);
   }
 
-  void storeCredential(String vc, String hdPath) async {
-    await _wallet.storeCredential(vc, '', hdPath, keyType: KeyType.ed25519);
+  void storeCredential(String vc, String hdPath, [String? newDid]) async {
+    await _wallet.storeCredential(vc, '', hdPath,
+        keyType: KeyType.ed25519, credDid: newDid);
     notifyListeners();
   }
 

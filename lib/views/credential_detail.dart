@@ -121,6 +121,26 @@ class _CredentialDetailState extends State<CredentialDetailView> {
     return issuer;
   }
 
+  Widget buildReceipt() {
+    if (widget.credential.credentialSubject is Map &&
+        widget.credential.credentialSubject.containsKey('receiptId')) {
+      var receipt = Provider.of<WalletProvider>(context, listen: false)
+          .getCredential(widget.credential.credentialSubject['receiptId']);
+      if (receipt != null) {
+        var receiptVc = VerifiableCredential.fromJson(receipt.w3cCredential);
+        return ExpansionTile(
+          title: const Text('Rechnung'),
+          children: buildCredSubject(receiptVc.credentialSubject),
+          expandedAlignment: Alignment.centerLeft,
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        );
+      }
+    }
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
   Widget _buildBody() {
     var personalData = ExpansionTile(
       title: const Text('Persönliche Daten'),
@@ -145,6 +165,7 @@ class _CredentialDetailState extends State<CredentialDetailView> {
         child: Column(
       children: [
         personalData,
+        buildReceipt(),
         issuerData,
         otherData,
         HistoryEntries(

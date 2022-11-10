@@ -34,10 +34,11 @@ Widget buildOfferCredentialDialog(
 
   return AlertDialog(
     title: const Text('Ihnen wird ein Credential angeboten'),
-    content: Card(
-        child: Column(
+    content: SingleChildScrollView(
+        child: Card(
+            child: Column(
       children: buildCred(),
-    )),
+    ))),
     actions: [
       TextButton(
           onPressed: () {

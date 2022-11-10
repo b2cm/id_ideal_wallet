@@ -61,13 +61,21 @@ class CredentialOverview extends StatelessWidget {
             itemBuilder: (context, index) {
               var cred = allCreds[index].w3cCredential;
               if (cred != '') {
-                return Column(children: [
-                  CredentialCard(
-                      credential: VerifiableCredential.fromJson(cred)),
-                  const SizedBox(
-                    height: 10,
-                  )
-                ]);
+                var vc = VerifiableCredential.fromJson(cred);
+                var type = vc.type
+                    .firstWhere((element) => element != 'VerifiableCredential');
+                if (type != 'PaymentReceipt') {
+                  return Column(children: [
+                    CredentialCard(credential: vc),
+                    const SizedBox(
+                      height: 10,
+                    )
+                  ]);
+                } else {
+                  return const SizedBox(
+                    height: 0,
+                  );
+                }
               } else {
                 return const SizedBox(
                   height: 0,
@@ -116,7 +124,7 @@ class CredentialCardState extends State<CredentialCard> {
       image = Image.memory(base64Decode(imageData));
       setState(() {});
     } catch (e) {
-      logger.e('cant decode image: $e');
+      logger.d('cant decode image: $e');
     }
   }
 
