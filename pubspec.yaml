@@ -43,7 +43,9 @@ dependencies:
   uuid: any
   mobile_scanner: ^2.0.0
   http: any
-  qr_flutter: any
+  qr_flutter:
+    git:
+      url: https://github.com/theyakka/qr.flutter.git
   json_path: any
   json_schema2: any
   provider: ^6.0.4
@@ -54,6 +56,8 @@ dependencies:
     git:
       url: https://github.com/SaOtto/x509/
       ref: verification
+  printing: ^5.9.3
+  pdf: ^3.8.4
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -87,6 +91,18 @@ flutter:
     - assets/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Black.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Bold.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-ExtraBold.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-ExtraLight.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Light.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Medium.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Regular.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-SemiBold.ttf
+        - asset: packages/id_wallet_design/fonts/Outfit/Outfit-Thin.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

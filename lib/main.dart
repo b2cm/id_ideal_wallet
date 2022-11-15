@@ -128,14 +128,14 @@ class MainPage extends StatelessWidget {
                       ))),
               const Heading(text: "Zeitlich relevant"),
               Shortcut(
-                  onTap: () => print("tapped shortcut"),
+                  onTap: () => logger.d("tapped shortcut"),
                   icon: const AssetImage("assets/truck-fast-regular.png"),
                   text: "Zwei Pakete kommen heute an"),
               Container(
                 height: 12,
               ),
               Shortcut(
-                  onTap: () => print("tapped shortcut"),
+                  onTap: () => logger.d("tapped shortcut"),
                   icon: const AssetImage("assets/ticket-regular.png"),
                   text:
                       "Ticket for hello hello hello hello hello hello darkness my old friend"),
@@ -152,20 +152,20 @@ class MainPage extends StatelessWidget {
                   // children: a list of hub-apps
                   children: [
                     HubApp(
-                        onTap: () => print("tapped hub app"),
+                        onTap: () => logger.d("tapped hub app"),
                         icon:
                             const AssetImage("assets/house-crack-regular.png"),
                         label: "Versicherung"),
                     HubApp(
-                        onTap: () => print("tapped hub app"),
+                        onTap: () => logger.d("tapped hub app"),
                         icon: const AssetImage("assets/ticket-regular.png"),
                         label: "Tickets"),
                     HubApp(
-                        onTap: () => print("tapped hub app"),
+                        onTap: () => logger.d("tapped hub app"),
                         icon: const AssetImage("assets/plane-regular.png"),
                         label: "Reisen"),
                     HubApp(
-                        onTap: () => print("tapped hub app"),
+                        onTap: () => logger.d("tapped hub app"),
                         icon: const AssetImage("assets/print-regular.png"),
                         label: "Drucken"),
                   ]),

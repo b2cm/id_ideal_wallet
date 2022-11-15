@@ -83,6 +83,6 @@ class QrRenderState extends State<QrRender> {
         scanOnTap: () {},
         child: qrData.isEmpty
             ? const CircularProgressIndicator()
-            : QrImage(data: qrData));
+            : QrImageView(data: qrData));
   }
 }

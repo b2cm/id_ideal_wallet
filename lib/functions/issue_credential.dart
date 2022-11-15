@@ -4,10 +4,11 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:uuid/uuid.dart';
 
+import '../constants/server_address.dart';
+import '../provider/wallet_provider.dart';
 import '../views/offer_credential_dialog.dart';
 import 'didcomm_message_handler.dart';
 
@@ -28,9 +29,9 @@ Future<bool> handleOfferCredential(
   } else {
     threadId = message.id;
   }
+
   //Are there any previous messages?
   var entry = wallet.getConversation(threadId);
-  //var credential = message.detail!.first.credential;
   String myDid;
 
   //payment requested?
@@ -83,7 +84,44 @@ Future<bool> handleOfferCredential(
           paymentDetails['value'] = '-$toPay';
           paymentDetails['note'] =
               '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
+
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return PaymentFinished(
+                    headline: "Zahlung erfolgreich",
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: "-$toPay",
+                        symbol: '€',
+                        mainFontSize: 35,
+                        centered: true));
+              });
         } else {
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return PaymentFinished(
+                  headline: "Zahlung fehlgeschlagen",
+                  success: false,
+                  amount: CurrencyDisplay(
+                      amount: "-$toPay",
+                      symbol: '€',
+                      mainFontSize: 35,
+                      centered: true),
+                  additionalInfo: Column(children: const [
+                    SizedBox(height: 20),
+                    Text("Zahlung konnte nicht durchgeführt werden",
+                        style: TextStyle(color: Colors.red)),
+                  ]),
+                );
+              });
           throw Exception('payment error: ${res.body}');
         }
       }

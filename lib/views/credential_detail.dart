@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
+import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
@@ -131,6 +132,14 @@ class _CredentialDetailState extends State<CredentialDetailView> {
         return ExpansionTile(
           title: const Text('Rechnung'),
           children: buildCredSubject(receiptVc.credentialSubject),
+          trailing: InkWell(
+            child: const Icon(Icons.picture_as_pdf),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => PdfPreviewPage(
+                    paymentReceipt: receiptVc,
+                    eventName:
+                        widget.credential.credentialSubject['event'] ?? ''))),
+          ),
           expandedAlignment: Alignment.centerLeft,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
         );

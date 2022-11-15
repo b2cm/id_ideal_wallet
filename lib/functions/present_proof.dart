@@ -1,14 +1,12 @@
-import 'dart:convert';
-
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/presentation_dialog.dart';
-import 'package:id_ideal_wallet/views/presentation_proposal_dialog.dart';
 import 'package:uuid/uuid.dart';
 
+import '../constants/server_address.dart';
+import '../provider/wallet_provider.dart';
+import '../views/presentation_dialog.dart';
+import '../views/presentation_proposal_dialog.dart';
 import '../views/presentation_request.dart';
 import 'didcomm_message_handler.dart';
 
@@ -68,9 +66,11 @@ Future<bool> handleRequestPresentation(
   }
 
   var allCreds = wallet.allCredentials();
-  List<Map<String, dynamic>> creds = [];
+  List<VerifiableCredential> creds = [];
   allCreds.forEach((key, value) {
-    if (value.w3cCredential != '') creds.add(jsonDecode(value.w3cCredential));
+    if (value.w3cCredential != '') {
+      creds.add(VerifiableCredential.fromJson(value.w3cCredential));
+    }
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
 
@@ -110,7 +110,7 @@ Future<bool> handleRequestPresentation(
                     determineReplyUrl(message.replyUrl, message.replyTo),
                 receiverDid: message.from!,
                 myDid: myDid,
-                results: finalShow,
+                results: filtered,
               )));
     } else {
       await showDialog(

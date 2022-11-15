@@ -78,7 +78,11 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int innerPos = 0;
     for (var res in widget.results) {
       for (var c in res.credentials) {
-        selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+        if (innerPos == 0) {
+          selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+        } else {
+          selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
+        }
         innerPos++;
       }
       outerPos++;
@@ -90,6 +94,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int outerPos = 0;
     int innerPos = 0;
 
+    // Requesting entity
     childList.add(const Text('Die Daten werden übermittelt an:'));
     childList.add(RequesterInfo(requesterUrl: widget.otherEndpoint));
     childList.add(const SizedBox(
@@ -109,7 +114,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         if (result.submissionRequirement!.rule ==
             SubmissionRequirementRule.all) {
           all = true;
-          childList.add(const Text('Diese Credentials werden alle benötigt'));
+          childList
+              .add(const Text('Wähle mindestens eins dieser Credentials aus'));
         } else {
           if (result.submissionRequirement!.count != null) {
             childList.add(Text(
@@ -129,7 +135,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 onChanged: (bool? newValue) {
                   setState(() {
                     if (newValue != null) {
-                      selectedCredsPerResult[key] = all ? true : newValue;
+                      selectedCredsPerResult[key] = newValue;
                     }
                   });
                 },
@@ -196,9 +202,10 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffold(
-      child: Column(
+      child: SingleChildScrollView(
+          child: Column(
         children: buildChilds(),
-      ),
+      )),
       name: 'Anfrage',
       nameOnTap: () {},
       scanOnTap: () {},
