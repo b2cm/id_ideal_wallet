@@ -22,7 +22,7 @@ Widget buildOfferCredentialDialog(
       contentData.add(const SizedBox(
         height: 10,
       ));
-      contentData.add(IssuerInfo(issuer: credential.issuer));
+      contentData.add(IssuerInfoText(issuer: credential.issuer));
     }
 
     if (toPay != null) {

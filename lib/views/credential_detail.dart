@@ -214,7 +214,7 @@ Card buildCredentialCard(VerifiableCredential credential) {
       height: 10,
     )
   ];
-  content.add(IssuerInfo(issuer: credential.issuer));
+  content.add(IssuerInfoText(issuer: credential.issuer));
   content.add(const SizedBox(
     height: 10,
   ));
