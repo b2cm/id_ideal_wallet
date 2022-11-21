@@ -201,13 +201,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
+    return StyledScaffoldTitle(
       child: SingleChildScrollView(
           child: Column(
         children: buildChilds(),
       )),
-      name: 'Anfrage',
-      nameOnTap: () {},
+      title: 'Anfrage',
       scanOnTap: () {},
       footerButtons: [
         TextButton(onPressed: reject, child: const Text('Ablehnen')),

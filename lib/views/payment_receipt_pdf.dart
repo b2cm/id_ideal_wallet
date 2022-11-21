@@ -131,13 +131,10 @@ class PdfPreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
-      nameOnTap: () {
-        Printing.layoutPdf(onLayout: _makePdf);
-      },
+    return StyledScaffoldTitle(
       scanOnTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
-      name: 'Rechnung - Vorschau',
+      title: 'Rechnung - Vorschau',
       child: PdfPreview(
         canChangePageFormat: false,
         canDebug: false,

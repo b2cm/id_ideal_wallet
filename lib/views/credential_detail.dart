@@ -185,11 +185,9 @@ class _CredentialDetailState extends State<CredentialDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
-      name: widget.credential.type
+    return StyledScaffoldTitle(
+      title: widget.credential.type
           .firstWhere((element) => element != 'VerifiableCredential'),
-      nameOnTap: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const CredentialPage())),
       scanOnTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
       child: _buildBody(),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -40,9 +41,45 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
+  void onTopUpSats(int amount, String memo) async {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var invoiceMap = await createInvoice(amount, wallet.lnAuthToken!, memo);
+    var index = invoiceMap['add_index'];
+    wallet.newPayment(index, memo, amount);
+    showModalBottomSheet<dynamic>(
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        context: navigatorKey.currentContext!,
+        builder: (context) {
+          return Consumer<WalletProvider>(builder: (context, wallet, child) {
+            if (wallet.paymentTimer != null) {
+              return InvoiceDisplay(
+                invoice: invoiceMap['payment_request'] ?? '',
+                amount: CurrencyDisplay(
+                    amount: amount.toString(),
+                    symbol: '€',
+                    mainFontSize: 35,
+                    centered: true),
+                memo: memo,
+              );
+            } else {
+              Navigator.of(context).pop();
+              return const SizedBox(
+                height: 10,
+              );
+            }
+          });
+        });
+  }
+
+  void onTopUpFiat(int amount) {}
+
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
+    return StyledScaffoldName(
         name: 'Meine Credentials',
         nameOnTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (context) => const CredentialPage())),
@@ -54,7 +91,11 @@ class MainPage extends StatelessWidget {
               Consumer<WalletProvider>(builder: (context, wallet, child) {
                 if (wallet.isOpen()) {
                   return Balance(
-                      receiveOnTap: () {},
+                      receiveOnTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => TopUp(
+                                  onTopUpSats: onTopUpSats,
+                                  onTopUpFiat: onTopUpFiat))),
                       sendOnTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) => const QrScanner())),

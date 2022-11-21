@@ -64,6 +64,44 @@ Future<bool> payInvoice(String invoice, String lnAuthToken) async {
   }
 }
 
+Future<Map<String, dynamic>> createInvoice(int amtSatoshis, String lnAuthToken,
+    [String memo = '']) async {
+  var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/addinvoice'),
+      body: {'amt': amtSatoshis.toString(), 'memo': memo},
+      headers: {'Authorization': 'Bearer $lnAuthToken'});
+  if (res.statusCode == 200) {
+    return jsonDecode(res.body);
+  } else {
+    throw Exception('Cant create invoice');
+  }
+}
+
+Future<List> getUserInvoice(int index, String lnAuthToken) async {
+  var res = await get(
+      Uri.https(
+        'ln.pixeldev.eu',
+        'lndhub/getuserinvoices',
+        {
+          'limit': 1.toString(),
+          'offset': index.toString(),
+        },
+      ),
+      headers: {
+        'Authorization': 'Bearer $lnAuthToken',
+        'Content-Type': 'application/json'
+      });
+  if (res.statusCode == 200) {
+    return jsonDecode(res.body) as List;
+  } else {
+    throw Exception('Cant get invoice with index $index');
+  }
+}
+
+Future<bool> isInvoicePaid(int index, String lnAuthToken) async {
+  var invoiceList = await getUserInvoice(index, lnAuthToken);
+  return invoiceList.first['ispaid'];
+}
+
 void payInvoiceInteraction(String invoice) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);

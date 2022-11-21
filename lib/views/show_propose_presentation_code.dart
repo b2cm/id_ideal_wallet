@@ -77,9 +77,8 @@ class QrRenderState extends State<QrRender> {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
-        name: 'Credential vorzeigen',
-        nameOnTap: () {},
+    return StyledScaffoldTitle(
+        title: 'Credential vorzeigen',
         scanOnTap: () {},
         child: qrData.isEmpty
             ? const CircularProgressIndicator()

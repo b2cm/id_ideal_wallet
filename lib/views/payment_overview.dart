@@ -10,9 +10,8 @@ class PaymentOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
-        name: 'Zahlungen',
-        nameOnTap: () {},
+    return StyledScaffoldTitle(
+        title: 'Zahlungen',
         scanOnTap: () {},
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {

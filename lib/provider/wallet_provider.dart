@@ -13,8 +13,10 @@ import '../functions/util.dart' as my_util;
 
 class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
+  bool _authRunning = false;
   String qrData = '';
   late Timer t;
+  Timer? paymentTimer;
   String? lnAuthToken;
   int balance = -1;
   List<ExchangeHistoryEntry> lastPayments = [];
@@ -24,31 +26,37 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void openWallet() async {
-    await my_util.openWallet(_wallet);
-    if (!_wallet.isInitialized()) {
-      _wallet.initialize();
-      _wallet.initializeIssuer(KeyType.ed25519);
+    if (!_authRunning) {
+      _authRunning = true;
+      await my_util.openWallet(_wallet);
+      print(_wallet.isWalletOpen());
+
+      if (!_wallet.isInitialized()) {
+        _wallet.initialize();
+        _wallet.initializeIssuer(KeyType.ed25519);
+      }
+
+      var login = wallet.getConfigEntry('ln_login');
+      if (login == null) {
+        // var account = await createAccount();
+        // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
+        // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
+
+        await wallet.storeConfigEntry('ln_login', '5a9ec88b1677a8e4a14e');
+        await wallet.storeConfigEntry('ln_password', '968394acb0ceeaf993c8');
+      }
+
+      login = wallet.getConfigEntry('ln_login');
+      var password = wallet.getConfigEntry('ln_password');
+
+      lnAuthToken = await getLnAuthToken(login!, password!);
+      balance = await getBalance(lnAuthToken!);
+
+      _updateLastThreePayments();
+
+      _authRunning = false;
+      notifyListeners();
     }
-
-    var login = wallet.getConfigEntry('ln_login');
-    if (login == null) {
-      // var account = await createAccount();
-      // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
-      // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
-
-      await wallet.storeConfigEntry('ln_login', '5a9ec88b1677a8e4a14e');
-      await wallet.storeConfigEntry('ln_password', '968394acb0ceeaf993c8');
-    }
-
-    login = wallet.getConfigEntry('ln_login');
-    var password = wallet.getConfigEntry('ln_password');
-
-    lnAuthToken = await getLnAuthToken(login!, password!);
-    balance = await getBalance(lnAuthToken!);
-
-    _updateLastThreePayments();
-
-    notifyListeners();
   }
 
   void getLnBalance() async {
@@ -62,6 +70,17 @@ class WalletProvider extends ChangeNotifier {
         otherParty, belongingCredentials);
     _updateLastThreePayments();
     getLnBalance();
+  }
+
+  void newPayment(int index, String memo, int amount) {
+    paymentTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      var paid = await isInvoicePaid(index, lnAuthToken!);
+      if (paid) {
+        timer.cancel();
+        storePayment('+$amount', memo);
+        paymentTimer = null;
+      }
+    });
   }
 
   void _updateLastThreePayments() {

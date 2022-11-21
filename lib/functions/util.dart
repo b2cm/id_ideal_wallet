@@ -16,10 +16,13 @@ Future<bool> openWallet(WalletStore wallet) async {
     var auth = LocalAuthentication();
     if (!await auth.isDeviceSupported()) return false;
     logger.d('device supported');
-    var didAuthWork = await auth.authenticate(
+    var didAuthWork = false;
+
+    didAuthWork = await auth.authenticate(
         localizedReason:
             'Zum Öffnen des Wallets ist Ihre Authentifizierung nötig',
         authMessages: [messages]);
+
     if (didAuthWork) {
       const storage = FlutterSecureStorage();
       String? pw = await storage.read(key: 'password');

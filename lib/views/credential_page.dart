@@ -16,9 +16,9 @@ class CredentialPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffold(
+    return StyledScaffoldName(
         name: 'Meine Credentials',
-        nameOnTap: () {},
+        nameOnTap: () => Navigator.of(context).pop(),
         scanOnTap: () {
           Navigator.of(context)
               .push(MaterialPageRoute(builder: (context) => const QrScanner()));
