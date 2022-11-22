@@ -76,14 +76,14 @@ Future<Map<String, dynamic>> createInvoice(int amtSatoshis, String lnAuthToken,
   }
 }
 
-Future<List> getUserInvoice(int index, String lnAuthToken) async {
+Future<List> getUserInvoice(String index, String lnAuthToken) async {
   var res = await get(
       Uri.https(
         'ln.pixeldev.eu',
         'lndhub/getuserinvoices',
         {
           'limit': 1.toString(),
-          'offset': index.toString(),
+          'offset': index,
         },
       ),
       headers: {
@@ -97,7 +97,7 @@ Future<List> getUserInvoice(int index, String lnAuthToken) async {
   }
 }
 
-Future<bool> isInvoicePaid(int index, String lnAuthToken) async {
+Future<bool> isInvoicePaid(String index, String lnAuthToken) async {
   var invoiceList = await getUserInvoice(index, lnAuthToken);
   return invoiceList.first['ispaid'];
 }

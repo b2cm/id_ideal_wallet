@@ -81,8 +81,10 @@ class _CredentialDetailState extends State<CredentialDetailView> {
   List<Widget> _buildOtherData() {
     var otherData = <Widget>[];
     var issDateValue = widget.credential.issuanceDate;
-    var issDate = Text(
-        'Ausstelldatum: ${issDateValue.day.toString().padLeft(2, '0')}. ${issDateValue.month.toString().padLeft(2, '0')}. ${issDateValue.year}');
+    var issDate = ListTile(
+        subtitle: const Text('Ausstelldatum'),
+        title: Text(
+            '${issDateValue.day.toString().padLeft(2, '0')}. ${issDateValue.month.toString().padLeft(2, '0')}. ${issDateValue.year}'));
     otherData.add(issDate);
     return otherData;
   }

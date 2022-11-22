@@ -66,7 +66,11 @@ class MainPage extends StatelessWidget {
                 memo: memo,
               );
             } else {
-              Navigator.of(context).pop();
+              Future.delayed(
+                  const Duration(seconds: 1),
+                  () => Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const MainPage()),
+                      (route) => false));
               return const SizedBox(
                 height: 10,
               );
@@ -93,9 +97,15 @@ class MainPage extends StatelessWidget {
                   return Balance(
                       receiveOnTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                              builder: (context) => TopUp(
-                                  onTopUpSats: onTopUpSats,
-                                  onTopUpFiat: onTopUpFiat))),
+                              builder: (context) => StyledScaffoldTitle(
+                                  title: 'Zahlung anfordern',
+                                  scanOnTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const QrScanner())),
+                                  child: TopUp(
+                                      onTopUpSats: onTopUpSats,
+                                      onTopUpFiat: onTopUpFiat)))),
                       sendOnTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) => const QrScanner())),

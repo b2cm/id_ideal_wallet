@@ -8,6 +8,7 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/lightning_utils.dart';
+import 'package:id_wallet_design/id_wallet_design.dart';
 
 import '../functions/util.dart' as my_util;
 
@@ -72,13 +73,28 @@ class WalletProvider extends ChangeNotifier {
     getLnBalance();
   }
 
-  void newPayment(int index, String memo, int amount) {
+  void newPayment(String index, String memo, int amount) {
     paymentTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       var paid = await isInvoicePaid(index, lnAuthToken!);
       if (paid) {
         timer.cancel();
-        storePayment('+$amount', memo);
+        storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
         paymentTimer = null;
+        showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return PaymentFinished(
+                  headline: "Zahlung eingegangen",
+                  success: true,
+                  amount: CurrencyDisplay(
+                      amount: "+$amount",
+                      symbol: '€',
+                      mainFontSize: 35,
+                      centered: true));
+            });
       }
     });
   }
