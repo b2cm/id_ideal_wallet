@@ -127,6 +127,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
       }
 
+      if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
+        childList.add(
+            const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
+        childList.add(ElevatedButton(
+            onPressed: () {}, child: const Text('Daten eintragen')));
+      }
+
       for (var v in result.credentials) {
         var key = 'o${outerPos}i$innerPos';
         childList.add(

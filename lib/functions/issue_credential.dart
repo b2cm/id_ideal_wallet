@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/functions/lightning_utils.dart';
@@ -51,8 +52,9 @@ Future<bool> handleOfferCredential(
   if (entry == null ||
       entry.protocol == DidcommProtocol.discoverFeature.value) {
     //show data to user
-    var res = await showDialog(
+    var res = await showCupertinoModalPopup(
         context: navigatorKey.currentContext!,
+        barrierColor: Colors.white,
         builder: (BuildContext context) =>
             buildOfferCredentialDialog(context, message.detail!, toPay));
 
