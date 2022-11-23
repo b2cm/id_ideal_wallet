@@ -69,7 +69,12 @@ Future<bool> handleRequestPresentation(
   List<VerifiableCredential> creds = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
-      creds.add(VerifiableCredential.fromJson(value.w3cCredential));
+      var vc = VerifiableCredential.fromJson(value.w3cCredential);
+      var type =
+          vc.type.firstWhere((element) => element != 'VerifiableCredential');
+      if (type != 'PaymentReceipt') {
+        creds.add(vc);
+      }
     }
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
