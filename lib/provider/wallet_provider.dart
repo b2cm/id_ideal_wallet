@@ -54,14 +54,22 @@ class WalletProvider extends ChangeNotifier {
       login = wallet.getConfigEntry('ln_login');
       var password = wallet.getConfigEntry('ln_password');
 
-      lnAuthToken = await getLnAuthToken(login!, password!);
-      balance = await getBalance(lnAuthToken!);
+      // lnAuthToken = await getLnAuthToken(login!, password!);
+      // balance = await getBalance(lnAuthToken!);
+
+      lnAuthToken = 'abhg';
+      balance = 10000;
 
       _updateLastThreePayments();
 
       _authRunning = false;
       notifyListeners();
     }
+  }
+
+  void simulatePay(String amount) {
+    balance -= int.parse(amount);
+    notifyListeners();
   }
 
   void getLnBalance() async {
@@ -74,7 +82,8 @@ class WalletProvider extends ChangeNotifier {
     _wallet.storeExchangeHistoryEntry('paymentHistory', DateTime.now(), action,
         otherParty, belongingCredentials);
     _updateLastThreePayments();
-    getLnBalance();
+    //getLnBalance();
+    notifyListeners();
   }
 
   void newPayment(String index, String memo, int amount) {

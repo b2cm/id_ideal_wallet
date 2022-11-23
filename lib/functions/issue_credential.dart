@@ -2,8 +2,6 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:uuid/uuid.dart';
 
@@ -43,8 +41,9 @@ Future<bool> handleOfferCredential(
         (element) => element.format != null && element.format == 'lnInvoice');
     if (paymentReq.isNotEmpty) {
       invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
-      var decoded = await decodeInvoice(invoice!, wallet.lnAuthToken!);
-      toPay = decoded['num_satoshis'];
+      // var decoded = await decodeInvoice(invoice!, wallet.lnAuthToken!);
+      //toPay = decoded['num_satoshis'];
+      toPay = invoice;
     }
   }
   Map<String, String> paymentDetails = {};
@@ -62,54 +61,55 @@ Future<bool> handleOfferCredential(
 
     if (res) {
       if (invoice != null) {
-        var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
-            body: {'invoice': invoice},
-            headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
-        if (res.statusCode == 200) {
-          logger.d('erfolgreich bezahlt');
-          paymentDetails['value'] = '-$toPay';
-          paymentDetails['note'] =
-              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
+        // var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
+        //     body: {'invoice': invoice},
+        //     headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
+        // if (res.statusCode == 200) {
+        wallet.simulatePay(toPay!);
+        logger.d('erfolgreich bezahlt');
+        paymentDetails['value'] = '-$toPay';
+        paymentDetails['note'] =
+            '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
 
-          showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return PaymentFinished(
-                    headline: "Zahlung erfolgreich",
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: "-$toPay",
-                        symbol: '€',
-                        mainFontSize: 35,
-                        centered: true));
-              });
-        } else {
-          showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return PaymentFinished(
-                  headline: "Zahlung fehlgeschlagen",
-                  success: false,
+        showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return PaymentFinished(
+                  headline: "Zahlung erfolgreich",
+                  success: true,
                   amount: CurrencyDisplay(
                       amount: "-$toPay",
                       symbol: '€',
                       mainFontSize: 35,
-                      centered: true),
-                  additionalInfo: Column(children: const [
-                    SizedBox(height: 20),
-                    Text("Zahlung konnte nicht durchgeführt werden",
-                        style: TextStyle(color: Colors.red)),
-                  ]),
-                );
-              });
-          throw Exception('payment error: ${res.body}');
-        }
+                      centered: true));
+            });
+        // } else {
+        //   showModalBottomSheet(
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(10.0),
+        //       ),
+        //       context: navigatorKey.currentContext!,
+        //       builder: (context) {
+        //         return PaymentFinished(
+        //           headline: "Zahlung fehlgeschlagen",
+        //           success: false,
+        //           amount: CurrencyDisplay(
+        //               amount: "-$toPay",
+        //               symbol: '€',
+        //               mainFontSize: 35,
+        //               centered: true),
+        //           additionalInfo: Column(children: const [
+        //             SizedBox(height: 20),
+        //             Text("Zahlung konnte nicht durchgeführt werden",
+        //                 style: TextStyle(color: Colors.red)),
+        //           ]),
+        //         );
+        //       });
+        //   throw Exception('payment error: ${res.body}');
+        // }
       }
     } else {
       logger.d('user declined credential');
