@@ -55,27 +55,19 @@ class CredentialOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
       if (wallet.isOpen()) {
-        var allCreds = wallet.allCredentials().values.toList();
         return ListView.builder(
-            itemCount: allCreds.length,
+            itemCount: wallet.credentials.length,
             itemBuilder: (context, index) {
-              var cred = allCreds[index].w3cCredential;
-              if (cred != '') {
-                var vc = VerifiableCredential.fromJson(cred);
-                var type = vc.type
-                    .firstWhere((element) => element != 'VerifiableCredential');
-                if (type != 'PaymentReceipt') {
-                  return Column(children: [
-                    CredentialCard(credential: vc),
-                    const SizedBox(
-                      height: 10,
-                    )
-                  ]);
-                } else {
-                  return const SizedBox(
-                    height: 0,
-                  );
-                }
+              var cred = wallet.credentials[index];
+              var type = cred.type
+                  .firstWhere((element) => element != 'VerifiableCredential');
+              if (type != 'PaymentReceipt') {
+                return Column(children: [
+                  CredentialCard(credential: cred),
+                  const SizedBox(
+                    height: 10,
+                  )
+                ]);
               } else {
                 return const SizedBox(
                   height: 0,

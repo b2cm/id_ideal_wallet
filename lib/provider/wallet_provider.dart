@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,9 @@ class WalletProvider extends ChangeNotifier {
   Timer? paymentTimer;
   String? lnAuthToken;
   int balance = -1;
+  SortingType sortingType = SortingType.dateDown;
   List<ExchangeHistoryEntry> lastPayments = [];
+  List<VerifiableCredential> credentials = [];
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -30,12 +33,13 @@ class WalletProvider extends ChangeNotifier {
     if (!_authRunning) {
       _authRunning = true;
       await my_util.openWallet(_wallet);
-      print(_wallet.isWalletOpen());
 
       if (!_wallet.isInitialized()) {
         _wallet.initialize();
         _wallet.initializeIssuer(KeyType.ed25519);
       }
+
+      _buildCredentialList();
 
       var login = wallet.getConfigEntry('ln_login');
       if (login == null) {
@@ -119,6 +123,55 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
+  void _buildCredentialList() {
+    credentials = [];
+    var all = allCredentials();
+    for (var cred in all.values) {
+      if (cred.w3cCredential == '') {
+        continue;
+      }
+      if (cred.plaintextCredential == '') {
+        credentials.add(VerifiableCredential.fromJson(cred.w3cCredential));
+      } else {
+        // TODO: merge w3c and Plaintext credential
+      }
+    }
+
+    if (sortingType == SortingType.dateDown ||
+        sortingType == SortingType.dateUp) {
+      credentials.sort(
+        (a, b) {
+          if (a.issuanceDate.isAfter(b.issuanceDate)) {
+            return sortingType == SortingType.dateDown ? -1 : 1;
+          } else if (a.issuanceDate.isBefore(b.issuanceDate)) {
+            return sortingType == SortingType.dateDown ? 1 : -1;
+          } else {
+            return 0;
+          }
+        },
+      );
+    } else {
+      credentials.sort(
+        (a, b) {
+          var typeA =
+              a.type.firstWhere((element) => element != 'VerifiableCredential');
+          var typeB =
+              b.type.firstWhere((element) => element != 'VerifiableCredential');
+          return typeA.compareTo(typeB);
+        },
+      );
+      if (sortingType == SortingType.typeDown) {
+        credentials = credentials.reversed.toList();
+      }
+    }
+  }
+
+  void changeSortingType(SortingType newType) {
+    sortingType = newType;
+    _buildCredentialList();
+    notifyListeners();
+  }
+
   List<ExchangeHistoryEntry> getAllPayments() {
     return _wallet.getExchangeHistoryEntriesForCredential('paymentHistory') ??
         [];
@@ -151,6 +204,7 @@ class WalletProvider extends ChangeNotifier {
   void storeCredential(String vc, String hdPath, [String? newDid]) async {
     await _wallet.storeCredential(vc, '', hdPath,
         keyType: KeyType.ed25519, credDid: newDid);
+    _buildCredentialList();
     notifyListeners();
   }
 
@@ -172,6 +226,7 @@ class WalletProvider extends ChangeNotifier {
 
   void deleteCredential(String credDid) {
     _wallet.deleteCredential(credDid);
+    _buildCredentialList();
     notifyListeners();
   }
 
@@ -203,3 +258,5 @@ class WalletProvider extends ChangeNotifier {
 
   WalletStore get wallet => _wallet;
 }
+
+enum SortingType { dateUp, dateDown, typeUp, typeDown }
