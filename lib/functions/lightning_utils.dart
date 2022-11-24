@@ -114,34 +114,39 @@ void payInvoiceInteraction(String invoice) async {
       ),
       context: navigatorKey.currentContext!,
       builder: (context) {
-        return PaymentIntent(
-          amount: CurrencyDisplay(
-              amount: toPay, symbol: '€', mainFontSize: 35, centered: true),
-          memo: description,
-          onPaymentAccepted: () async {
-            var success = await payInvoice(invoice, wallet.lnAuthToken!);
-            if (success) {
-              wallet.storePayment('-$toPay',
-                  description == '' ? 'Lightning Invoice' : description);
-            }
-            showModalBottomSheet(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                context: context,
-                builder: (context) {
-                  return PaymentFinished(
-                      headline: success
-                          ? 'Zahlung erfolgreich'
-                          : 'Zahlung fehlgeschlagen',
-                      success: success,
-                      amount: CurrencyDisplay(
-                          amount: toPay,
-                          symbol: '€',
-                          mainFontSize: 35,
-                          centered: true));
-                });
-          },
+        return ModalDismissWrapper(
+          child: PaymentIntent(
+            amount: CurrencyDisplay(
+                amount: toPay, symbol: '€', mainFontSize: 35, centered: true),
+            memo: description,
+            onPaymentAccepted: () async {
+              var success = await payInvoice(invoice, wallet.lnAuthToken!);
+              if (success) {
+                wallet.storePayment('-$toPay',
+                    description == '' ? 'Lightning Invoice' : description);
+              }
+              showModalBottomSheet(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  context: context,
+                  builder: (context) {
+                    return ModalDismissWrapper(
+                      child: PaymentFinished(
+                        headline: success
+                            ? 'Zahlung erfolgreich'
+                            : 'Zahlung fehlgeschlagen',
+                        success: success,
+                        amount: CurrencyDisplay(
+                            amount: toPay,
+                            symbol: '€',
+                            mainFontSize: 35,
+                            centered: true),
+                      ),
+                    );
+                  });
+            },
+          ),
         );
       });
 }

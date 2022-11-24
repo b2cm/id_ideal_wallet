@@ -77,14 +77,16 @@ Future<bool> handleOfferCredential(
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
-              return PaymentFinished(
+              return ModalDismissWrapper(child: PaymentFinished(
                   headline: "Zahlung erfolgreich",
                   success: true,
                   amount: CurrencyDisplay(
                       amount: "-$toPay",
                       symbol: '€',
                       mainFontSize: 35,
-                      centered: true));
+                      centered: true),
+              ),
+              );
             });
         // } else {
         //   showModalBottomSheet(
