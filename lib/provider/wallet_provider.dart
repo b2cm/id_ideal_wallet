@@ -90,14 +90,17 @@ class WalletProvider extends ChangeNotifier {
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
-              return PaymentFinished(
+              return ModalDismissWrapper(
+                child: PaymentFinished(
                   headline: "Zahlung eingegangen",
                   success: true,
                   amount: CurrencyDisplay(
                       amount: "+$amount",
                       symbol: '€',
                       mainFontSize: 35,
-                      centered: true));
+                      centered: true),
+                ),
+              );
             });
       }
     });

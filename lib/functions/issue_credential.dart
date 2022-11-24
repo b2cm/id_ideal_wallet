@@ -77,14 +77,17 @@ Future<bool> handleOfferCredential(
               ),
               context: navigatorKey.currentContext!,
               builder: (context) {
-                return PaymentFinished(
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
                     headline: "Zahlung erfolgreich",
                     success: true,
                     amount: CurrencyDisplay(
                         amount: "-$toPay",
                         symbol: '€',
                         mainFontSize: 35,
-                        centered: true));
+                        centered: true),
+                  ),
+                );
               });
         } else {
           showModalBottomSheet(
@@ -93,19 +96,21 @@ Future<bool> handleOfferCredential(
               ),
               context: navigatorKey.currentContext!,
               builder: (context) {
-                return PaymentFinished(
-                  headline: "Zahlung fehlgeschlagen",
-                  success: false,
-                  amount: CurrencyDisplay(
-                      amount: "-$toPay",
-                      symbol: '€',
-                      mainFontSize: 35,
-                      centered: true),
-                  additionalInfo: Column(children: const [
-                    SizedBox(height: 20),
-                    Text("Zahlung konnte nicht durchgeführt werden",
-                        style: TextStyle(color: Colors.red)),
-                  ]),
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: "Zahlung fehlgeschlagen",
+                    success: false,
+                    amount: CurrencyDisplay(
+                        amount: "-$toPay",
+                        symbol: '€',
+                        mainFontSize: 35,
+                        centered: true),
+                    additionalInfo: Column(children: const [
+                      SizedBox(height: 20),
+                      Text("Zahlung konnte nicht durchgeführt werden",
+                          style: TextStyle(color: Colors.red)),
+                    ]),
+                  ),
                 );
               });
           throw Exception('payment error: ${res.body}');
