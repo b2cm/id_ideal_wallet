@@ -29,12 +29,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dart_ssi:
-    git:
-      url: https://github.com/b2cm/dart_ssi
-      ref: didcomm
 #  dart_ssi:
-#    path: ../flutter_ssi_wallet
+#    git:
+#      url: https://github.com/b2cm/dart_ssi
+#      ref: didcomm
+  dart_ssi:
+    path: ../flutter_ssi_wallet
  # dart_ssi: ^1.0.3
   path_provider: any
   local_auth: 2.1.0
@@ -58,6 +58,8 @@ dependencies:
       ref: verification
   printing: ^5.9.3
   pdf: ^3.8.4
+  flutter_json_schema_form: ^0.0.10
+  json_schema_document: ^0.0.4
 
 
   # The following adds the Cupertino Icons font to your application.

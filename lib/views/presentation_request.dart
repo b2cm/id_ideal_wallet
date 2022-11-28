@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
+import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 
@@ -131,7 +132,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         childList.add(
             const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
         childList.add(ElevatedButton(
-            onPressed: () {}, child: const Text('Daten eintragen')));
+            onPressed: () => showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return CredentialSelfIssue(input: result.selfIssuable!);
+                }),
+            child: const Text('Daten eintragen')));
       }
 
       for (var v in result.credentials) {
