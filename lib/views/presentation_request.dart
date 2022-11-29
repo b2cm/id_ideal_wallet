@@ -132,11 +132,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         childList.add(
             const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
         childList.add(ElevatedButton(
-            onPressed: () => showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return CredentialSelfIssue(input: result.selfIssuable!);
-                }),
+            onPressed: () async {
+              var res = await Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) =>
+                      CredentialSelfIssue(input: result.selfIssuable!)));
+              logger.d(res);
+            },
             child: const Text('Daten eintragen')));
       }
 

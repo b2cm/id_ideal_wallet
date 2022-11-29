@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_json_schema_form/controller/flutter_json_schema_form_controller.dart';
-import 'package:flutter_json_schema_form/flutter_json_schema_form.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:json_schema_document/json_schema_document.dart' as jsd;
+import 'package:id_wallet_design/id_wallet_design.dart';
+import 'package:json_schema2/json_schema2.dart';
+import 'package:json_schema_form/json_schema_form.dart';
 
 class CredentialSelfIssue extends StatefulWidget {
   final List<InputDescriptorConstraints> input;
@@ -17,8 +17,8 @@ class CredentialSelfIssue extends StatefulWidget {
 }
 
 class CredentialSelfIssueState extends State<CredentialSelfIssue> {
-  late jsd.JsonSchema schema;
-  late FlutterJsonSchemaFormController controller;
+  late JsonSchema schema;
+  late SchemaFormController controller;
   int index = 0;
 
   @override
@@ -29,26 +29,23 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
         for (var field in i.fields!) {
           var givenSchema = field.filter?.toJson();
           if (givenSchema != null) {
-            schema = jsd.JsonSchema.fromMap(jsonDecode(givenSchema));
+            schema = JsonSchema.createSchema(jsonDecode(givenSchema));
             logger.d(schema);
-            controller = FlutterJsonSchemaFormController(jsonSchema: schema);
+            controller = SchemaFormController(schema);
           }
         }
       }
     }
   }
 
-  void submit() {
-    print(controller.data);
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FlutterJsonSchemaForm(
-      jsonSchema: schema,
-      controller: controller,
-      onSubmit: submit,
-      buttonText: 'Fertig',
-    );
+    return StyledScaffoldTitle(
+        title: 'Selbstausstellung',
+        scanOnTap: () {},
+        child: JsonSchemaForm(
+          schema: schema,
+          controller: controller,
+        ));
   }
 }

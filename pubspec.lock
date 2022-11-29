@@ -183,13 +183,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.1.4"
-  file_picker:
-    dependency: transitive
-    description:
-      name: file_picker
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "4.6.1"
   fixnum:
     dependency: transitive
     description:
@@ -202,13 +195,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_json_schema_form:
-    dependency: "direct main"
-    description:
-      name: flutter_json_schema_form
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.10"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -337,7 +323,7 @@ packages:
       name: json_class
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.2+10"
+    version: "2.1.2+13"
   json_ld_processor:
     dependency: transitive
     description:
@@ -365,14 +351,14 @@ packages:
       name: json_schema2
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.2+12"
-  json_schema_document:
+    version: "2.0.2+18"
+  json_schema_form:
     dependency: "direct main"
     description:
-      name: json_schema_document
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.4"
+      path: "../json_schema_form"
+      relative: true
+    source: path
+    version: "0.0.1"
   lints:
     dependency: transitive
     description:
@@ -428,7 +414,7 @@ packages:
       name: logging
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.2"
+    version: "1.1.0"
   matcher:
     dependency: transitive
     description:
@@ -626,7 +612,7 @@ packages:
       name: rest_client
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.5+3"
+    version: "2.2.0+3"
   rfc_6901:
     dependency: transitive
     description:
@@ -695,13 +681,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.4.12"
-  tuple:
-    dependency: transitive
-    description:
-      name: tuple
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.1"
   typed_data:
     dependency: transitive
     description:
@@ -722,7 +701,7 @@ packages:
       name: uuid
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.6"
+    version: "3.0.7"
   vector_math:
     dependency: transitive
     description:
@@ -787,7 +766,7 @@ packages:
       name: yaon
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.1+5"
+    version: "1.0.1+7"
 sdks:
-  dart: ">=2.18.2 <3.0.0"
+  dart: ">=2.18.4 <3.0.0"
   flutter: ">=3.0.0"

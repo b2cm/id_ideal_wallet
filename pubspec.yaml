@@ -58,8 +58,9 @@ dependencies:
       ref: verification
   printing: ^5.9.3
   pdf: ^3.8.4
-  flutter_json_schema_form: ^0.0.10
-  json_schema_document: ^0.0.4
+  json_schema_form:
+    path: ../json_schema_form
+
 
 
   # The following adds the Cupertino Icons font to your application.
