@@ -77,7 +77,8 @@ Future<bool> handleOfferCredential(
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
-              return ModalDismissWrapper(child: PaymentFinished(
+              return ModalDismissWrapper(
+                child: PaymentFinished(
                   headline: "Zahlung erfolgreich",
                   success: true,
                   amount: CurrencyDisplay(
@@ -85,7 +86,7 @@ Future<bool> handleOfferCredential(
                       symbol: '€',
                       mainFontSize: 35,
                       centered: true),
-              ),
+                ),
               );
             });
         // } else {
@@ -253,12 +254,32 @@ Future<bool> handleIssueCredential(
           wallet.storeCredential(cred.toString(), storageCred.hdPath);
           wallet.storeExchangeHistoryEntry(
               credDid, DateTime.now(), 'issue', message.from!);
+
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: "Credential empfangen",
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: type,
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
         }
       } else {
         throw Exception('Credential signature is wrong');
       }
 
       wallet.storeConversation(message, entry.myDid);
+
       var ack = EmptyMessage(
           ack: [message.id], threadId: message.threadId ?? message.id);
       sendMessage(
