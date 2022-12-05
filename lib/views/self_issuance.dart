@@ -19,6 +19,7 @@ class CredentialSelfIssue extends StatefulWidget {
 class CredentialSelfIssueState extends State<CredentialSelfIssue> {
   late JsonSchema schema;
   late SchemaFormController controller;
+  String type = '';
   int index = 0;
 
   @override
@@ -27,11 +28,16 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
     for (var i in widget.input) {
       if (i.fields != null) {
         for (var field in i.fields!) {
-          var givenSchema = field.filter?.toJson();
-          if (givenSchema != null) {
-            schema = JsonSchema.createSchema(jsonDecode(givenSchema));
-            logger.d(schema);
-            controller = SchemaFormController(schema);
+          if (field.path
+              .where(
+                  (element) => element.toString().contains('credentialSubject'))
+              .isNotEmpty) {
+            var givenSchema = field.filter?.toJson();
+            if (givenSchema != null) {
+              schema = JsonSchema.createSchema(jsonDecode(givenSchema));
+              logger.d(schema);
+              controller = SchemaFormController(schema);
+            }
           }
         }
       }
