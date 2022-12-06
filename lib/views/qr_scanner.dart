@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -20,7 +19,8 @@ class QrScanner extends StatelessWidget {
                 final String code = barcode.rawValue!;
                 logger.d('Barcode found! $code');
                 if (code.startsWith('lnbc') || code.startsWith('LNBC')) {
-                  payInvoiceInteraction(code);
+                  logger.d('LN-Invoice found');
+                  //payInvoiceInteraction(code);
                 } else {
                   handleDidcommMessage(code);
                 }

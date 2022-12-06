@@ -294,9 +294,11 @@ packages:
   id_wallet_design:
     dependency: "direct main"
     description:
-      path: "../id_wallet_design"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "12e06f71ec418754821f59b59e0d8072ce96ed19"
+      url: "https://github.com/b2cm/id_ideal_wallet_design"
+    source: git
     version: "1.0.0+1"
   image:
     dependency: transitive
