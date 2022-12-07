@@ -203,7 +203,9 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
 
   if (otherEndpoint.startsWith('http')) {
     logger.d('send message to $otherEndpoint');
-    post(Uri.parse(otherEndpoint), body: encrypted.toString());
+    post(Uri.parse(otherEndpoint),
+        body: encrypted.toString(),
+        headers: {'Content-Type': 'application/json'});
   } else {
     throw Exception('We do not support other transports');
   }

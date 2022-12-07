@@ -7,6 +7,23 @@ import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:json_schema2/json_schema2.dart';
 import 'package:json_schema_form/json_schema_form.dart';
 
+class SelfIssueList extends StatelessWidget {
+  const SelfIssueList({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledScaffoldTitle(
+        title: 'Selbstaustellbare Credentials',
+        scanOnTap: () {},
+        child: Column(
+          children: [
+            ElevatedButton(
+                onPressed: () {}, child: const Text('E-Mail Adresse'))
+          ],
+        ));
+  }
+}
+
 class CredentialSelfIssue extends StatefulWidget {
   final List<InputDescriptorConstraints> input;
 
@@ -19,7 +36,6 @@ class CredentialSelfIssue extends StatefulWidget {
 class CredentialSelfIssueState extends State<CredentialSelfIssue> {
   late JsonSchema schema;
   late SchemaFormController controller;
-  String type = '';
   int index = 0;
 
   @override
