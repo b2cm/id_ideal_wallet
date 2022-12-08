@@ -132,10 +132,10 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: a9ebee92ff082722a9eb2b8a118aa3a821464fe5
+      resolved-ref: ef952781850604560b60474a945e9e93b5f0698d
       url: "https://github.com/b2cm/dart_ssi"
     source: git
-    version: "1.0.4"
+    version: "1.0.5"
   ed25519_edwards:
     dependency: transitive
     description:
