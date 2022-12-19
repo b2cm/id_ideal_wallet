@@ -15,12 +15,16 @@ class QrScanner extends StatelessWidget {
         scanOnTap: () {},
         child: MobileScanner(
             allowDuplicates: false,
-            onDetect: (barcode, args) {
+            onDetect: (barcode, args) async {
               if (barcode.rawValue != null) {
                 final String code = barcode.rawValue!;
                 logger.d('Barcode found! $code');
-                if (code.startsWith('lnbc') || code.startsWith('LNBC')) {
+                // LNURL for coffee maschine
+                if (code.startsWith('lnbc') || code.startsWith('LNBC') || code.startsWith("LNURL")) {
                   payInvoiceInteraction(code);
+                // Shortened Links
+                } else if (code.startsWith('shortvclink')) {
+                  handleDidcommMessage(await resolveVCShortLink(code));
                 } else {
                   handleDidcommMessage(code);
                 }
