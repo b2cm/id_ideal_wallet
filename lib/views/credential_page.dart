@@ -132,9 +132,12 @@ class CredentialCardState extends State<CredentialCard> {
               .firstWhere((element) => element != 'VerifiableCredential'),
           subjectName:
               '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-          bottomLeftText: IssuerInfoText(issuer: widget.credential.issuer),
+          bottomLeftText: IssuerInfoText(
+              issuer: widget.credential.issuer,
+              selfIssued: widget.credential.isSelfIssued()),
           bottomRightText: IssuerInfoIcon(
             issuer: widget.credential.issuer,
+            selfIssued: widget.credential.isSelfIssued(),
           )),
     );
   }

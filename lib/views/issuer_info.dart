@@ -5,8 +5,11 @@ import 'package:x509b/x509.dart' as x509;
 
 class IssuerInfoText extends StatefulWidget {
   final dynamic issuer;
+  final bool selfIssued;
 
-  const IssuerInfoText({Key? key, required this.issuer}) : super(key: key);
+  const IssuerInfoText(
+      {Key? key, required this.issuer, this.selfIssued = false})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => IssuerInfoTextState();
@@ -22,7 +25,10 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
   }
 
   void certVerify() async {
-    if (widget.issuer is Map) {
+    if (widget.selfIssued) {
+      issuerName = 'Selbstausgestellt';
+      setState(() {});
+    } else if (widget.issuer is Map) {
       if (widget.issuer.containsKey('certificate')) {
         var certIt = x509.parsePem(
             '-----BEGIN CERTIFICATE-----\n${widget.issuer['certificate']}\n-----END CERTIFICATE-----');
@@ -70,8 +76,11 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
 
 class IssuerInfoIcon extends StatefulWidget {
   final dynamic issuer;
+  final bool selfIssued;
 
-  const IssuerInfoIcon({Key? key, required this.issuer}) : super(key: key);
+  const IssuerInfoIcon(
+      {Key? key, required this.issuer, this.selfIssued = false})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => IssuerInfoIconState();
@@ -88,7 +97,11 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
   }
 
   void certVerify() async {
-    if (widget.issuer is Map) {
+    if (widget.selfIssued) {
+      marker = Icons.verified_outlined;
+      iconColor = Colors.green;
+      setState(() {});
+    } else if (widget.issuer is Map) {
       if (widget.issuer.containsKey('certificate')) {
         var certIt = x509.parsePem(
             '-----BEGIN CERTIFICATE-----\n${widget.issuer['certificate']}\n-----END CERTIFICATE-----');
