@@ -154,6 +154,7 @@ _sendRequestCredential(
   WalletProvider wallet,
   String myDid,
 ) async {
+
   List<LdProofVcDetail> detail = [];
   for (var d in offer.detail!) {
     detail.add(LdProofVcDetail(
@@ -161,12 +162,14 @@ _sendRequestCredential(
         options: LdProofVcDetailOptions(
             proofType: d.options.proofType, challenge: const Uuid().v4())));
   }
+
   var message = RequestCredential(
       detail: detail,
       replyUrl: '$relay/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
       from: myDid,
       to: [offer.from!]);
+
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);
 }
