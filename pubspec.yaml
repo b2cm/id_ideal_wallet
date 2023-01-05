@@ -29,12 +29,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-#  dart_ssi:
-#    git:
-#      url: https://github.com/b2cm/dart_ssi
-#      ref: didcomm
   dart_ssi:
-    path: ../flutter_ssi_wallet
+    git:
+      url: https://github.com/b2cm/dart_ssi
+      ref: didcomm
+#  dart_ssi:
+#    path: ../flutter_ssi_wallet
  # dart_ssi: ^1.0.3
   path_provider: any
   local_auth: 2.1.0
@@ -59,7 +59,8 @@ dependencies:
   printing: ^5.9.3
   pdf: ^3.8.4
   json_schema_form:
-    path: ../json_schema_form
+    git:
+      url: https://github.com/SaOtto/flutter_json_schema_form
   device_info_plus: ^8.0.0
   android_id: ^0.1.3+1
 

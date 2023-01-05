@@ -137,9 +137,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "../flutter_ssi_wallet"
-      relative: true
-    source: path
+      path: "."
+      ref: didcomm
+      resolved-ref: c7577ff181c96d4ba9f914e15d7f5b92f17ed0b8
+      url: "https://github.com/b2cm/dart_ssi"
+    source: git
     version: "1.0.5"
   device_info_plus:
     dependency: "direct main"
@@ -376,9 +378,11 @@ packages:
   json_schema_form:
     dependency: "direct main"
     description:
-      path: "../json_schema_form"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: eee7336816e0a86ecc3a31a0895071d9583a5a44
+      url: "https://github.com/SaOtto/flutter_json_schema_form"
+    source: git
     version: "0.0.1"
   lints:
     dependency: transitive

@@ -15,7 +15,30 @@ import 'package:provider/provider.dart';
 final emailSchema = JsonSchema.createSchema({
   'type': 'object',
   'properties': {
-    'email': {'type': 'string'}
+    'email': {'type': 'string', 'description': 'E-Mail Adresse'}
+  }
+});
+
+final socialMediaSchema = JsonSchema.createSchema({
+  'type': 'object',
+  'properties': {
+    'network': {
+      'type': 'string',
+      'enum': [
+        'Facebook',
+        'Telegram',
+        'Instagram',
+        'TikTok',
+        'Matrix',
+        'Mastodon',
+        'LinkedIn',
+        'Xing'
+      ]
+    },
+    'username': {
+      'type': 'string',
+      'description': 'Nutzername im gewählten Netzwerk'
+    }
   }
 });
 
@@ -34,6 +57,12 @@ class SelfIssueList extends StatelessWidget {
                     builder: (context) => FixedSelfIssue(
                         schema: emailSchema, type: 'EMailCredential'))),
                 child: const Text('E-Mail Adresse')),
+            ElevatedButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => FixedSelfIssue(
+                        schema: socialMediaSchema,
+                        type: 'SocialMediaAccountCredential'))),
+                child: const Text('Social Media Account')),
             ElevatedButton(
                 onPressed: () async {
                   JsonSchema deviceInfoSchema;

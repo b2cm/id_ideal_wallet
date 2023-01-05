@@ -209,7 +209,7 @@ class MainPage extends StatelessWidget {
                                 builder: (context) => const SelfIssueList())),
                         icon:
                             const AssetImage("assets/house-crack-regular.png"),
-                        label: "Versicherung"),
+                        label: "Selbstausstellung"),
                     HubApp(
                         onTap: () => logger.d("tapped hub app"),
                         icon: const AssetImage("assets/ticket-regular.png"),
