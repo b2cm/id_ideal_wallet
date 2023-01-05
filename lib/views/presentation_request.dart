@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
+import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 
@@ -128,10 +129,45 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
 
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
-        childList.add(
-            const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
-        childList.add(ElevatedButton(
-            onPressed: () {}, child: const Text('Daten eintragen')));
+        var pos = outerPos;
+        for (var i in result.selfIssuable!) {
+          childList.add(
+              const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
+          childList.add(ElevatedButton(
+              onPressed: () async {
+                var res = await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => CredentialSelfIssue(input: [i])));
+                print(res);
+                if (res != null) {
+                  var wallet =
+                      Provider.of<WalletProvider>(context, listen: false);
+                  var did = await wallet.newCredentialDid();
+                  if (res is Map) {
+                    var credSubject = <dynamic, dynamic>{'id': did};
+                    credSubject.addAll(res);
+                    var cred = VerifiableCredential(
+                        context: ['https://schema.org'],
+                        type: ['SelfIssuedCredential'],
+                        issuer: did,
+                        credentialSubject: credSubject,
+                        issuanceDate: DateTime.now());
+                    var signed = await signCredential(wallet.wallet, cred);
+                    logger.d(signed);
+                    result.selfIssuable!.remove(i);
+                    if (result.selfIssuable!.isEmpty) {
+                      result.selfIssuable = null;
+                    }
+                    result.credentials
+                        .add(VerifiableCredential.fromJson(signed));
+                    selectedCredsPerResult[
+                        'o${pos}i${result.credentials.length - 1}'] = true;
+                    logger.d(selectedCredsPerResult);
+                    setState(() {});
+                  }
+                }
+              },
+              child: const Text('Daten eintragen')));
+        }
       }
 
       for (var v in result.credentials) {
