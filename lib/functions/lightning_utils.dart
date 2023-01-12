@@ -17,7 +17,7 @@ Future<String?> getLnAuthToken(String login, String password) async {
   var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/auth'),
       body: {'login': login, 'password': password});
   if (res.statusCode == 200) {
-    var decodedResponse = jsonDecode(res.body);
+    var decodedResponse = jsonDecode(res.body) as Map;
     var lnAuthToken = decodedResponse['access_token'];
     return lnAuthToken;
   } else {
