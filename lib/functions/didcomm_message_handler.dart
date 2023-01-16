@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:http/http.dart';
@@ -8,6 +11,16 @@ import 'package:id_ideal_wallet/functions/present_proof.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+
+
+Future<String> resolveVCShortLink(String message) async {
+  String url  = message.split(',')[1].trim();
+  HttpClient client = HttpClient();
+  HttpClientRequest request = await client.getUrl(Uri.parse(url));
+  HttpClientResponse response = await request.close();
+  String responseBody = await response.transform(utf8.decoder).join();
+  return responseBody;
+}
 
 Future<bool> handleDidcommMessage(String message) async {
   var wallet =

@@ -168,17 +168,39 @@ class CredentialCardState extends State<CredentialCard> {
 
   Future<void> searchImage() async {
     try {
-      final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
-        'image': (match) =>
-            match.value is String && match.value.startsWith('data:image')
+
+      bool showImg = false;
+      String imgB64 = '';
+
+      widget.credential.credentialSubject.forEach((key, value) {
+        // todo change key to picture
+        if(key=='data' && value is String && value.startsWith('data:image')){
+          showImg=true;
+          imgB64 = value;
+        }
       });
 
-      var result = path.read(widget.credential.toJson());
-      var dataString = result.first.value as String;
-      var imageData = dataString.split(',').last;
+      if (showImg) {
 
-      image = Image.memory(base64Decode(imageData));
-      setState(() {});
+        image = Image.memory(base64Decode(imgB64.split(',')[1]));
+        setState(() {});
+
+      } else {
+        final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
+          'image': (match) =>
+          match.value is String && match.value.startsWith('data:image')
+        });
+
+        var result = path.read(widget.credential.toJson());
+        var dataString = result.first.value as String;
+        var imageData = dataString
+            .split(',')
+            .last;
+
+        image = Image.memory(base64Decode(imageData));
+        setState(() {});
+      }
+
     } catch (e) {
       logger.d('cant decode image: $e');
     }

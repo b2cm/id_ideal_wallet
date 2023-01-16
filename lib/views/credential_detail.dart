@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -155,36 +157,54 @@ class _CredentialDetailState extends State<CredentialDetailView> {
   }
 
   Widget _buildBody() {
-    var personalData = ExpansionTile(
-      title: const Text('Persönliche Daten'),
-      children: buildCredSubject(widget.credential.credentialSubject),
-      expandedAlignment: Alignment.centerLeft,
-      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-    );
-    var otherData = ExpansionTile(
-      title: const Text('Sonstige Daten'),
-      children: _buildOtherData(),
-      expandedAlignment: Alignment.centerLeft,
-      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-    );
-    var issuerData = ExpansionTile(
-      title: const Text('Aussteller'),
-      children: _buildIssuerData(),
-      expandedAlignment: Alignment.centerLeft,
-      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-    );
 
-    return SingleChildScrollView(
-        child: Column(
-      children: [
-        personalData,
-        buildReceipt(),
-        issuerData,
-        otherData,
-        HistoryEntries(
-            credDid: getHolderDidFromCredential(widget.credential.toJson()))
-      ],
-    ));
+    bool showImg = false;
+    String image = '';
+
+    widget.credential.credentialSubject.forEach((key, value) {
+      // todo change key to picture
+      if(key=='data' && value is String && value.startsWith('data:image')){
+        showImg=true;
+        image = value;
+      }
+    });
+
+    if(showImg){
+      return SingleChildScrollView(
+        child: Image.memory(base64Decode(image.split(',')[1])),
+      );
+    } else {
+      var personalData = ExpansionTile(
+        title: const Text('Persönliche Daten'),
+        children: buildCredSubject(widget.credential.credentialSubject),
+        expandedAlignment: Alignment.centerLeft,
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      );
+      var otherData = ExpansionTile(
+        title: const Text('Sonstige Daten'),
+        children: _buildOtherData(),
+        expandedAlignment: Alignment.centerLeft,
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      );
+      var issuerData = ExpansionTile(
+        title: const Text('Aussteller'),
+        children: _buildIssuerData(),
+        expandedAlignment: Alignment.centerLeft,
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      );
+
+      return SingleChildScrollView(
+          child: Column(
+        children: [
+          personalData,
+          buildReceipt(),
+          issuerData,
+          otherData,
+          HistoryEntries(
+              credDid: getHolderDidFromCredential(widget.credential.toJson()))
+        ],
+      ));
+    }
   }
 
   @override
