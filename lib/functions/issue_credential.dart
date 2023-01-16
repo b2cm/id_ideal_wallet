@@ -157,7 +157,6 @@ _sendRequestCredential(
   WalletProvider wallet,
   String myDid,
 ) async {
-
   List<LdProofVcDetail> detail = [];
   for (var d in offer.detail!) {
     detail.add(LdProofVcDetail(
@@ -284,7 +283,9 @@ Future<bool> handleIssueCredential(
       wallet.storeConversation(message, entry.myDid);
 
       var ack = EmptyMessage(
-          ack: [message.id], threadId: message.threadId ?? message.id);
+          ack: [message.id],
+          threadId: message.threadId ?? message.id,
+          from: entry.myDid);
       sendMessage(
           entry.myDid,
           determineReplyUrl(message.replyUrl, message.replyTo),
