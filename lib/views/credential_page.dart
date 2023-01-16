@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:json_path/json_path.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 class CredentialPage extends StatelessWidget {
@@ -37,8 +40,24 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
       } else {
         children.add(ListTile(
           subtitle: Text('${before != null ? '$before.' : ''}$key'),
-          title: Text(
-              '${(value is String && value.startsWith('data:image')) ? '...' : value}'),
+          title: (value is String && value.startsWith('data:'))
+              ? InkWell(
+                  child: const Text('Anzeigen'),
+                  onTap: () {
+                    if (value.contains('image')) {
+                      Navigator.of(navigatorKey.currentContext!).push(
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  Base64ImagePreview(imageDataUri: value)));
+                    } else if (value.contains('application/pdf')) {
+                      Navigator.of(navigatorKey.currentContext!).push(
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  Base64PdfPreview(pdfDataUri: value)));
+                    }
+                  },
+                )
+              : Text(value),
         ));
         // children.add(Text(
         //     '${before != null ? '$before.' : ''}$key: ${(value is String && value.startsWith('data:image')) ? '...' : value}'));
@@ -46,6 +65,51 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
     }
   });
   return children;
+}
+
+class Base64ImagePreview extends StatelessWidget {
+  final String imageDataUri;
+
+  const Base64ImagePreview({Key? key, required this.imageDataUri})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledScaffoldTitle(
+        scanOnTap: () => Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => const QrScanner())),
+        title: 'Vorschau',
+        child: Image(
+            image: Image.memory(base64Decode(imageDataUri.split(',').last))
+                .image));
+  }
+}
+
+class Base64PdfPreview extends StatelessWidget {
+  final String pdfDataUri;
+
+  const Base64PdfPreview({Key? key, required this.pdfDataUri})
+      : super(key: key);
+
+  FutureOr<Uint8List> _makePdf() {
+    var base64 = pdfDataUri.split(',').last;
+    return base64Decode(base64);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StyledScaffoldTitle(
+      scanOnTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => const QrScanner())),
+      title: 'Vorschau',
+      child: PdfPreview(
+        canChangePageFormat: false,
+        canDebug: false,
+        pdfFileName: 'Credential',
+        build: (context) => _makePdf(),
+      ),
+    );
+  }
 }
 
 class CredentialOverview extends StatelessWidget {
@@ -132,9 +196,12 @@ class CredentialCardState extends State<CredentialCard> {
               .firstWhere((element) => element != 'VerifiableCredential'),
           subjectName:
               '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-          bottomLeftText: IssuerInfoText(issuer: widget.credential.issuer),
+          bottomLeftText: IssuerInfoText(
+              issuer: widget.credential.issuer,
+              selfIssued: widget.credential.isSelfIssued()),
           bottomRightText: IssuerInfoIcon(
             issuer: widget.credential.issuer,
+            selfIssued: widget.credential.isSelfIssued(),
           )),
     );
   }
