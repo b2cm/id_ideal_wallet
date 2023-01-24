@@ -7,7 +7,8 @@ import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
+    as local;
 import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 
@@ -252,7 +253,7 @@ class WalletProvider extends ChangeNotifier {
         if (serverAnswer.statusCode == 200) {
           List messages = jsonDecode(serverAnswer.body);
           for (var m in messages) {
-            handleDidcommMessage(jsonEncode(m));
+            local.handleDidcommMessage(jsonEncode(m));
           }
         }
       }
