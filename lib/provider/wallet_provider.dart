@@ -9,8 +9,6 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 
 import '../functions/util.dart' as my_util;
 
