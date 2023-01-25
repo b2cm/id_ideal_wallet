@@ -8,6 +8,8 @@ import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:id_ideal_wallet/views/self_issuance.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +35,12 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       home: const MainPage(),
+      onGenerateRoute: (args) {
+        if (args.name != null && args.name!.contains('oob')) {
+          handleDidcommMessage('https://wallet.id-ideal.de${args.name}');
+        }
+        return null;
+      },
     );
   }
 }
@@ -167,18 +175,29 @@ class MainPage extends StatelessWidget {
                   // children: a list of hub-apps
                   children: [
                     HubApp(
-                        onTap: () => logger.d("tapped hub app"),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const SelfIssueList())),
                         icon:
                             const AssetImage("assets/house-crack-regular.png"),
-                        label: "Versicherung"),
+                        label: "Selbstausstellung"),
                     HubApp(
-                        onTap: () => logger.d("tapped hub app"),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const WebViewWindow(
+                                    title: 'Ausstell-Service',
+                                    initialUrl: 'http://localhost:8081'))),
+                        icon: const AssetImage("assets/plane-regular.png"),
+                        label: "Credential ausstellen"),
+                    HubApp(
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const WebViewWindow(
+                                    title: 'Ticket-Shop',
+                                    initialUrl:
+                                        'https://167.235.195.132:8082'))),
                         icon: const AssetImage("assets/ticket-regular.png"),
                         label: "Tickets"),
-                    HubApp(
-                        onTap: () => logger.d("tapped hub app"),
-                        icon: const AssetImage("assets/plane-regular.png"),
-                        label: "Reisen"),
                     HubApp(
                         onTap: () => logger.d("tapped hub app"),
                         icon: const AssetImage("assets/print-regular.png"),
