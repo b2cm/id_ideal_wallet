@@ -263,7 +263,9 @@ Future<bool> handleIssueCredential(
 
       wallet.storeConversation(message, entry.myDid);
       var ack = EmptyMessage(
-          ack: [message.id], threadId: message.threadId ?? message.id);
+          from: entry.myDid,
+          ack: [message.id],
+          threadId: message.threadId ?? message.id);
       sendMessage(
           entry.myDid,
           determineReplyUrl(message.replyUrl, message.replyTo),
