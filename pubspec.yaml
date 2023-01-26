@@ -19,6 +19,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ">=2.16.1 <3.0.0"
+  flutter: ">=3.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -37,7 +38,7 @@ dependencies:
   #    path: ../flutter_ssi_wallet
   # dart_ssi: ^1.0.3
   path_provider: any
-  local_auth: 2.1.0
+  local_auth: ^2.1.0
   flutter_secure_storage:
   random_password_generator:
   uuid: any
@@ -78,7 +79,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^1.0.0
+  flutter_lints: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

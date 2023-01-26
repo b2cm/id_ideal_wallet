@@ -195,8 +195,7 @@ class MainPage extends StatelessWidget {
                             MaterialPageRoute(
                                 builder: (context) => const WebViewWindow(
                                     title: 'Ticket-Shop',
-                                    initialUrl:
-                                        'https://167.235.195.132:8082'))),
+                                    initialUrl: 'https://localhost:8082'))),
                         icon: const AssetImage("assets/ticket-regular.png"),
                         label: "Tickets"),
                     HubApp(
