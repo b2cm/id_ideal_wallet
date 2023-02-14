@@ -1,4 +1,5 @@
-age:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/did.dart';
+import 'package:dart_ssi/didcomm.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
