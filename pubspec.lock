@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: ed7cc591a948744994714375caf9a2ce89e1d82e8243997c8a2994d57181c212
+      sha256: d6347d54a2d8028e0437e3c099f66fdb8ae02c4720c1e7534c9f24c10351f85d
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.5"
+    version: "3.3.6"
   args:
     dependency: transitive
     description:
@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  bidi:
+    dependency: transitive
+    description:
+      name: bidi
+      sha256: dc00274c7edabae2ab30c676e736ea1eb0b1b7a1b436cb5fe372e431ccb39ab0
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.6"
   bip32:
     dependency: transitive
     description:
@@ -158,10 +166,10 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: "798b80bdf6ac5d64e8bcb82a6ec3d35729328605"
+      resolved-ref: "7aefcf47e95fdddc209b0dc9601988590a55611c"
       url: "https://github.com/b2cm/dart_ssi"
     source: git
-    version: "1.0.5"
+    version: "1.0.6"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -246,10 +254,10 @@ packages:
     dependency: transitive
     description:
       name: fixnum
-      sha256: "04be3e934c52e082558cc9ee21f42f5c1cd7a1262f4c63cd0357c08d5bba81ec"
+      sha256: "25517a4deb0c03aa0f32fd12db525856438902d9c16536311e76cdc57b31d7d1"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.1.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -390,10 +398,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: "8e9d133755c3e84c73288363e6343157c383a0c6c56fc51afcc5d4d7180306d6"
+      sha256: "3686865febd85c57a632d87a0fb1f0a8a9ef602fdb68d909c3e9aa29ec70fd24"
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.0"
+    version: "4.0.13"
   intl:
     dependency: transitive
     description:
@@ -414,18 +422,18 @@ packages:
     dependency: transitive
     description:
       name: json_class
-      sha256: "41385d019473e229f2c9b2687568c123861f0b524e74ac70640a2ea0f44c5fc8"
+      sha256: "0b84873e108461f74048f169cf68b8e3b6300220552f0aee7f8917f7137d28c2"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.5"
+    version: "2.1.5+1"
   json_ld_processor:
     dependency: transitive
     description:
       name: json_ld_processor
-      sha256: dea7961f0a581c3eeb666625fdc6d95c788c0d1aeac42659bf9b56a12a2d7401
+      sha256: "54cfb03b6cd5597024ddae19616330c32b7982d3519191ad91ae6322e653c2ba"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "1.0.1"
   json_path:
     dependency: "direct main"
     description:
@@ -446,10 +454,10 @@ packages:
     dependency: "direct main"
     description:
       name: json_schema2
-      sha256: "5257fd1c566ba2e8e47cd28a6eb9ea872189a6448cb92d9c38a91d8ab9edb6a1"
+      sha256: "8b82ad9bdae38b468608c9e460bddad01bc4b89660014fb1f23d96181d30224b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.3+2"
   json_schema_form:
     dependency: "direct main"
     description:
@@ -479,10 +487,10 @@ packages:
     dependency: transitive
     description:
       name: local_auth_android
-      sha256: ba48fe0e1cae140a0813ce68c2540250d7f573a8ae4d4b6c681b2d2583584953
+      sha256: cfcbc4936e288d61ef85a04feef6b95f49ba496d4fd98364e6abafb462b06a1f
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.17"
+    version: "1.0.18"
   local_auth_ios:
     dependency: transitive
     description:
@@ -519,10 +527,10 @@ packages:
     dependency: transitive
     description:
       name: logging
-      sha256: c0bbfe94d46aedf9b8b3e695cf3bd48c8e14b35e3b2c639e0aa7755d589ba946
+      sha256: "04094f2eb032cbb06c6f6e8d3607edcfcb0455e2bb6cbc010cb01171dcb64e6d"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   matcher:
     dependency: transitive
     description:
@@ -599,10 +607,10 @@ packages:
     dependency: transitive
     description:
       name: path_provider_foundation
-      sha256: "6637955e38a5f1851c023482c25a60c93972ea06c8608e2f25ad0064c46c0939"
+      sha256: "62a68e7e1c6c459f9289859e2fae58290c981ce21d1697faf54910fe1faa4c74"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   path_provider_linux:
     dependency: transitive
     description:
@@ -631,10 +639,10 @@ packages:
     dependency: "direct main"
     description:
       name: pdf
-      sha256: "10659b915e65832b106f6d1d213e09b789cc1f24bf282ee911e49db35b96be4d"
+      sha256: "6cd57e8e6d052bd1078f18e0dc7cd6701fad6288231c1ce99d66ef5034d14e61"
       url: "https://pub.dev"
     source: hosted
-    version: "3.8.4"
+    version: "3.9.0"
   petitparser:
     dependency: transitive
     description:
@@ -679,10 +687,10 @@ packages:
     dependency: "direct main"
     description:
       name: printing
-      sha256: "4df9e22bd4cb2ecea67183e5b328711b10276127b8878d9d5cb60ccd4c24a77c"
+      sha256: fe654363cd0114b50a0815b24e96957c7e9a60eb4e3b7ccfe71cf3f2b7114cb2
       url: "https://pub.dev"
     source: hosted
-    version: "5.9.3"
+    version: "5.10.1"
   process:
     dependency: transitive
     description:
@@ -736,10 +744,10 @@ packages:
     dependency: transitive
     description:
       name: rest_client
-      sha256: "1d6a7f158cb756d0fd5ecc2bc82e3cb9be384705fe86745b8f7b292ded4ed3b0"
+      sha256: edb1cb1a1368521a2044abcaa22dc76dfe04e1fe5dbfd092d8245efe2de0a620
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "2.2.1+2"
   rfc_6901:
     dependency: transitive
     description:
@@ -932,4 +940,4 @@ packages:
     version: "1.0.2"
 sdks:
   dart: ">=2.19.0 <4.0.0"
-  flutter: ">=3.0.0"
+  flutter: ">=3.7.0"

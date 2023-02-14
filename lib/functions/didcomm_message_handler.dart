@@ -1,5 +1,4 @@
-import 'package:dart_ssi/did.dart';
-import 'package:dart_ssi/didcomm.dart';
+age:dart_ssi/didcomm.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
@@ -203,9 +202,19 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
 
   if (otherEndpoint.startsWith('http')) {
     logger.d('send message to $otherEndpoint');
-    post(Uri.parse(otherEndpoint),
+    var res = await post(Uri.parse(otherEndpoint),
         body: encrypted.toString(),
-        headers: {'Content-Type': 'application/json'});
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        });
+
+    // if (res.statusCode == 201) {
+    //   logger.d('getResponse: ${res.body}');
+    //   var body = jsonDecode(res.body);
+    //   var responses = body['responses'] as List;
+    //   handleDidcommMessage(jsonEncode(responses.first));
+    // }
   } else {
     throw Exception('We do not support other transports');
   }
