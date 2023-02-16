@@ -24,7 +24,11 @@ class HistoryEntries extends StatelessWidget {
         var tile = ListTile(
           leading: Text(
               '${h.timestamp.day}.${h.timestamp.month}.${h.timestamp.year}, ${h.timestamp.hour}:${h.timestamp.minute}'),
-          title: Text(h.action == 'issue' ? 'Ausgestellt' : 'Vorgezeigt'),
+          title: Text(h.action == 'issue'
+              ? 'Ausgestellt'
+              : h.action == 'present'
+                  ? 'Vorgezeigt'
+                  : 'Vorzeigen fehlgeschlagen'),
         );
         entries.add(tile);
       }
