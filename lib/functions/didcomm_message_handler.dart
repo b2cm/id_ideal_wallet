@@ -1,16 +1,11 @@
-import 'dart:convert';
-
-import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -196,7 +191,7 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
   var recipientDDO = (await resolveDidDocument(receiverDid))
       .resolveKeyIds()
       .convertAllKeysToJwk();
-  if (message.type != DidcommMessages.emptyMessage.value) {
+  if (message.type != DidcommMessages.emptyMessage) {
     wallet.storeConversation(message, myDid);
   }
   var encrypted = DidcommEncryptedMessage.fromPlaintext(
@@ -215,70 +210,70 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
           'Accept': 'application/json'
         });
 
-    if (res.statusCode == 201 || res.statusCode == 200) {
-      logger.d('getResponse: ${res.body}');
-
-      if (message is Presentation) {
-        String type = '';
-        for (var p in message.verifiablePresentation) {
-          for (var c in p.verifiableCredential) {
-            type +=
-                '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
-          }
-        }
-        type = type.substring(0, type.length - 1);
-
-        showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Credentials erfolgreich vorgezeigt",
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: type,
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
-      } else {
-        var body = jsonDecode(res.body);
-        var responses = body['responses'] as List;
-        handleDidcommMessage(jsonEncode(responses.first));
-      }
-    } else {
-      if (message is Presentation) {
-        for (var pres in message.verifiablePresentation) {
-          for (var cred in pres.verifiableCredential) {
-            wallet.storeExchangeHistoryEntry(
-                getHolderDidFromCredential(cred.toJson()),
-                DateTime.now(),
-                'present failed',
-                message.to!.first);
-          }
-        }
-        showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return const ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Credentials konnten nicht vorgezeigt werden",
-                  success: false,
-                  amount: CurrencyDisplay(
-                      amount: '', symbol: '', mainFontSize: 35, centered: true),
-                ),
-              );
-            });
-      }
-    }
+    // if (res.statusCode == 201 || res.statusCode == 200) {
+    //   logger.d('getResponse: ${res.body}');
+    //
+    //   if (message is Presentation) {
+    //     String type = '';
+    //     for (var p in message.verifiablePresentation) {
+    //       for (var c in p.verifiableCredential) {
+    //         type +=
+    //             '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+    //       }
+    //     }
+    //     type = type.substring(0, type.length - 1);
+    //
+    //     showModalBottomSheet(
+    //         shape: RoundedRectangleBorder(
+    //           borderRadius: BorderRadius.circular(10.0),
+    //         ),
+    //         context: navigatorKey.currentContext!,
+    //         builder: (context) {
+    //           return ModalDismissWrapper(
+    //             child: PaymentFinished(
+    //               headline: "Credentials erfolgreich vorgezeigt",
+    //               success: true,
+    //               amount: CurrencyDisplay(
+    //                   amount: type,
+    //                   symbol: '',
+    //                   mainFontSize: 35,
+    //                   centered: true),
+    //             ),
+    //           );
+    //         });
+    //   } else {
+    //     var body = jsonDecode(res.body);
+    //     var responses = body['responses'] as List;
+    //     handleDidcommMessage(jsonEncode(responses.first));
+    //   }
+    // } else {
+    //   if (message is Presentation) {
+    //     for (var pres in message.verifiablePresentation) {
+    //       for (var cred in pres.verifiableCredential) {
+    //         wallet.storeExchangeHistoryEntry(
+    //             getHolderDidFromCredential(cred.toJson()),
+    //             DateTime.now(),
+    //             'present failed',
+    //             message.to!.first);
+    //       }
+    //     }
+    //     showModalBottomSheet(
+    //         shape: RoundedRectangleBorder(
+    //           borderRadius: BorderRadius.circular(10.0),
+    //         ),
+    //         context: navigatorKey.currentContext!,
+    //         builder: (context) {
+    //           return const ModalDismissWrapper(
+    //             child: PaymentFinished(
+    //               headline: "Credentials konnten nicht vorgezeigt werden",
+    //               success: false,
+    //               amount: CurrencyDisplay(
+    //                   amount: '', symbol: '', mainFontSize: 35, centered: true),
+    //             ),
+    //           );
+    //         });
+    //   }
+    // }
   } else {
     throw Exception('We do not support other transports');
   }

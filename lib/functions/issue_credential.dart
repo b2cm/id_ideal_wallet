@@ -230,7 +230,7 @@ Future<bool> handleIssueCredential(
   }
 
   var previosMessage = DidcommPlaintextMessage.fromJson(entry.lastMessage);
-  if (previosMessage.type == DidcommMessages.requestCredential.value) {
+  if (previosMessage.type == DidcommMessages.requestCredential) {
     for (int i = 0; i < message.credentials!.length; i++) {
       var req = RequestCredential.fromJson(previosMessage.toJson());
       var cred = message.credentials![i];
