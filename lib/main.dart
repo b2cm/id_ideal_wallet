@@ -187,7 +187,8 @@ class MainPage extends StatelessWidget {
                             MaterialPageRoute(
                                 builder: (context) => const WebViewWindow(
                                     title: 'Ausstell-Service',
-                                    initialUrl: 'http://localhost:8081'))),
+                                    initialUrl:
+                                        'http://167.235.195.132:8081'))),
                         icon: const AssetImage("assets/plane-regular.png"),
                         label: "Credential ausstellen"),
                     HubApp(
@@ -195,13 +196,18 @@ class MainPage extends StatelessWidget {
                             MaterialPageRoute(
                                 builder: (context) => const WebViewWindow(
                                     title: 'Ticket-Shop',
-                                    initialUrl: 'https://localhost:8082'))),
+                                    initialUrl:
+                                        'https://167.235.195.132:8082'))),
                         icon: const AssetImage("assets/ticket-regular.png"),
                         label: "Tickets"),
                     HubApp(
-                        onTap: () => logger.d("tapped hub app"),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const WebViewWindow(
+                                    title: 'Lokaler Test',
+                                    initialUrl: 'http://localhost:8081'))),
                         icon: const AssetImage("assets/print-regular.png"),
-                        label: "Drucken"),
+                        label: "Lokal"),
                   ]),
             ],
           ),
