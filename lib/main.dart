@@ -205,7 +205,7 @@ class MainPage extends StatelessWidget {
                             MaterialPageRoute(
                                 builder: (context) => const WebViewWindow(
                                     title: 'Lokaler Test',
-                                    initialUrl: 'http://localhost:8081'))),
+                                    initialUrl: 'https://localhost:8082'))),
                         icon: const AssetImage("assets/print-regular.png"),
                         label: "Lokal"),
                   ]),

@@ -168,6 +168,7 @@ _sendRequestCredential(
       detail: detail,
       replyUrl: '$relay/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
+      returnRoute: ReturnRouteValue.thread,
       from: myDid,
       to: [offer.from!]);
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
@@ -203,6 +204,7 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
       from: myDid,
       to: [offer.from!],
       replyUrl: '$relay/buffer/$myDid',
+      returnRoute: ReturnRouteValue.thread,
       detail: detail);
 
   //Sign attachment with credentialDid
