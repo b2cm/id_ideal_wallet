@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
-    as local_handler;
+    as local;
 
 import '../functions/util.dart' as my_util;
 
@@ -23,6 +23,7 @@ class WalletProvider extends ChangeNotifier {
   SortingType sortingType = SortingType.dateDown;
   List<ExchangeHistoryEntry> lastPayments = [];
   List<VerifiableCredential> credentials = [];
+  List<String> relayedDids = [];
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -45,7 +46,6 @@ class WalletProvider extends ChangeNotifier {
         // var account = await createAccount();
         // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
         // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
-
       }
 
       login = wallet.getConfigEntry('ln_login');
@@ -60,6 +60,12 @@ class WalletProvider extends ChangeNotifier {
       _updateLastThreePayments();
 
       _authRunning = false;
+
+      var relayedDidsEntry = wallet.getConfigEntry('relayedDids');
+      if (relayedDidsEntry != null && relayedDidsEntry.isNotEmpty) {
+        relayedDids = jsonDecode(relayedDidsEntry).cast<String>();
+      }
+
       notifyListeners();
     }
   }
@@ -250,15 +256,25 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getExchangeHistoryEntriesForCredential(credDid) ?? [];
   }
 
+  void addRelayedDid(String did) async {
+    relayedDids.add(did);
+    await wallet.storeConfigEntry('relayedDids', jsonEncode(relayedDids));
+  }
+
+  void removeRelayedDid(String did) async {
+    relayedDids.remove(did);
+    await wallet.storeConfigEntry('relayedDids', jsonEncode(relayedDids));
+  }
+
   void checkRelay(Timer t) async {
     if (isOpen()) {
-      var connectionDids = allConnections();
-      for (var did in connectionDids.keys.toList()) {
+      // var connectionDids = allConnections();
+      for (var did in relayedDids) {
         var serverAnswer = await get(Uri.parse('$relay/get/$did'));
         if (serverAnswer.statusCode == 200) {
           List messages = jsonDecode(serverAnswer.body);
           for (var m in messages) {
-            local_handler.handleDidcommMessage(jsonEncode(m));
+            local.handleDidcommMessage(jsonEncode(m));
           }
         }
       }
