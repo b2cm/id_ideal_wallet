@@ -36,6 +36,8 @@ Future<void> handleOfferOidc(String offerUri) async {
       throw Exception('Bad Status code: ${issuerMetaReq.statusCode}');
     }
 
+    logger.d(issuerMetaReq.body);
+
     var metaData = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
 
     var authMetaReq = await get(
@@ -121,7 +123,12 @@ Future<void> handleOfferOidc(String offerUri) async {
       if (credentialResponse.statusCode == 200) {
         var credential = jsonDecode(credentialResponse.body)['credential'];
 
-        var verified = await verifyCredential(credential);
+        logger.d(jsonDecode(credential));
+
+        var verified = await verifyCredential(credential,
+            loadDocumentFunction: loadDocumentFast);
+
+        logger.d(verified);
         if (verified) {
           var credDid = getHolderDidFromCredential(credential);
           var storageCred = wallet.getCredential(credDid);
@@ -151,6 +158,8 @@ Future<void> handleOfferOidc(String offerUri) async {
                 );
               });
         }
+      } else {
+        logger.d(credentialResponse.statusCode);
       }
     } else {
       logger.d(tokenRes.statusCode);
