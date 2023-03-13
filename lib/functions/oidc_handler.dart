@@ -84,6 +84,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           listen: false);
 
       var credentialDid = await wallet.newCredentialDid();
+      logger.d(credentialDid);
 
       var header = {
         'typ': 'openid4vci-proof+jwt',
@@ -103,7 +104,8 @@ Future<void> handleOfferOidc(String offerUri) async {
 
       var credentialRequest = {
         'format': 'ldp_vc',
-        'types': offer.credentials.first['types'],
+        'types':
+            offer.credentials.first['type'] ?? offer.credentials.first['types'],
         'proof': {'proof_type': 'jwt', 'jwt': jwt}
       };
 
@@ -113,7 +115,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           await post(Uri.parse(metaData.credentialEndpoint),
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'BEARER ${tokenResponse.accessToken}'
+                    'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
                   body: jsonEncode(credentialRequest))
               .timeout(const Duration(seconds: 20), onTimeout: () {
@@ -123,7 +125,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       if (credentialResponse.statusCode == 200) {
         var credential = jsonDecode(credentialResponse.body)['credential'];
 
-        logger.d(jsonDecode(credential));
+        logger.d(credential);
 
         var verified = await verifyCredential(credential,
             loadDocumentFunction: loadDocumentFast);
@@ -131,13 +133,14 @@ Future<void> handleOfferOidc(String offerUri) async {
         logger.d(verified);
         if (verified) {
           var credDid = getHolderDidFromCredential(credential);
-          var storageCred = wallet.getCredential(credDid);
+          logger.d(credDid);
+          var storageCred = wallet.getCredential(credDid.split('#').first);
           if (storageCred == null) {
             throw Exception(
                 'No hd path for credential found. Sure we control it?');
           }
 
-          wallet.storeCredential(jsonEncode(credentialDid), storageCred.hdPath);
+          wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
 
           showModalBottomSheet(
               shape: RoundedRectangleBorder(
@@ -150,7 +153,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     headline: "Credential empfangen",
                     success: true,
                     amount: CurrencyDisplay(
-                        amount: credential['type'],
+                        amount: credential['type'].first,
                         symbol: '',
                         mainFontSize: 35,
                         centered: true),
@@ -160,6 +163,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         }
       } else {
         logger.d(credentialResponse.statusCode);
+        logger.d(credentialResponse.body);
       }
     } else {
       logger.d(tokenRes.statusCode);

@@ -235,7 +235,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       logger.d(res.statusCode);
       logger.d(res.body);
       if (res.statusCode == 200 || res.statusCode == 201) {
-        for (var cred in casted.verifiableCredential) {
+        for (var cred in casted.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(
               getHolderDidFromCredential(cred.toJson()),
               DateTime.now(),
@@ -244,7 +244,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
 
         String type = '';
-        for (var c in casted.verifiableCredential) {
+        for (var c in casted.verifiableCredential!) {
           type +=
               '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
         }
@@ -270,7 +270,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
         Navigator.of(context).pop();
       } else {
-        for (var cred in casted.verifiableCredential) {
+        for (var cred in casted.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(
               getHolderDidFromCredential(cred.toJson()),
               DateTime.now(),
@@ -308,7 +308,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       sendMessage(widget.myDid, widget.otherEndpoint, wallet,
           presentationMessage, widget.receiverDid);
       for (var pres in presentationMessage.verifiablePresentation) {
-        for (var cred in pres.verifiableCredential) {
+        for (var cred in pres.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(
               getHolderDidFromCredential(cred.toJson()),
               DateTime.now(),
