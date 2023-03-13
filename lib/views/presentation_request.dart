@@ -300,7 +300,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           widget.message!.presentationDefinition.first.challenge);
       var presentationMessage = Presentation(
           replyUrl: '$relay/buffer/${widget.myDid}',
-          returnRoute: ReturnRouteValue.thread,to: [widget.receiverDid],
+          returnRoute: ReturnRouteValue.thread,
+          to: [widget.receiverDid],
           from: widget.myDid,
           verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
           threadId: widget.message!.threadId ?? widget.message!.id,
