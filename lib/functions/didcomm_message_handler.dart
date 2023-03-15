@@ -272,7 +272,9 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         Map<String, dynamic> body = jsonDecode(res.body);
         if (body.containsKey('responses')) {
           var responses = body['responses'] as List;
-          handleDidcommMessage(jsonEncode(responses.first));
+          if (responses.isNotEmpty) {
+            handleDidcommMessage(jsonEncode(responses.first));
+          }
         } else {
           wallet.addRelayedDid(myDid);
           //TODO: appropriate Reaction

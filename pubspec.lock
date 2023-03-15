@@ -181,8 +181,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: oidc
-      resolved-ref: "6822e8e20ccaadce3a1ec67be88f84de949ab5f8"
+      ref: didcomm
+      resolved-ref: dc67f83a0cda0be7907270b252ffbff0bc9b2ac4
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "2.0.1"

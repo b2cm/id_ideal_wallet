@@ -99,8 +99,12 @@ Future<void> handleOfferOidc(String offerUri) async {
         'nonce': tokenResponse.cNonce
       };
 
-      var jwt = await signStringOrJson(wallet.wallet, credentialDid, payload,
-          jwsHeader: header, detached: false);
+      var jwt = await signStringOrJson(
+          wallet: wallet.wallet,
+          didToSignWith: credentialDid,
+          toSign: payload,
+          jwsHeader: header,
+          detached: false);
 
       var credentialRequest = {
         'format': 'ldp_vc',
@@ -167,6 +171,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       }
     } else {
       logger.d(tokenRes.statusCode);
+      logger.d(tokenRes.body);
     }
   }
 }

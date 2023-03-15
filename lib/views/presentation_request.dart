@@ -223,9 +223,11 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           submissionRequirement: result.submissionRequirement));
     }
     if (widget.isOidc) {
-      var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!);
+      var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
+          loadDocumentFunction: loadDocumentFast);
       var casted = VerifiablePresentation.fromJson(vp);
-      logger.d(await verifyPresentation(vp, widget.nonce!));
+      logger.d(await verifyPresentation(vp, widget.nonce!,
+          loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
       var res = await post(Uri.parse(widget.otherEndpoint),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -317,6 +319,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               widget.receiverDid);
         }
       }
+      Navigator.of(context).pop();
     }
     // Navigator.of(context).pop();
   }
