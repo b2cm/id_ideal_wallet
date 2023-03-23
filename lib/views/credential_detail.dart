@@ -98,7 +98,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
           subtitle: const Text('Ablaufdatum'),
           title: Text(
             '${expDate.day.toString().padLeft(2, '0')}. ${expDate.month.toString().padLeft(2, '0')}. ${expDate.year}',
-            style: expDate.isAfter(DateTime.now())
+            style: expDate.isBefore(DateTime.now())
                 ? const TextStyle(color: Colors.red)
                 : null,
           ));

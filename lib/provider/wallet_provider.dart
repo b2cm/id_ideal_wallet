@@ -120,6 +120,8 @@ class WalletProvider extends ChangeNotifier {
         } else {
           revocationState[id] = RevocationState.unknown.index;
         }
+      } on Exception catch (_) {
+        revocationState[id] = RevocationState.unknown.index;
       }
       return;
     }
