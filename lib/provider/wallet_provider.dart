@@ -24,6 +24,8 @@ class WalletProvider extends ChangeNotifier {
   List<ExchangeHistoryEntry> lastPayments = [];
   List<VerifiableCredential> credentials = [];
   List<String> relayedDids = [];
+  DateTime? lastCheckRevocation;
+  Map<String, int> revocationState = {};
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -40,6 +42,17 @@ class WalletProvider extends ChangeNotifier {
       }
 
       _buildCredentialList();
+
+      var lastCheck = _wallet.getConfigEntry('lastValidityCheckTime');
+      if (lastCheck == null) {
+        checkValidity();
+      } else {
+        lastCheckRevocation = DateTime.parse(lastCheck);
+        if (DateTime.now().difference(lastCheckRevocation!) >=
+            const Duration(days: 1)) {
+          checkValidity();
+        }
+      }
 
       var login = wallet.getConfigEntry('ln_login');
       if (login == null) {
@@ -68,6 +81,64 @@ class WalletProvider extends ChangeNotifier {
 
       notifyListeners();
     }
+  }
+
+  Future<void> checkValiditySingle(VerifiableCredential vc,
+      [bool notify = false]) async {
+    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    logger.d(vc);
+
+    // check states that won't change to speed up
+    var lastState = revocationState[id];
+    if (lastState == RevocationState.revoked.index ||
+        lastState == RevocationState.expired.index) {
+      return;
+    }
+
+    // check expiration date
+    if (vc.expirationDate != null &&
+        vc.expirationDate!.isBefore(DateTime.now())) {
+      revocationState[id] = RevocationState.expired.index;
+      return;
+    }
+
+    // check status
+    if (vc.status != null) {
+      logger.d(vc.status);
+      try {
+        var revoked = await checkForRevocation(vc);
+        if (!revoked) {
+          revocationState[id] = RevocationState.valid.index;
+        }
+      } on RevokedException catch (e) {
+        if (e.code == 'revErr') {
+          revocationState[id] = RevocationState.unknown.index;
+        } else if (e.code == 'rev') {
+          revocationState[id] = RevocationState.revoked.index;
+        } else if (e.code == 'sus') {
+          revocationState[id] = RevocationState.suspended.index;
+        } else {
+          revocationState[id] = RevocationState.unknown.index;
+        }
+      }
+      return;
+    }
+
+    revocationState[id] = RevocationState.valid.index;
+
+    if (notify) notifyListeners();
+  }
+
+  void checkValidity() async {
+    lastCheckRevocation = DateTime.now();
+    await _wallet.storeConfigEntry(
+        'lastValidityCheckTime', lastCheckRevocation!.toIso8601String());
+
+    for (var vc in credentials) {
+      await checkValiditySingle(vc);
+    }
+
+    notifyListeners();
   }
 
   void simulatePay(String amount) {
@@ -220,6 +291,7 @@ class WalletProvider extends ChangeNotifier {
     await _wallet.storeCredential(vc, '', hdPath,
         keyType: KeyType.ed25519, credDid: newDid);
     _buildCredentialList();
+    await checkValiditySingle(VerifiableCredential.fromJson(vc));
     notifyListeners();
   }
 
@@ -285,3 +357,5 @@ class WalletProvider extends ChangeNotifier {
 }
 
 enum SortingType { dateUp, dateDown, typeUp, typeDown }
+
+enum RevocationState { valid, expired, suspended, revoked, unknown }

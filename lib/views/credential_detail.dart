@@ -34,8 +34,8 @@ class HistoryEntries extends StatelessWidget {
       }
       return ExpansionTile(
         title: const Text('Historie'),
-        children: entries,
         childrenPadding: const EdgeInsets.all(10),
+        children: entries,
       );
     });
   }
@@ -48,10 +48,10 @@ class CredentialDetailView extends StatefulWidget {
       : super(key: key);
 
   @override
-  _CredentialDetailState createState() => _CredentialDetailState();
+  CredentialDetailState createState() => CredentialDetailState();
 }
 
-class _CredentialDetailState extends State<CredentialDetailView> {
+class CredentialDetailState extends State<CredentialDetailView> {
   void _deleteCredential() {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     showDialog(
@@ -84,12 +84,61 @@ class _CredentialDetailState extends State<CredentialDetailView> {
 
   List<Widget> _buildOtherData() {
     var otherData = <Widget>[];
+
     var issDateValue = widget.credential.issuanceDate;
     var issDate = ListTile(
         subtitle: const Text('Ausstelldatum'),
         title: Text(
             '${issDateValue.day.toString().padLeft(2, '0')}. ${issDateValue.month.toString().padLeft(2, '0')}. ${issDateValue.year}'));
     otherData.add(issDate);
+
+    var expDate = widget.credential.expirationDate;
+    if (expDate != null) {
+      var expDateTile = ListTile(
+          subtitle: const Text('Ablaufdatum'),
+          title: Text(
+            '${expDate.day.toString().padLeft(2, '0')}. ${expDate.month.toString().padLeft(2, '0')}. ${expDate.year}',
+            style: expDate.isAfter(DateTime.now())
+                ? const TextStyle(color: Colors.red)
+                : null,
+          ));
+      otherData.add(expDateTile);
+    }
+
+    var id = widget.credential.id ??
+        getHolderDidFromCredential(widget.credential.toJson());
+    var statusTile =
+        Consumer<WalletProvider>(builder: (context, wallet, child) {
+      var status = wallet.revocationState[id];
+      String statusText = '';
+      switch (status) {
+        case 0:
+          statusText = 'Gültig';
+          break;
+        case 1:
+          statusText = 'Abgelaufen';
+          break;
+        case 2:
+          statusText = 'inaktiv';
+          break;
+        case 3:
+          statusText = 'zurückgezogen';
+          break;
+        default:
+          statusText = 'Unbekannt';
+          break;
+      }
+      return ListTile(
+        subtitle: const Text('Status'),
+        title: Text(statusText),
+        trailing: InkWell(
+          child: const Icon(Icons.refresh),
+          onTap: () => wallet.checkValidity(),
+        ),
+      );
+    });
+    otherData.add(statusTile);
+
     return otherData;
   }
 
@@ -139,7 +188,6 @@ class _CredentialDetailState extends State<CredentialDetailView> {
         var receiptVc = VerifiableCredential.fromJson(receipt.w3cCredential);
         return ExpansionTile(
           title: const Text('Rechnung'),
-          children: buildCredSubject(receiptVc.credentialSubject),
           trailing: InkWell(
             child: const Icon(Icons.picture_as_pdf),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
@@ -150,6 +198,7 @@ class _CredentialDetailState extends State<CredentialDetailView> {
           ),
           expandedAlignment: Alignment.centerLeft,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: buildCredSubject(receiptVc.credentialSubject),
         );
       }
     }
@@ -161,21 +210,21 @@ class _CredentialDetailState extends State<CredentialDetailView> {
   Widget _buildBody() {
     var personalData = ExpansionTile(
       title: const Text('Persönliche Daten'),
-      children: buildCredSubject(widget.credential.credentialSubject),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: buildCredSubject(widget.credential.credentialSubject),
     );
     var otherData = ExpansionTile(
       title: const Text('Sonstige Daten'),
-      children: _buildOtherData(),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: _buildOtherData(),
     );
     var issuerData = ExpansionTile(
       title: const Text('Aussteller'),
-      children: _buildIssuerData(),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: _buildIssuerData(),
     );
 
     return SingleChildScrollView(
@@ -198,7 +247,6 @@ class _CredentialDetailState extends State<CredentialDetailView> {
           .firstWhere((element) => element != 'VerifiableCredential'),
       scanOnTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
-      child: _buildBody(),
       footerButtons: [
         TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
@@ -206,6 +254,7 @@ class _CredentialDetailState extends State<CredentialDetailView> {
             child: const Text('zum Vorzeigen anbieten')),
         TextButton(onPressed: _deleteCredential, child: const Text('Löschen'))
       ],
+      child: _buildBody(),
     );
   }
 }
@@ -230,8 +279,8 @@ Card buildCredentialCard(VerifiableCredential credential) {
     child: Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
-        children: content,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: content,
       ),
     ),
   );

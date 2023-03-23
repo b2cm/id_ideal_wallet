@@ -185,7 +185,9 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
       firstDid = credDid;
     }
     var offeredCred = offer.detail![i].credential;
+    logger.d('Das wurde angeboten: ${offeredCred.toJson()}');
     var credSubject = offeredCred.credentialSubject;
+    logger.d(offeredCred.status);
     credSubject['id'] = credDid;
     var newCred = VerifiableCredential(
         id: credDid,
@@ -195,7 +197,9 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
         credentialSubject: credSubject,
         issuanceDate: offeredCred.issuanceDate,
         credentialSchema: offeredCred.credentialSchema,
+        status: offeredCred.status,
         expirationDate: offeredCred.expirationDate);
+    logger.d('Das geht zurück : ${newCred.toJson()}');
     detail.add(LdProofVcDetail(
         credential: newCred, options: offer.detail!.first.options));
   }
