@@ -180,12 +180,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "."
-      ref: didcomm
-      resolved-ref: cda61cc5f18c416bfabf05e9feb4ef24b4f26436
-      url: "https://github.com/b2cm/dart_ssi"
-    source: git
-    version: "2.0.1"
+      name: dart_ssi
+      sha256: e78c0a9594d490f7ed227d43882406e254175145b087769c02f5bffa9d5ddc9f
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   device_info_plus:
     dependency: "direct main"
     description:

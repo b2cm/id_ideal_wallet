@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
