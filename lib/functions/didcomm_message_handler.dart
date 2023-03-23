@@ -235,9 +235,11 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
       if (message is Presentation) {
         String type = '';
         for (var p in message.verifiablePresentation) {
-          for (var c in p.verifiableCredential) {
-            type +=
-                '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+          if (p.verifiableCredential != null) {
+            for (var c in p.verifiableCredential!) {
+              type +=
+                  '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+            }
           }
         }
         type = type.substring(0, type.length - 1);
@@ -270,7 +272,9 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         Map<String, dynamic> body = jsonDecode(res.body);
         if (body.containsKey('responses')) {
           var responses = body['responses'] as List;
-          handleDidcommMessage(jsonEncode(responses.first));
+          if (responses.isNotEmpty) {
+            handleDidcommMessage(jsonEncode(responses.first));
+          }
         } else {
           wallet.addRelayedDid(myDid);
           //TODO: appropriate Reaction
@@ -287,12 +291,14 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
     } else {
       if (message is Presentation) {
         for (var pres in message.verifiablePresentation) {
-          for (var cred in pres.verifiableCredential) {
-            wallet.storeExchangeHistoryEntry(
-                getHolderDidFromCredential(cred.toJson()),
-                DateTime.now(),
-                'present failed',
-                message.to!.first);
+          if (pres.verifiableCredential != null) {
+            for (var cred in pres.verifiableCredential!) {
+              wallet.storeExchangeHistoryEntry(
+                  getHolderDidFromCredential(cred.toJson()),
+                  DateTime.now(),
+                  'present failed',
+                  message.to!.first);
+            }
           }
         }
         showModalBottomSheet(

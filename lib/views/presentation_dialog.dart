@@ -7,8 +7,10 @@ Widget buildPresentationDialog(
     List<VerifiablePresentation> presentations, BuildContext context) {
   List<Widget> creds = [];
   for (var vp in presentations) {
-    for (var vc in vp.verifiableCredential) {
-      creds.add(buildCredentialCard(vc));
+    if (vp.verifiableCredential != null) {
+      for (var vc in vp.verifiableCredential!) {
+        creds.add(buildCredentialCard(vc));
+      }
     }
   }
   return AlertDialog(

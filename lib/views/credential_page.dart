@@ -206,25 +206,43 @@ class CredentialCardState extends State<CredentialCard> {
     }
   }
 
+  Widget buildCard() {
+    return IdCard(
+        subjectImage: image?.image,
+        cardTitle: widget.credential.type
+            .firstWhere((element) => element != 'VerifiableCredential'),
+        subjectName:
+            '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+        bottomLeftText: IssuerInfoText(
+            issuer: widget.credential.issuer,
+            selfIssued: widget.credential.isSelfIssued()),
+        bottomRightText: IssuerInfoIcon(
+          issuer: widget.credential.issuer,
+          selfIssued: widget.credential.isSelfIssued(),
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) =>
-              CredentialDetailView(credential: widget.credential))),
-      child: IdCard(
-          subjectImage: image?.image,
-          cardTitle: widget.credential.type
-              .firstWhere((element) => element != 'VerifiableCredential'),
-          subjectName:
-              '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-          bottomLeftText: IssuerInfoText(
-              issuer: widget.credential.issuer,
-              selfIssued: widget.credential.isSelfIssued()),
-          bottomRightText: IssuerInfoIcon(
-            issuer: widget.credential.issuer,
-            selfIssued: widget.credential.isSelfIssued(),
-          )),
-    );
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) =>
+                CredentialDetailView(credential: widget.credential))),
+        child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+          var id = widget.credential.id ??
+              getHolderDidFromCredential(widget.credential.toJson());
+          var revState = wallet.revocationState[id];
+          if (revState == RevocationState.expired.index ||
+              revState == RevocationState.revoked.index ||
+              revState == RevocationState.suspended.index) {
+            return Container(
+              foregroundDecoration: const BoxDecoration(
+                  color: Color.fromARGB(125, 255, 255, 255)),
+              child: buildCard(),
+            );
+          } else {
+            return buildCard();
+          }
+        }));
   }
 }

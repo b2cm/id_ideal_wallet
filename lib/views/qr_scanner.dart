@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -21,6 +22,10 @@ class QrScanner extends StatelessWidget {
                 if (code.startsWith('lnbc') || code.startsWith('LNBC')) {
                   logger.d('LN-Invoice found');
                   //payInvoiceInteraction(code);
+                } else if (code.startsWith('openid-credential-offer')) {
+                  handleOfferOidc(code);
+                } else if (code.startsWith('openid-presentation-request')) {
+                  handlePresentationRequestOidc(code);
                 } else {
                   handleDidcommMessage(code);
                 }
