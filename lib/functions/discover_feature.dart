@@ -20,10 +20,10 @@ Future<bool> handleDiscoverFeatureQuery(
     Iterable<String> result = [];
     //Note: we only accept wildcards at the end; if there is nothing, we look for exact match
     if (q.featureType == FeatureType.protocol) {
-      result = DidcommMessages.requestCredential.allValues.where((element) =>
-          q.match.endsWith('*')
-              ? element.startsWith(q.match.substring(1, q.match.length))
-              : element == q.match);
+      var d = DidcommMessages();
+      result = d.allValues.where((element) => q.match.endsWith('*')
+          ? element.startsWith(q.match.substring(1, q.match.length))
+          : element == q.match);
     } else if (q.featureType == FeatureType.attachmentFormat) {
       result = _supportedAttachments.where((element) => q.match.endsWith('*')
           ? element.startsWith(q.match.substring(1, q.match.length))

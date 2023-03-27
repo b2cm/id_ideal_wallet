@@ -132,6 +132,7 @@ class FixedSelfIssue extends StatelessWidget {
     var credential = VerifiableCredential(
         context: [
           'https://www.w3.org/2018/credentials/v1',
+          ed25519ContextIri,
           'https://schema.org'
         ],
         type: [
@@ -139,10 +140,13 @@ class FixedSelfIssue extends StatelessWidget {
           type
         ],
         issuer: credentialDid,
+        id: credentialDid,
         credentialSubject: result,
         issuanceDate: DateTime.now());
 
     var signed = await signCredential(wallet.wallet, credential.toJson());
+
+    logger.d(signed);
 
     var storageCred = wallet.getCredential(credentialDid);
 

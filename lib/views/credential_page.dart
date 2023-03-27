@@ -168,41 +168,81 @@ class CredentialCardState extends State<CredentialCard> {
 
   Future<void> searchImage() async {
     try {
-      final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
-        'image': (match) =>
-            match.value is String && match.value.startsWith('data:image')
+
+      bool showImg = false;
+      String imgB64 = '';
+
+      widget.credential.credentialSubject.forEach((key, value) {
+        // todo change key to picture
+        if(key=='data' && value is String && value.startsWith('data:image')){
+          showImg=true;
+          imgB64 = value;
+        }
       });
 
-      var result = path.read(widget.credential.toJson());
-      var dataString = result.first.value as String;
-      var imageData = dataString.split(',').last;
+      if (showImg) {
 
-      image = Image.memory(base64Decode(imageData));
-      setState(() {});
+        image = Image.memory(base64Decode(imgB64.split(',')[1]));
+        setState(() {});
+
+      } else {
+        final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
+          'image': (match) =>
+          match.value is String && match.value.startsWith('data:image')
+        });
+
+        var result = path.read(widget.credential.toJson());
+        var dataString = result.first.value as String;
+        var imageData = dataString
+            .split(',')
+            .last;
+
+        image = Image.memory(base64Decode(imageData));
+        setState(() {});
+      }
+
     } catch (e) {
       logger.d('cant decode image: $e');
     }
   }
 
+  Widget buildCard() {
+    return IdCard(
+        subjectImage: image?.image,
+        cardTitle: widget.credential.type
+            .firstWhere((element) => element != 'VerifiableCredential'),
+        subjectName:
+            '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+        bottomLeftText: IssuerInfoText(
+            issuer: widget.credential.issuer,
+            selfIssued: widget.credential.isSelfIssued()),
+        bottomRightText: IssuerInfoIcon(
+          issuer: widget.credential.issuer,
+          selfIssued: widget.credential.isSelfIssued(),
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) =>
-              CredentialDetailView(credential: widget.credential))),
-      child: IdCard(
-          subjectImage: image?.image,
-          cardTitle: widget.credential.type
-              .firstWhere((element) => element != 'VerifiableCredential'),
-          subjectName:
-              '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-          bottomLeftText: IssuerInfoText(
-              issuer: widget.credential.issuer,
-              selfIssued: widget.credential.isSelfIssued()),
-          bottomRightText: IssuerInfoIcon(
-            issuer: widget.credential.issuer,
-            selfIssued: widget.credential.isSelfIssued(),
-          )),
-    );
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) =>
+                CredentialDetailView(credential: widget.credential))),
+        child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+          var id = widget.credential.id ??
+              getHolderDidFromCredential(widget.credential.toJson());
+          var revState = wallet.revocationState[id];
+          if (revState == RevocationState.expired.index ||
+              revState == RevocationState.revoked.index ||
+              revState == RevocationState.suspended.index) {
+            return Container(
+              foregroundDecoration: const BoxDecoration(
+                  color: Color.fromARGB(125, 255, 255, 255)),
+              child: buildCard(),
+            );
+          } else {
+            return buildCard();
+          }
+        }));
   }
 }

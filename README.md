@@ -7,12 +7,10 @@ This app is in an early stage of development and for now only recommended to use
 
 This branch supports http as transport protocol for didcomm messages. 
 
-**This branch include a new Design. It depends on [id_wallet_design repo](http://suc-1.hs-mittweida.de/erik/id_wallet_design).
-Therefore clone this repo next to the wallet project, if you would like to build it.**
 
 **Important Notes**
-- because the wallet store potential sensitive data the smartphone you run it on must offer an enrolled authentication mechanism (password, pin pattern fingerprint, pace)
-- the implemented transport layer for didcomm messages here is http. Because cant be reached by http requests directly a relay-service is needed. I've provided a [simple one on Github](https://github.com/b2cm/simple_didcomm_relay).
+- because the wallet store potential sensitive data the smartphone you run it on must offer an enrolled authentication mechanism (password, pin, pattern, fingerprint, face)
+- the implemented transport layer for didcomm messages here is http. Because a mobile phone can't be reached by http requests directly a relay-service is needed. I've provided a [simple one on Github](https://github.com/b2cm/simple_didcomm_relay).
 - the wallet expects the relay service to run at `http://localhost:8888`
 - to access the relay running on your PC from the mobile device the wallet is running on, use `adb reverse` command:
   ```

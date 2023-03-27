@@ -4,7 +4,6 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -50,43 +49,7 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
-  void onTopUpSats(int amount, String memo) async {
-    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-        listen: false);
-    var invoiceMap = await createInvoice(amount, wallet.lnAuthToken!, memo);
-    var index = invoiceMap['add_index'];
-    wallet.newPayment(index, memo, amount);
-    showModalBottomSheet<dynamic>(
-        isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        context: navigatorKey.currentContext!,
-        builder: (context) {
-          return Consumer<WalletProvider>(builder: (context, wallet, child) {
-            if (wallet.paymentTimer != null) {
-              return InvoiceDisplay(
-                invoice: invoiceMap['payment_request'] ?? '',
-                amount: CurrencyDisplay(
-                    amount: amount.toString(),
-                    symbol: '€',
-                    mainFontSize: 35,
-                    centered: true),
-                memo: memo,
-              );
-            } else {
-              Future.delayed(
-                  const Duration(seconds: 1),
-                  () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const MainPage()),
-                      (route) => false));
-              return const SizedBox(
-                height: 10,
-              );
-            }
-          });
-        });
-  }
+  void onTopUpSats(int amount, String memo) async {}
 
   void onTopUpFiat(int amount) {}
 
@@ -113,7 +76,8 @@ class MainPage extends StatelessWidget {
                                           builder: (context) =>
                                               const QrScanner())),
                                   child: TopUp(
-                                      onTopUpSats: onTopUpSats,
+                                      // onTopUpSats: onTopUpSats,
+                                      onTopUpSats: (x, y) {},
                                       onTopUpFiat: onTopUpFiat)))),
                       sendOnTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
@@ -223,7 +187,8 @@ class MainPage extends StatelessWidget {
                             MaterialPageRoute(
                                 builder: (context) => const WebViewWindow(
                                     title: 'Ausstell-Service',
-                                    initialUrl: 'http://localhost:8081'))),
+                                    initialUrl:
+                                        'http://167.235.195.132:8081'))),
                         icon: const AssetImage("assets/plane-regular.png"),
                         label: "Credential ausstellen"),
                     HubApp(
@@ -236,9 +201,13 @@ class MainPage extends StatelessWidget {
                         icon: const AssetImage("assets/ticket-regular.png"),
                         label: "Tickets"),
                     HubApp(
-                        onTap: () => logger.d("tapped hub app"),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const WebViewWindow(
+                                    title: 'Lokaler Test',
+                                    initialUrl: 'https://localhost:8082'))),
                         icon: const AssetImage("assets/print-regular.png"),
-                        label: "Drucken"),
+                        label: "Lokal"),
                   ]),
             ],
           ),

@@ -27,7 +27,9 @@ Widget buildOfferCredentialDialog(
         title: title,
         subtitle: Row(
           children: [
-            IssuerInfoText(issuer: credential.issuer),
+            SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: IssuerInfoText(issuer: credential.issuer)),
             IssuerInfoIcon(issuer: credential.issuer)
           ],
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

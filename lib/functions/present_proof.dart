@@ -73,7 +73,12 @@ Future<bool> handleRequestPresentation(
       var type =
           vc.type.firstWhere((element) => element != 'VerifiableCredential');
       if (type != 'PaymentReceipt') {
-        creds.add(vc);
+        var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+        var status = wallet.revocationState[id];
+        if (status == RevocationState.valid.index ||
+            status == RevocationState.unknown.index) {
+          creds.add(vc);
+        }
       }
     }
   });
@@ -140,7 +145,7 @@ Future<bool> handleRequestPresentation(
         builder: (context) => AlertDialog(
               title: const Text('Keine Credentials gefunden'),
               content: Text(
-                  'Sie besitzen keine Credential, die der Anfrage entsprechen ($e)'),
+                  'Sie besitzen keine Credentials, die der Anfrage entsprechen ($e)'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.of(context).pop(),

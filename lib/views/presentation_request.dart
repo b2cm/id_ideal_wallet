@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -52,7 +55,9 @@ class PresentationRequestDialog extends StatefulWidget {
   final String myDid;
   final String otherEndpoint;
   final String receiverDid;
-  final RequestPresentation message;
+  final RequestPresentation? message;
+  final bool isOidc;
+  final String? nonce;
 
   const PresentationRequestDialog(
       {Key? key,
@@ -60,7 +65,9 @@ class PresentationRequestDialog extends StatefulWidget {
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
-      required this.message})
+      this.message,
+      this.isOidc = false,
+      this.nonce})
       : super(key: key);
 
   @override
@@ -215,26 +222,106 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
-    var vp = await buildPresentation(finalSend, wallet.wallet,
-        widget.message.presentationDefinition.first.challenge);
-    var presentationMessage = Presentation(
-        replyUrl: '$relay/buffer/${widget.myDid}',
-        from: widget.myDid,
-        verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
-        threadId: widget.message.threadId ?? widget.message.id,
-        parentThreadId: widget.message.parentThreadId);
-    sendMessage(widget.myDid, widget.otherEndpoint, wallet, presentationMessage,
-        widget.receiverDid);
-    for (var pres in presentationMessage.verifiablePresentation) {
-      for (var cred in pres.verifiableCredential) {
-        wallet.storeExchangeHistoryEntry(
-            getHolderDidFromCredential(cred.toJson()),
-            DateTime.now(),
-            'present',
-            widget.receiverDid);
+    if (widget.isOidc) {
+      var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
+          loadDocumentFunction: loadDocumentFast);
+      var casted = VerifiablePresentation.fromJson(vp);
+      logger.d(await verifyPresentation(vp, widget.nonce!,
+          loadDocumentFunction: loadDocumentFast));
+      logger.d(jsonDecode(vp));
+      var res = await post(Uri.parse(widget.otherEndpoint),
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body:
+              'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+
+      logger.d(res.statusCode);
+      logger.d(res.body);
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        for (var cred in casted.verifiableCredential!) {
+          wallet.storeExchangeHistoryEntry(
+              getHolderDidFromCredential(cred.toJson()),
+              DateTime.now(),
+              'present',
+              widget.receiverDid);
+        }
+
+        String type = '';
+        for (var c in casted.verifiableCredential!) {
+          type +=
+              '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+        }
+        type = type.substring(0, type.length - 1);
+
+        await showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                child: PaymentFinished(
+                  headline: "Credentials erfolgreich vorgezeigt",
+                  success: true,
+                  amount: CurrencyDisplay(
+                      amount: type,
+                      symbol: '',
+                      mainFontSize: 35,
+                      centered: true),
+                ),
+              );
+            });
+        Navigator.of(context).pop();
+      } else {
+        for (var cred in casted.verifiableCredential!) {
+          wallet.storeExchangeHistoryEntry(
+              getHolderDidFromCredential(cred.toJson()),
+              DateTime.now(),
+              'present failed',
+              widget.receiverDid);
+        }
+
+        await showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return const ModalDismissWrapper(
+                child: PaymentFinished(
+                  headline: "Credentials konnten nicht vorgezeigt werden",
+                  success: false,
+                  amount: CurrencyDisplay(
+                      amount: '', symbol: '', mainFontSize: 35, centered: true),
+                ),
+              );
+            });
+        Navigator.of(context).pop();
       }
+    } else {
+      var vp = await buildPresentation(finalSend, wallet.wallet,
+          widget.message!.presentationDefinition.first.challenge);
+      var presentationMessage = Presentation(
+          replyUrl: '$relay/buffer/${widget.myDid}',
+          returnRoute: ReturnRouteValue.thread,
+          to: [widget.receiverDid],
+          from: widget.myDid,
+          verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+          threadId: widget.message!.threadId ?? widget.message!.id,
+          parentThreadId: widget.message!.parentThreadId);
+      sendMessage(widget.myDid, widget.otherEndpoint, wallet,
+          presentationMessage, widget.receiverDid);
+      for (var pres in presentationMessage.verifiablePresentation) {
+        for (var cred in pres.verifiableCredential!) {
+          wallet.storeExchangeHistoryEntry(
+              getHolderDidFromCredential(cred.toJson()),
+              DateTime.now(),
+              'present',
+              widget.receiverDid);
+        }
+      }
+      Navigator.of(context).pop();
     }
-    Navigator.of(context).pop();
+    // Navigator.of(context).pop();
   }
 
   void reject() {
@@ -245,16 +332,16 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-      child: SingleChildScrollView(
-          child: Column(
-        children: buildChilds(),
-      )),
       title: 'Anfrage',
       scanOnTap: () {},
       footerButtons: [
         TextButton(onPressed: reject, child: const Text('Ablehnen')),
         TextButton(onPressed: sendAnswer, child: const Text('Senden'))
       ],
+      child: SingleChildScrollView(
+          child: Column(
+        children: buildChilds(),
+      )),
     );
   }
 }

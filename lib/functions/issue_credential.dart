@@ -62,59 +62,58 @@ Future<bool> handleOfferCredential(
 
     if (res) {
       if (invoice != null) {
-        var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
-            body: {'invoice': invoice},
-            headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
-        if (res.statusCode == 200) {
-          logger.d('erfolgreich bezahlt');
-          paymentDetails['value'] = '-$toPay';
-          paymentDetails['note'] =
-              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
+        // var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
+        //     body: {'invoice': invoice},
+        //     headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
+        // if (res.statusCode == 200) {
+        wallet.simulatePay(toPay!);
+        logger.d('erfolgreich bezahlt');
+        paymentDetails['value'] = '-$toPay';
+        paymentDetails['note'] =
+            '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
 
-          showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline: "Zahlung erfolgreich",
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: "-$toPay",
-                        symbol: '€',
-                        mainFontSize: 35,
-                        centered: true),
-                  ),
-                );
-              });
-        } else {
-          showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline: "Zahlung fehlgeschlagen",
-                    success: false,
-                    amount: CurrencyDisplay(
-                        amount: "-$toPay",
-                        symbol: '€',
-                        mainFontSize: 35,
-                        centered: true),
-                    additionalInfo: Column(children: const [
-                      SizedBox(height: 20),
-                      Text("Zahlung konnte nicht durchgeführt werden",
-                          style: TextStyle(color: Colors.red)),
-                    ]),
-                  ),
-                );
-              });
-          throw Exception('payment error: ${res.body}');
-        }
+        showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                child: PaymentFinished(
+                  headline: "Zahlung erfolgreich",
+                  success: true,
+                  amount: CurrencyDisplay(
+                      amount: "-$toPay",
+                      symbol: '€',
+                      mainFontSize: 35,
+                      centered: true),
+                ),
+              );
+            });
+        // } else {
+        //   showModalBottomSheet(
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(10.0),
+        //       ),
+        //       context: navigatorKey.currentContext!,
+        //       builder: (context) {
+        //         return PaymentFinished(
+        //           headline: "Zahlung fehlgeschlagen",
+        //           success: false,
+        //           amount: CurrencyDisplay(
+        //               amount: "-$toPay",
+        //               symbol: '€',
+        //               mainFontSize: 35,
+        //               centered: true),
+        //           additionalInfo: Column(children: const [
+        //             SizedBox(height: 20),
+        //             Text("Zahlung konnte nicht durchgeführt werden",
+        //                 style: TextStyle(color: Colors.red)),
+        //           ]),
+        //         );
+        //       });
+        //   throw Exception('payment error: ${res.body}');
+        // }
       }
     } else {
       logger.d('user declined credential');
@@ -170,6 +169,7 @@ _sendRequestCredential(
       detail: detail,
       replyUrl: '$relay/buffer/$myDid',
       threadId: offer.threadId ?? offer.id,
+      returnRoute: ReturnRouteValue.thread,
       from: myDid,
       to: [offer.from!]);
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
@@ -186,7 +186,9 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
       firstDid = credDid;
     }
     var offeredCred = offer.detail![i].credential;
+    logger.d('Das wurde angeboten: ${offeredCred.toJson()}');
     var credSubject = offeredCred.credentialSubject;
+    logger.d(offeredCred.status);
     credSubject['id'] = credDid;
     var newCred = VerifiableCredential(
         id: credDid,
@@ -196,7 +198,9 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
         credentialSubject: credSubject,
         issuanceDate: offeredCred.issuanceDate,
         credentialSchema: offeredCred.credentialSchema,
+        status: offeredCred.status,
         expirationDate: offeredCred.expirationDate);
+    logger.d('Das geht zurück : ${newCred.toJson()}');
     detail.add(LdProofVcDetail(
         credential: newCred, options: offer.detail!.first.options));
   }
@@ -205,6 +209,7 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
       from: myDid,
       to: [offer.from!],
       replyUrl: '$relay/buffer/$myDid',
+      returnRoute: ReturnRouteValue.thread,
       detail: detail);
 
   //Sign attachment with credentialDid
@@ -232,7 +237,7 @@ Future<bool> handleIssueCredential(
   }
 
   var previosMessage = DidcommPlaintextMessage.fromJson(entry.lastMessage);
-  if (previosMessage.type == DidcommMessages.requestCredential.value) {
+  if (previosMessage.type == DidcommMessages.requestCredential) {
     for (int i = 0; i < message.credentials!.length; i++) {
       var req = RequestCredential.fromJson(previosMessage.toJson());
       var cred = message.credentials![i];
@@ -256,16 +261,37 @@ Future<bool> handleIssueCredential(
           wallet.storeCredential(cred.toString(), storageCred.hdPath);
           wallet.storeExchangeHistoryEntry(
               credDid, DateTime.now(), 'issue', message.from!);
+
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: "Credential empfangen",
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: type,
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
         }
       } else {
         throw Exception('Credential signature is wrong');
       }
 
       wallet.storeConversation(message, entry.myDid);
+
       var ack = EmptyMessage(
           from: entry.myDid,
           ack: [message.id],
           threadId: message.threadId ?? message.id);
+
       sendMessage(
           entry.myDid,
           determineReplyUrl(message.replyUrl, message.replyTo),

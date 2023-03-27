@@ -53,11 +53,11 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
           org = commonName;
         }
 
-        issuerName = '$org (verifiziert)';
+        issuerName = '$org\n(verifiziert)';
 
         setState(() {});
       } else if (widget.issuer.containsKey('name')) {
-        issuerName = '${widget.issuer['name']} (nicht verifiziert)';
+        issuerName = '${widget.issuer['name']}\n(nicht verifiziert)';
         setState(() {});
       }
     }

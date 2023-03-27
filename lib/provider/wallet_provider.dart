@@ -9,8 +9,6 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 
 import '../functions/util.dart' as my_util;
 
@@ -25,6 +23,9 @@ class WalletProvider extends ChangeNotifier {
   SortingType sortingType = SortingType.dateDown;
   List<ExchangeHistoryEntry> lastPayments = [];
   List<VerifiableCredential> credentials = [];
+  List<String> relayedDids = [];
+  DateTime? lastCheckRevocation;
+  Map<String, int> revocationState = {};
 
   WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
@@ -42,70 +43,153 @@ class WalletProvider extends ChangeNotifier {
 
       _buildCredentialList();
 
+      var lastCheck = _wallet.getConfigEntry('lastValidityCheckTime');
+      if (lastCheck == null) {
+        checkValidity();
+      } else {
+        lastCheckRevocation = DateTime.parse(lastCheck);
+        if (DateTime.now().difference(lastCheckRevocation!) >=
+            const Duration(days: 1)) {
+          checkValidity();
+        }
+      }
+
       var login = wallet.getConfigEntry('ln_login');
       if (login == null) {
         // var account = await createAccount();
         // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
         // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
-
-        await wallet.storeConfigEntry('ln_login', '5a9ec88b1677a8e4a14e');
-        await wallet.storeConfigEntry('ln_password', '968394acb0ceeaf993c8');
       }
 
       login = wallet.getConfigEntry('ln_login');
       var password = wallet.getConfigEntry('ln_password');
 
-      lnAuthToken = await getLnAuthToken(login!, password!);
-      balance = await getBalance(lnAuthToken!);
+      // lnAuthToken = await getLnAuthToken(login!, password!);
+      // balance = await getBalance(lnAuthToken!);
+
+      lnAuthToken = 'abhg';
+      balance = 10000;
 
       _updateLastThreePayments();
 
       _authRunning = false;
+
+      var relayedDidsEntry = wallet.getConfigEntry('relayedDids');
+      if (relayedDidsEntry != null && relayedDidsEntry.isNotEmpty) {
+        relayedDids = jsonDecode(relayedDidsEntry).cast<String>();
+      }
+
       notifyListeners();
     }
   }
 
-  void getLnBalance() async {
-    balance = await getBalance(lnAuthToken!);
+  Future<void> checkValiditySingle(VerifiableCredential vc,
+      [bool notify = false]) async {
+    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    logger.d(vc);
+
+    // check states that won't change to speed up
+    var lastState = revocationState[id];
+    if (lastState == RevocationState.revoked.index ||
+        lastState == RevocationState.expired.index) {
+      return;
+    }
+
+    // check expiration date
+    if (vc.expirationDate != null &&
+        vc.expirationDate!.isBefore(DateTime.now())) {
+      revocationState[id] = RevocationState.expired.index;
+      return;
+    }
+
+    // check status
+    if (vc.status != null) {
+      logger.d(vc.status);
+      try {
+        var revoked = await checkForRevocation(vc);
+        if (!revoked) {
+          revocationState[id] = RevocationState.valid.index;
+        }
+      } on RevokedException catch (e) {
+        if (e.code == 'revErr') {
+          revocationState[id] = RevocationState.unknown.index;
+        } else if (e.code == 'rev') {
+          revocationState[id] = RevocationState.revoked.index;
+        } else if (e.code == 'sus') {
+          revocationState[id] = RevocationState.suspended.index;
+        } else {
+          revocationState[id] = RevocationState.unknown.index;
+        }
+      } on Exception catch (_) {
+        revocationState[id] = RevocationState.unknown.index;
+      }
+      return;
+    }
+
+    revocationState[id] = RevocationState.valid.index;
+
+    if (notify) notifyListeners();
+  }
+
+  void checkValidity() async {
+    lastCheckRevocation = DateTime.now();
+    await _wallet.storeConfigEntry(
+        'lastValidityCheckTime', lastCheckRevocation!.toIso8601String());
+
+    for (var vc in credentials) {
+      await checkValiditySingle(vc);
+    }
+
     notifyListeners();
   }
+
+  void simulatePay(String amount) {
+    balance -= int.parse(amount);
+    notifyListeners();
+  }
+
+  // void getLnBalance() async {
+  //   balance = await getBalance(lnAuthToken!);
+  //   notifyListeners();
+  // }
 
   void storePayment(String action, String otherParty,
       [List<String>? belongingCredentials]) async {
     _wallet.storeExchangeHistoryEntry('paymentHistory', DateTime.now(), action,
         otherParty, belongingCredentials);
     _updateLastThreePayments();
-    getLnBalance();
+    //getLnBalance();
+    notifyListeners();
   }
 
-  void newPayment(String index, String memo, int amount) {
-    paymentTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      var paid = await isInvoicePaid(index, lnAuthToken!);
-      if (paid) {
-        timer.cancel();
-        storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
-        paymentTimer = null;
-        showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Zahlung eingegangen",
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: "+$amount",
-                      symbol: '€',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
-      }
-    });
-  }
+  // void newPayment(String index, String memo, int amount) {
+  //   paymentTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+  //     var paid = await isInvoicePaid(index, lnAuthToken!);
+  //     if (paid) {
+  //       timer.cancel();
+  //       storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
+  //       paymentTimer = null;
+  //       showModalBottomSheet(
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(10.0),
+  //           ),
+  //           context: navigatorKey.currentContext!,
+  //           builder: (context) {
+  //             return ModalDismissWrapper(
+  //               child: PaymentFinished(
+  //                 headline: "Zahlung eingegangen",
+  //                 success: true,
+  //                 amount: CurrencyDisplay(
+  //                     amount: "+$amount",
+  //                     symbol: '€',
+  //                     mainFontSize: 35,
+  //                     centered: true),
+  //               ),
+  //             );
+  //           });
+  //     }
+  //   });
+  // }
 
   void _updateLastThreePayments() {
     var payments = getAllPayments();
@@ -209,6 +293,7 @@ class WalletProvider extends ChangeNotifier {
     await _wallet.storeCredential(vc, '', hdPath,
         keyType: KeyType.ed25519, credDid: newDid);
     _buildCredentialList();
+    await checkValiditySingle(VerifiableCredential.fromJson(vc));
     notifyListeners();
   }
 
@@ -245,10 +330,20 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getExchangeHistoryEntriesForCredential(credDid) ?? [];
   }
 
+  void addRelayedDid(String did) async {
+    relayedDids.add(did);
+    await wallet.storeConfigEntry('relayedDids', jsonEncode(relayedDids));
+  }
+
+  void removeRelayedDid(String did) async {
+    relayedDids.remove(did);
+    await wallet.storeConfigEntry('relayedDids', jsonEncode(relayedDids));
+  }
+
   void checkRelay(Timer t) async {
     if (isOpen()) {
-      var connectionDids = allConnections();
-      for (var did in connectionDids.keys.toList()) {
+      // var connectionDids = allConnections();
+      for (var did in relayedDids) {
         var serverAnswer = await get(Uri.parse('$relay/get/$did'));
         if (serverAnswer.statusCode == 200) {
           List messages = jsonDecode(serverAnswer.body);
@@ -264,3 +359,5 @@ class WalletProvider extends ChangeNotifier {
 }
 
 enum SortingType { dateUp, dateDown, typeUp, typeDown }
+
+enum RevocationState { valid, expired, suspended, revoked, unknown }
