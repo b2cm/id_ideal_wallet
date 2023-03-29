@@ -5,11 +5,14 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
+import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 
 import '../functions/didcomm_message_handler.dart';

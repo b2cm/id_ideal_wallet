@@ -1,9 +1,11 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
+import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/receipt.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 
 Widget buildOfferCredentialDialog(
     BuildContext context, List<LdProofVcDetail> credentials, String? toPay) {

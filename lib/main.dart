@@ -2,8 +2,20 @@ import 'dart:io';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/balance.dart';
+import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
+import 'package:id_ideal_wallet/basicUi/standard/hub_app.dart';
+import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/shortcut.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_name.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
+import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
+import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -11,7 +23,6 @@ import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -49,7 +60,43 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
-  void onTopUpSats(int amount, String memo) async {}
+  void onTopUpSats(int amount, String memo) async {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var invoiceMap = await createInvoice(wallet.lnInKey!, amount, memo: memo);
+    var index = invoiceMap['checking_id'];
+    wallet.newPayment(index, memo, amount);
+    showModalBottomSheet<dynamic>(
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        context: navigatorKey.currentContext!,
+        builder: (context) {
+          return Consumer<WalletProvider>(builder: (context, wallet, child) {
+            if (wallet.paymentTimer != null) {
+              return InvoiceDisplay(
+                invoice: invoiceMap['checking_id'] ?? '',
+                amount: CurrencyDisplay(
+                    amount: amount.toString(),
+                    symbol: '€',
+                    mainFontSize: 35,
+                    centered: true),
+                memo: memo,
+              );
+            } else {
+              Future.delayed(
+                  const Duration(seconds: 1),
+                  () => Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const MainPage()),
+                      (route) => false));
+              return const SizedBox(
+                height: 10,
+              );
+            }
+          });
+        });
+  }
 
   void onTopUpFiat(int amount) {}
 
@@ -76,15 +123,23 @@ class MainPage extends StatelessWidget {
                                           builder: (context) =>
                                               const QrScanner())),
                                   child: TopUp(
-                                      // onTopUpSats: onTopUpSats,
-                                      onTopUpSats: (x, y) {},
+                                      onTopUpSats: onTopUpSats,
+                                      //onTopUpSats: (x, y) {},
                                       onTopUpFiat: onTopUpFiat)))),
                       sendOnTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) => const QrScanner())),
                       balance: CurrencyDisplay(
-                        amount: wallet.balance.toString(),
-                        symbol: '€',
+                        amount: wallet.lnAdminKey != null
+                            ? wallet.balance.toString()
+                            : InkWell(
+                                child: const Text('Ln-Account anlegen',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    )),
+                                onTap: () => createLNWallet()),
+                        symbol: wallet.lnAdminKey != null ? '€' : '',
                         mainFontSize: 40,
                       ));
                 } else {
@@ -94,7 +149,7 @@ class MainPage extends StatelessWidget {
                       sendOnTap: () {},
                       balance: const CurrencyDisplay(
                         amount: 'wird geladen',
-                        symbol: '€',
+                        symbol: '',
                       ));
                 }
               }),
@@ -153,14 +208,14 @@ class MainPage extends StatelessWidget {
               const Heading(text: "Zeitlich relevant"),
               Shortcut(
                   onTap: () => logger.d("tapped shortcut"),
-                  icon: const AssetImage("assets/truck-fast-regular.png"),
+                  icon: const AssetImage("assets/icons/truck-fast-regular.png"),
                   text: "Zwei Pakete kommen heute an"),
               Container(
                 height: 12,
               ),
               Shortcut(
                   onTap: () => logger.d("tapped shortcut"),
-                  icon: const AssetImage("assets/ticket-regular.png"),
+                  icon: const AssetImage("assets/icons/ticket-regular.png"),
                   text:
                       "Ticket for hello hello hello hello hello hello darkness my old friend"),
               const Heading(text: "Hub"),
@@ -179,8 +234,8 @@ class MainPage extends StatelessWidget {
                         onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (context) => const SelfIssueList())),
-                        icon:
-                            const AssetImage("assets/house-crack-regular.png"),
+                        icon: const AssetImage(
+                            "assets/icons/house-crack-regular.png"),
                         label: "Selbstausstellung"),
                     HubApp(
                         onTap: () => Navigator.of(context).push(
@@ -189,7 +244,8 @@ class MainPage extends StatelessWidget {
                                     title: 'Ausstell-Service',
                                     initialUrl:
                                         'http://167.235.195.132:8081'))),
-                        icon: const AssetImage("assets/plane-regular.png"),
+                        icon:
+                            const AssetImage("assets/icons/plane-regular.png"),
                         label: "Credential ausstellen"),
                     HubApp(
                         onTap: () => Navigator.of(context).push(
@@ -198,7 +254,8 @@ class MainPage extends StatelessWidget {
                                     title: 'Ticket-Shop',
                                     initialUrl:
                                         'https://167.235.195.132:8082'))),
-                        icon: const AssetImage("assets/ticket-regular.png"),
+                        icon:
+                            const AssetImage("assets/icons/ticket-regular.png"),
                         label: "Tickets"),
                     HubApp(
                         onTap: () => Navigator.of(context).push(
@@ -206,7 +263,8 @@ class MainPage extends StatelessWidget {
                                 builder: (context) => const WebViewWindow(
                                     title: 'Lokaler Test',
                                     initialUrl: 'https://localhost:8082'))),
-                        icon: const AssetImage("assets/print-regular.png"),
+                        icon:
+                            const AssetImage("assets/icons/print-regular.png"),
                         label: "Lokal"),
                   ]),
             ],

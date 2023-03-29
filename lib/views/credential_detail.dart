@@ -1,12 +1,12 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 

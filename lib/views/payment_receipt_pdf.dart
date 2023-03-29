@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pdf;
 import 'package:printing/printing.dart';
@@ -14,6 +13,7 @@ import 'package:x509b/x509.dart' as x509;
 class PdfPreviewPage extends StatelessWidget {
   final VerifiableCredential paymentReceipt;
   final String eventName;
+
   const PdfPreviewPage(
       {Key? key, required this.paymentReceipt, required this.eventName})
       : super(key: key);

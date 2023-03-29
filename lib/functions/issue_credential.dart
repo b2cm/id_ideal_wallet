@@ -2,9 +2,9 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'package:id_ideal_wallet/functions/lightning_utils.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
+import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
+import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -42,9 +42,9 @@ Future<bool> handleOfferCredential(
     var paymentReq = message.attachments!.where(
         (element) => element.format != null && element.format == 'lnInvoice');
     if (paymentReq.isNotEmpty) {
-      invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
-      var decoded = await decodeInvoice(invoice!, wallet.lnAuthToken!);
-      toPay = decoded['num_satoshis'];
+      // invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
+      // var decoded = await decodeInvoice(invoice!, wallet.lnAuthToken!);
+      // toPay = decoded['num_satoshis'];
     }
   }
   Map<String, String> paymentDetails = {};

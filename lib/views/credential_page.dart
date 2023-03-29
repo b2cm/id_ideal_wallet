@@ -4,12 +4,14 @@ import 'dart:typed_data';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_name.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
@@ -168,39 +170,35 @@ class CredentialCardState extends State<CredentialCard> {
 
   Future<void> searchImage() async {
     try {
-
       bool showImg = false;
       String imgB64 = '';
 
       widget.credential.credentialSubject.forEach((key, value) {
         // todo change key to picture
-        if(key=='data' && value is String && value.startsWith('data:image')){
-          showImg=true;
+        if (key == 'data' &&
+            value is String &&
+            value.startsWith('data:image')) {
+          showImg = true;
           imgB64 = value;
         }
       });
 
       if (showImg) {
-
         image = Image.memory(base64Decode(imgB64.split(',')[1]));
         setState(() {});
-
       } else {
         final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
           'image': (match) =>
-          match.value is String && match.value.startsWith('data:image')
+              match.value is String && match.value.startsWith('data:image')
         });
 
         var result = path.read(widget.credential.toJson());
         var dataString = result.first.value as String;
-        var imageData = dataString
-            .split(',')
-            .last;
+        var imageData = dataString.split(',').last;
 
         image = Image.memory(base64Decode(imageData));
         setState(() {});
       }
-
     } catch (e) {
       logger.d('cant decode image: $e');
     }

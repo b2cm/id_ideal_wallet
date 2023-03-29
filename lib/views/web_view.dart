@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_wallet_design/id_wallet_design.dart';
 
 class WebViewWindow extends StatefulWidget {
   final String initialUrl;

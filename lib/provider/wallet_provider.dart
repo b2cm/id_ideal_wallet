@@ -6,9 +6,13 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
+import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 
 import '../functions/util.dart' as my_util;
 
@@ -18,8 +22,9 @@ class WalletProvider extends ChangeNotifier {
   String qrData = '';
   late Timer t;
   Timer? paymentTimer;
-  String? lnAuthToken;
-  int balance = -1;
+  String? lnAdminKey;
+  String? lnInKey;
+  double balance = -1.0;
   SortingType sortingType = SortingType.dateDown;
   List<ExchangeHistoryEntry> lastPayments = [];
   List<VerifiableCredential> credentials = [];
@@ -54,21 +59,12 @@ class WalletProvider extends ChangeNotifier {
         }
       }
 
-      var login = wallet.getConfigEntry('ln_login');
-      if (login == null) {
-        // var account = await createAccount();
-        // await wallet.storeConfigEntry('ln_login', account['ln_login']!);
-        // await wallet.storeConfigEntry('ln_password', account['ln_password']!);
+      lnAdminKey = _wallet.getConfigEntry('lnAdminKey');
+      lnInKey = _wallet.getConfigEntry('lnInKey');
+
+      if (lnInKey != null) {
+        getLnBalance();
       }
-
-      login = wallet.getConfigEntry('ln_login');
-      var password = wallet.getConfigEntry('ln_password');
-
-      // lnAuthToken = await getLnAuthToken(login!, password!);
-      // balance = await getBalance(lnAuthToken!);
-
-      lnAuthToken = 'abhg';
-      balance = 10000;
 
       _updateLastThreePayments();
 
@@ -148,48 +144,68 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // void getLnBalance() async {
-  //   balance = await getBalance(lnAuthToken!);
-  //   notifyListeners();
-  // }
+  void getLnBalance() async {
+    var a = await getBalance(lnInKey!);
+    balance = a.toEuro();
+    notifyListeners();
+  }
+
+  void storeLnAccount(Map<String, dynamic> accountData) async {
+    var wallets = accountData['wallets'] as List;
+    var w = wallets.first;
+    lnAdminKey = w['adminkey'];
+    lnInKey = w['inkey'];
+
+    if (lnAdminKey == null || lnInKey == null) {
+      throw Exception('AdminKey or inKey null - this should not happen');
+      // Todo message to user
+    }
+
+    await _wallet.storeConfigEntry('lnAdminKey', lnAdminKey!);
+    await _wallet.storeConfigEntry('lnInKey', lnInKey!);
+    await _wallet.storeConfigEntry('lnDetails', jsonEncode(accountData));
+
+    notifyListeners();
+  }
 
   void storePayment(String action, String otherParty,
       [List<String>? belongingCredentials]) async {
     _wallet.storeExchangeHistoryEntry('paymentHistory', DateTime.now(), action,
         otherParty, belongingCredentials);
     _updateLastThreePayments();
-    //getLnBalance();
+    getLnBalance();
     notifyListeners();
   }
 
-  // void newPayment(String index, String memo, int amount) {
-  //   paymentTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-  //     var paid = await isInvoicePaid(index, lnAuthToken!);
-  //     if (paid) {
-  //       timer.cancel();
-  //       storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
-  //       paymentTimer = null;
-  //       showModalBottomSheet(
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(10.0),
-  //           ),
-  //           context: navigatorKey.currentContext!,
-  //           builder: (context) {
-  //             return ModalDismissWrapper(
-  //               child: PaymentFinished(
-  //                 headline: "Zahlung eingegangen",
-  //                 success: true,
-  //                 amount: CurrencyDisplay(
-  //                     amount: "+$amount",
-  //                     symbol: '€',
-  //                     mainFontSize: 35,
-  //                     centered: true),
-  //               ),
-  //             );
-  //           });
-  //     }
-  //   });
-  // }
+  void newPayment(String paymentHash, String memo, int amount) {
+    paymentTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      var paid = await isInvoicePaid(lnInKey!, paymentHash);
+      logger.d(paymentHash);
+      if (paid) {
+        timer.cancel();
+        storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
+        paymentTimer = null;
+        showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                child: PaymentFinished(
+                  headline: "Zahlung eingegangen",
+                  success: true,
+                  amount: CurrencyDisplay(
+                      amount: "+$amount",
+                      symbol: '€',
+                      mainFontSize: 35,
+                      centered: true),
+                ),
+              );
+            });
+      }
+    });
+  }
 
   void _updateLastThreePayments() {
     var payments = getAllPayments();
