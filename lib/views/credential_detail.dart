@@ -170,7 +170,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
         issuer += buildCredSubject(issMap);
       }
     } else if (widget.credential.isSelfIssued()) {
-      issuer.add(const Text('Sebtsausgestellt'));
+      issuer.add(const Text('Selbtsausgestellt'));
     } else {
       //issuer is String
       issuer.add(Text(widget.credential.issuer));

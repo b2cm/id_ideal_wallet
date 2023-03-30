@@ -59,10 +59,9 @@ class PdfPreviewPage extends StatelessWidget {
     String subjectStreet =
         paymentReceipt.credentialSubject['address']?['streetAddress'] ?? '';
 
-    var dataBase = await rootBundle
-        .load('packages/id_wallet_design/fonts/Outfit/Outfit-Medium.ttf');
-    var dataBold = await rootBundle
-        .load('packages/id_wallet_design/fonts/Outfit/Outfit-Bold.ttf');
+    var dataBase =
+        await rootBundle.load('assets/fonts/Outfit/Outfit-Medium.ttf');
+    var dataBold = await rootBundle.load('assets/fonts/Outfit/Outfit-Bold.ttf');
     final file = pdf.Document();
     file.addPage(pdf.Page(
         theme: pdf.ThemeData.withFont(

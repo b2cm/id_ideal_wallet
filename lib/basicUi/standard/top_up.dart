@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 
 class TopUp extends StatefulWidget {
   const TopUp(
       {super.key, required this.onTopUpSats, required this.onTopUpFiat});
 
-  final void Function(int, String) onTopUpSats;
+  final void Function(SatoshiAmount, String) onTopUpSats;
   final void Function(int) onTopUpFiat;
 
   @override
@@ -90,7 +91,10 @@ class _TopUpState extends State<TopUp> {
                 onPressed: () => {
                   if (_selectedReceiveOption[0])
                     {
-                      widget.onTopUpSats(int.parse(_amountControllerSats.text),
+                      widget.onTopUpSats(
+                          SatoshiAmount.fromUnitAndValue(
+                              int.parse(_amountControllerSats.text),
+                              SatoshiUnit.sat),
                           _memoController.text)
                     }
                   else

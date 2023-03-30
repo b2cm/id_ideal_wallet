@@ -61,8 +61,6 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
                 )
               : Text(value),
         ));
-        // children.add(Text(
-        //     '${before != null ? '$before.' : ''}$key: ${(value is String && value.startsWith('data:image')) ? '...' : value}'));
       }
     }
   });

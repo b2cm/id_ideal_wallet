@@ -60,7 +60,7 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
-  void onTopUpSats(int amount, String memo) async {
+  void onTopUpSats(SatoshiAmount amount, String memo) async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
     var invoiceMap = await createInvoice(wallet.lnInKey!, amount, memo: memo);
@@ -78,7 +78,7 @@ class MainPage extends StatelessWidget {
               return InvoiceDisplay(
                 invoice: invoiceMap['checking_id'] ?? '',
                 amount: CurrencyDisplay(
-                    amount: amount.toString(),
+                    amount: amount.toEuro().toStringAsFixed(2),
                     symbol: '€',
                     mainFontSize: 35,
                     centered: true),

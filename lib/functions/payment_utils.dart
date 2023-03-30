@@ -20,15 +20,10 @@ Future<void> createLNWallet() async {
 
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    if (!answer.containsKey('detail')) {
-      // everything ok = store to wallet
-      var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-          listen: false);
-      wallet.storeLnAccount(answer);
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-    }
+    // everything ok = store to wallet
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    wallet.storeLnAccount(answer);
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -45,14 +40,7 @@ Future<SatoshiAmount> getBalance(String inKey) async {
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer);
-    if (!answer.containsKey('detail')) {
-      return SatoshiAmount.fromUnitAndValue(
-          answer['balance'], SatoshiUnit.msat);
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-      throw Exception(answer['detail']);
-    }
+    return SatoshiAmount.fromUnitAndValue(answer['balance'], SatoshiUnit.msat);
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -63,23 +51,20 @@ Future<SatoshiAmount> getBalance(String inKey) async {
   }
 }
 
-Future<Map<String, dynamic>> createInvoice(String inKey, int amount,
+Future<Map<String, dynamic>> createInvoice(String inKey, SatoshiAmount amount,
     {String? memo}) async {
   var res = await post(Uri.parse('https://payments.pixeldev.eu/create_invoice'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(
-          {'inkey': inKey, 'amount': amount.toString(), 'memo': memo ?? ''}));
+      body: jsonEncode({
+        'inkey': inKey,
+        'amount': amount.toSat().ceil(),
+        'memo': memo ?? ''
+      }));
 
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    if (!answer.containsKey('detail')) {
-      logger.d(answer);
-      return answer;
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-      throw Exception(answer['detail']);
-    }
+    logger.d(answer);
+    return answer;
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -97,13 +82,7 @@ Future<String> payInvoice(String adminKey, String invoice) async {
 
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    if (!answer.containsKey('detail')) {
-      return answer['payment_hash'];
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-      throw Exception(answer['detail']);
-    }
+    return answer['payment_hash'];
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -121,13 +100,7 @@ Future<Invoice> decodeInvoice(String inKey, String invoice) async {
 
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    if (!answer.containsKey('detail')) {
-      return Invoice.fromJson(answer);
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-      throw Exception(answer['detail']);
-    }
+    return Invoice.fromJson(answer);
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -145,14 +118,8 @@ Future<bool> isInvoicePaid(String inKey, String paymentHash) async {
 
   if (res.statusCode == 200) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    if (!answer.containsKey('detail')) {
-      logger.d(answer);
-      return answer['paid'];
-    } else {
-      // TODO: show error message to user
-      logger.d(answer['detail']);
-      return false;
-    }
+    logger.d(answer);
+    return answer['paid'];
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -174,9 +141,10 @@ void payInvoiceInteraction(String invoice) async {
 
   var decoded = await decodeInvoice(wallet.lnInKey!, invoice);
   SatoshiAmount toPay = decoded.amount;
+  logger.d(toPay.toMSat());
   var description = decoded.description;
 
-  Future.delayed(Duration(seconds: 0), () {
+  Future.delayed(const Duration(seconds: 0), () {
     showModalBottomSheet(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -192,17 +160,37 @@ void payInvoiceInteraction(String invoice) async {
                   centered: true),
               memo: description,
               onPaymentAccepted: () async {
-                var paymentHash = await payInvoice(wallet.lnAdminKey!, invoice);
+                bool paid = false;
+                var paymentHash = '';
+                try {
+                  paymentHash = await payInvoice(wallet.lnAdminKey!, invoice);
+                  paid = true;
+                } catch (_) {
+                  paid = false;
+                }
 
                 bool success = false;
-                while (!success) {
-                  await Future.delayed(const Duration(seconds: 1), () async {
-                    success = await isInvoicePaid(wallet.lnInKey!, paymentHash);
-                  });
+                if (paid) {
+                  while (!success) {
+                    int x = await Future.delayed(const Duration(seconds: 1),
+                        () async {
+                      try {
+                        success =
+                            await isInvoicePaid(wallet.lnInKey!, paymentHash);
+                        return 0;
+                      } catch (_) {
+                        return -1;
+                      }
+                    });
+                    if (x == -1) {
+                      success = false;
+                      break;
+                    }
+                  }
                 }
 
                 if (success) {
-                  wallet.storePayment('-${toPay.toSat()}',
+                  wallet.storePayment('-${toPay.toEuro()}',
                       description == '' ? 'Lightning Invoice' : description);
                 }
 

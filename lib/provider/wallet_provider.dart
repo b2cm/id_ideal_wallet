@@ -177,13 +177,14 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void newPayment(String paymentHash, String memo, int amount) {
+  void newPayment(String paymentHash, String memo, SatoshiAmount amount) {
     paymentTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       var paid = await isInvoicePaid(lnInKey!, paymentHash);
       logger.d(paymentHash);
       if (paid) {
         timer.cancel();
-        storePayment('+$amount', memo == '' ? 'Lightning Invoice' : memo);
+        storePayment(
+            '+${amount.toEuro()}', memo == '' ? 'Lightning Invoice' : memo);
         paymentTimer = null;
         showModalBottomSheet(
             shape: RoundedRectangleBorder(
@@ -196,7 +197,7 @@ class WalletProvider extends ChangeNotifier {
                   headline: "Zahlung eingegangen",
                   success: true,
                   amount: CurrencyDisplay(
-                      amount: "+$amount",
+                      amount: "+${amount.toEuro()}",
                       symbol: '€',
                       mainFontSize: 35,
                       centered: true),
