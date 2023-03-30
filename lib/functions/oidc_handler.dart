@@ -39,6 +39,7 @@ Future<void> handleOfferOidc(String offerUri) async {
     logger.d(issuerMetaReq.body);
 
     var metaData = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
+    logger.d(metaData.credentialsSupported.first.format);
 
     var authMetaReq = await get(
         Uri.parse(
@@ -86,6 +87,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       var credentialDid = await wallet.newCredentialDid();
       logger.d(credentialDid);
 
+      // create JWT
       var header = {
         'typ': 'openid4vci-proof+jwt',
         'alg': 'EdDSA',
@@ -105,6 +107,13 @@ Future<void> handleOfferOidc(String offerUri) async {
           toSign: payload,
           jwsHeader: header,
           detached: false);
+      //end JWT creation
+
+      // create VP
+      var signed = await buildPresentation(
+          [], wallet.wallet, tokenResponse.cNonce!,
+          holder: credentialDid, domain: offer.credentialIssuer);
+      // end VP creation
 
       var credentialRequest = {
         'format': 'ldp_vc',
@@ -113,7 +122,15 @@ Future<void> handleOfferOidc(String offerUri) async {
         'proof': {'proof_type': 'jwt', 'jwt': jwt}
       };
 
+      var credentialRequestLdp = {
+        'format': 'ldp_vc',
+        'types':
+            offer.credentials.first['type'] ?? offer.credentials.first['types'],
+        'proof': {'proof_type': 'ldp_vp', 'vp': jsonDecode(signed)}
+      };
+
       logger.d(credentialRequest);
+      logger.d(credentialRequestLdp);
 
       var credentialResponse =
           await post(Uri.parse(metaData.credentialEndpoint),
@@ -121,7 +138,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequest))
+                  body: jsonEncode(credentialRequestLdp))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
