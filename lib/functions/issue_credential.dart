@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -42,9 +43,36 @@ Future<bool> handleOfferCredential(
     var paymentReq = message.attachments!.where(
         (element) => element.format != null && element.format == 'lnInvoice');
     if (paymentReq.isNotEmpty) {
-      // invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
-      // var decoded = await decodeInvoice(invoice!, wallet.lnAuthToken!);
-      // toPay = decoded['num_satoshis'];
+      invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
+      if (invoice != null && wallet.lnInKey == null) {
+        await showModalBottomSheet(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return PaymentFinished(
+                headline: "Zahlung nicht möglich",
+                success: false,
+                amount: CurrencyDisplay(
+                    amount: "-$toPay",
+                    symbol: '€',
+                    mainFontSize: 35,
+                    centered: true),
+                additionalInfo: Column(children: const [
+                  SizedBox(height: 20),
+                  Text(
+                      "Sie besitzen kein LN-Wallet. \nBitte legen Si sich eines an und sorgen für ausreichend Deckung.",
+                      style: TextStyle(color: Colors.red),
+                      overflow: TextOverflow.ellipsis),
+                ]),
+              );
+            });
+        return false;
+      }
+      var decoded = await decodeInvoice(wallet.lnInKey!, invoice!);
+      toPay = decoded.amount.toEuro().toStringAsFixed(2);
+      logger.d(decoded.amount.milliSatoshi);
     }
   }
   Map<String, String> paymentDetails = {};
@@ -59,61 +87,56 @@ Future<bool> handleOfferCredential(
             buildOfferCredentialDialog(context, message.detail!, toPay));
 
     //pay the credential
-
     if (res) {
       if (invoice != null) {
-        // var res = await post(Uri.https('ln.pixeldev.eu', 'lndhub/payinvoice'),
-        //     body: {'invoice': invoice},
-        //     headers: {'Authorization': 'Bearer ${wallet.lnAuthToken}'});
-        // if (res.statusCode == 200) {
-        wallet.simulatePay(toPay!);
-        logger.d('erfolgreich bezahlt');
-        paymentDetails['value'] = '-$toPay';
-        paymentDetails['note'] =
-            '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
+        try {
+          await payInvoice(wallet.lnAdminKey!, invoice);
+          logger.d('erfolgreich bezahlt');
+          paymentDetails['value'] = '-$toPay';
+          paymentDetails['note'] =
+              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
 
-        showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Zahlung erfolgreich",
-                  success: true,
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: "Zahlung erfolgreich",
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: "-$toPay",
+                        symbol: '€',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
+        } catch (e) {
+          showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return PaymentFinished(
+                  headline: "Zahlung fehlgeschlagen",
+                  success: false,
                   amount: CurrencyDisplay(
                       amount: "-$toPay",
                       symbol: '€',
                       mainFontSize: 35,
                       centered: true),
-                ),
-              );
-            });
-        // } else {
-        //   showModalBottomSheet(
-        //       shape: RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.circular(10.0),
-        //       ),
-        //       context: navigatorKey.currentContext!,
-        //       builder: (context) {
-        //         return PaymentFinished(
-        //           headline: "Zahlung fehlgeschlagen",
-        //           success: false,
-        //           amount: CurrencyDisplay(
-        //               amount: "-$toPay",
-        //               symbol: '€',
-        //               mainFontSize: 35,
-        //               centered: true),
-        //           additionalInfo: Column(children: const [
-        //             SizedBox(height: 20),
-        //             Text("Zahlung konnte nicht durchgeführt werden",
-        //                 style: TextStyle(color: Colors.red)),
-        //           ]),
-        //         );
-        //       });
-        //   throw Exception('payment error: ${res.body}');
-        // }
+                  additionalInfo: Column(children: const [
+                    SizedBox(height: 20),
+                    Text("Zahlung konnte nicht durchgeführt werden",
+                        style: TextStyle(color: Colors.red)),
+                  ]),
+                );
+              });
+        }
       }
     } else {
       logger.d('user declined credential');
