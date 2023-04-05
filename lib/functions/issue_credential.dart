@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
@@ -168,7 +169,8 @@ Future<bool> handleOfferCredential(
         return false;
       }
     } else {
-      _sendProposeCredential(message, wallet, myDid, paymentDetails);
+      // Issuer likes to issue credential without id (not bound to holder)
+      _sendRequestCredential(message, wallet, myDid);
       return false;
     }
   }
@@ -268,20 +270,27 @@ Future<bool> handleIssueCredential(
       var verified = await verifyCredential(cred, expectedChallenge: challenge);
       if (verified) {
         var credDid = getHolderDidFromCredential(cred.toJson());
-        var storageCred = wallet.getCredential(credDid);
-        if (storageCred == null) {
-          throw Exception(
-              'No hd path for credential found. Sure we control it?');
+        Credential? storageCred;
+        if (credDid != '') {
+          storageCred = wallet.getCredential(credDid);
+          if (storageCred == null) {
+            throw Exception(
+                'No hd path for credential found. Sure we control it?');
+          }
         }
 
         var type = cred.type
             .firstWhere((element) => element != 'VerifiableCredential');
+        if (credDid == '') {
+          credDid = '${cred.issuanceDate.toIso8601String()}$type';
+        }
 
         if (type == 'PaymentReceipt') {
-          wallet.storeCredential(cred.toString(), storageCred.hdPath,
+          wallet.storeCredential(cred.toString(), storageCred?.hdPath ?? '',
               cred.credentialSubject['receiptId']);
         } else {
-          wallet.storeCredential(cred.toString(), storageCred.hdPath);
+          wallet.storeCredential(
+              cred.toString(), storageCred?.hdPath ?? '', credDid);
           wallet.storeExchangeHistoryEntry(
               credDid, DateTime.now(), 'issue', message.from!);
 

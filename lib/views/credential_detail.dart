@@ -11,13 +11,20 @@ import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 
 class HistoryEntries extends StatelessWidget {
-  const HistoryEntries({Key? key, required this.credDid}) : super(key: key);
-  final String credDid;
+  const HistoryEntries({Key? key, required this.credential}) : super(key: key);
+  final VerifiableCredential credential;
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
-      var historyEntries = wallet.historyEntriesForCredential(credDid);
+      var credId =
+          credential.id ?? getHolderDidFromCredential(credential.toJson());
+      if (credId == '') {
+        var type = credential.type
+            .firstWhere((element) => element != 'VerifiableCredential');
+        credId = '${credential.issuanceDate.toIso8601String()}$type';
+      }
+      var historyEntries = wallet.historyEntriesForCredential(credId);
       List<Widget> entries = [];
 
       for (var h in historyEntries) {
@@ -69,8 +76,15 @@ class CredentialDetailState extends State<CredentialDetailView> {
               child: const Text('Abbrechen')),
           TextButton(
               onPressed: () async {
-                wallet.deleteCredential(widget.credential.id ??
-                    getHolderDidFromCredential(widget.credential.toJson()));
+                var credId = widget.credential.id ??
+                    getHolderDidFromCredential(widget.credential.toJson());
+                if (credId == '') {
+                  var type = widget.credential.type.firstWhere(
+                      (element) => element != 'VerifiableCredential');
+                  credId =
+                      '${widget.credential.issuanceDate.toIso8601String()}$type';
+                }
+                wallet.deleteCredential(credId);
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
@@ -234,8 +248,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
         buildReceipt(),
         issuerData,
         otherData,
-        HistoryEntries(
-            credDid: getHolderDidFromCredential(widget.credential.toJson()))
+        HistoryEntries(credential: widget.credential)
       ],
     ));
   }
@@ -251,7 +264,10 @@ class CredentialDetailState extends State<CredentialDetailView> {
         TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => QrRender(credential: widget.credential))),
-            child: const Text('zum Vorzeigen anbieten')),
+            child: Text(
+                getHolderDidFromCredential(widget.credential.toJson()) == ''
+                    ? 'zum Kauf anbieten'
+                    : 'zum Vorzeigen anbieten')),
         TextButton(onPressed: _deleteCredential, child: const Text('Löschen'))
       ],
       child: _buildBody(),
