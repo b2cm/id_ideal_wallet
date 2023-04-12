@@ -18,8 +18,37 @@ bool handleProposeCredential(ProposeCredential message, WalletProvider wallet) {
   throw Exception('We should never get such a message');
 }
 
-bool handleRequestCredential(RequestCredential message, WalletProvider wallet) {
-  throw Exception('We should never get such a message');
+Future<bool> handleRequestCredential(
+    RequestCredential message, WalletProvider wallet) async {
+  String threadId;
+  logger.d('Request Credential received');
+  if (message.threadId != null) {
+    threadId = message.threadId!;
+  } else {
+    threadId = message.id;
+  }
+
+  // Are there any previous messages?
+  var entry = wallet.getConversation(threadId);
+
+  // no -> This is a Problem: We have never offered sth.
+  if (entry == null) {
+    throw Exception('There is no offer');
+  }
+
+  var myDid = entry.myDid;
+
+  var issueMessage = IssueCredential(
+      threadId: threadId,
+      credentials: [message.detail!.first.credential],
+      replyUrl: '$relay/buffer/$myDid',
+      from: myDid,
+      to: [message.from!]);
+
+  sendMessage(myDid, determineReplyUrl(message.replyUrl, message.replyTo),
+      wallet, issueMessage, message.from!);
+
+  return true;
 }
 
 Future<bool> handleOfferCredential(
@@ -63,7 +92,7 @@ Future<bool> handleOfferCredential(
                 additionalInfo: Column(children: const [
                   SizedBox(height: 20),
                   Text(
-                      "Sie besitzen kein LN-Wallet. \nBitte legen Si sich eines an und sorgen für ausreichend Deckung.",
+                      "Sie besitzen kein LN-Wallet. \nBitte legen Sie sich eines an und sorgen für ausreichend Deckung.",
                       style: TextStyle(color: Colors.red),
                       overflow: TextOverflow.ellipsis),
                 ]),
