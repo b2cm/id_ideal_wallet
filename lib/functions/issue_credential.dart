@@ -102,6 +102,7 @@ Future<bool> handleOfferCredential(
       }
       var decoded = await decodeInvoice(wallet.lnInKey!, invoice!);
       toPay = decoded.amount.toEuro().toStringAsFixed(2);
+      logger.d(toPay);
       logger.d(decoded.amount.milliSatoshi);
     }
   }
@@ -121,6 +122,7 @@ Future<bool> handleOfferCredential(
       if (invoice != null) {
         try {
           await payInvoice(wallet.lnAdminKey!, invoice);
+          wallet.getLnBalance();
           logger.d('erfolgreich bezahlt');
           paymentDetails['value'] = '-$toPay';
           paymentDetails['note'] =
@@ -199,11 +201,11 @@ Future<bool> handleOfferCredential(
       }
     } else {
       // Issuer likes to issue credential without id (not bound to holder)
-      _sendRequestCredential(message, wallet, myDid);
+      _sendRequestCredential(message, wallet, myDid, paymentDetails);
       return false;
     }
   }
-  await _sendRequestCredential(message, wallet, myDid);
+  await _sendRequestCredential(message, wallet, myDid, paymentDetails);
   return false;
 }
 
@@ -211,13 +213,17 @@ _sendRequestCredential(
   OfferCredential offer,
   WalletProvider wallet,
   String myDid,
+  Map<String, String> paymentDetails,
 ) async {
   List<LdProofVcDetail> detail = [];
   for (var d in offer.detail!) {
     detail.add(LdProofVcDetail(
         credential: d.credential,
         options: LdProofVcDetailOptions(
-            proofType: d.options.proofType, challenge: const Uuid().v4())));
+            proofType: d.options.proofType,
+            challenge: d.credential.proof == null
+                ? const Uuid().v4()
+                : d.credential.proof!.challenge!)));
   }
   var message = RequestCredential(
       detail: detail,
@@ -226,6 +232,12 @@ _sendRequestCredential(
       returnRoute: ReturnRouteValue.thread,
       from: myDid,
       to: [offer.from!]);
+
+  if (paymentDetails.isNotEmpty) {
+    wallet.storePayment(paymentDetails['value']!, paymentDetails['note']!, [
+      '${detail.first.credential.issuanceDate.toIso8601String()}${paymentDetails['note']!}'
+    ]);
+  }
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);
 }
@@ -270,6 +282,8 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
   for (var a in message.attachments!) {
     await a.data.sign(wallet.wallet, firstDid);
   }
+
+  logger.d(message.toJson());
 
   if (paymentDetails.isNotEmpty) {
     wallet.storePayment(

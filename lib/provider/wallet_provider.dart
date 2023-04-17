@@ -183,8 +183,8 @@ class WalletProvider extends ChangeNotifier {
       logger.d(paymentHash);
       if (paid) {
         timer.cancel();
-        storePayment(
-            '+${amount.toEuro()}', memo == '' ? 'Lightning Invoice' : memo);
+        storePayment('+${amount.toEuro().toStringAsFixed(2)}',
+            memo == '' ? 'Lightning Invoice' : memo);
         paymentTimer = null;
         showModalBottomSheet(
             shape: RoundedRectangleBorder(
@@ -197,7 +197,7 @@ class WalletProvider extends ChangeNotifier {
                   headline: "Zahlung eingegangen",
                   success: true,
                   amount: CurrencyDisplay(
-                      amount: "+${amount.toEuro()}",
+                      amount: "+${amount.toEuro().toStringAsFixed(2)}",
                       symbol: '€',
                       mainFontSize: 35,
                       centered: true),

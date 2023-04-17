@@ -1,6 +1,7 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -262,8 +263,26 @@ class CredentialDetailState extends State<CredentialDetailView> {
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
       footerButtons: [
         TextButton(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => QrRender(credential: widget.credential))),
+            onPressed: getHolderDidFromCredential(widget.credential.toJson()) ==
+                    ''
+                ? () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => StyledScaffoldTitle(
+                        title: 'Credential verkaufen',
+                        scanOnTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => const QrScanner())),
+                        child: TopUp(
+                            onTopUpSats: (amount, memo) => Navigator.of(context)
+                                .pushReplacement(MaterialPageRoute(
+                                    builder: (context) => QrRender(
+                                          credential: widget.credential,
+                                          amount: amount,
+                                          memo: memo,
+                                        ))),
+                            onTopUpFiat: (x) {}))))
+                : () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        QrRender(credential: widget.credential))),
             child: Text(
                 getHolderDidFromCredential(widget.credential.toJson()) == ''
                     ? 'zum Kauf anbieten'

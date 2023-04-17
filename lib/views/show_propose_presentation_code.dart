@@ -19,8 +19,11 @@ import 'package:uuid/uuid.dart';
 
 class QrRender extends StatefulWidget {
   final VerifiableCredential credential;
+  final SatoshiAmount? amount;
+  final String? memo;
 
-  const QrRender({Key? key, required this.credential}) : super(key: key);
+  const QrRender({Key? key, required this.credential, this.amount, this.memo})
+      : super(key: key);
 
   @override
   State<QrRender> createState() => QrRenderState();
@@ -42,8 +45,8 @@ class QrRenderState extends State<QrRender> {
         getHolderDidFromCredential(widget.credential.toJson());
     if (id == '') {
       // Offer Credential
-      var invoiceMap = await createInvoice(
-          wallet.lnInKey!, SatoshiAmount.fromUnitAndValue(1, SatoshiUnit.msat));
+      var invoiceMap = await createInvoice(wallet.lnInKey!, widget.amount!,
+          memo: widget.memo);
 
       wallet.newPayment(invoiceMap['checking_id'], '',
           SatoshiAmount.fromUnitAndValue(1, SatoshiUnit.msat));
@@ -56,6 +59,8 @@ class QrRenderState extends State<QrRender> {
           }));
 
       var myDid = await wallet.newConnectionDid();
+
+      wallet.addRelayedDid(myDid);
 
       var offer = OfferCredential(
         from: myDid,
@@ -140,7 +145,9 @@ class QrRenderState extends State<QrRender> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Credential vorzeigen',
+        title: getHolderDidFromCredential(widget.credential.toJson()) == ''
+            ? 'Credential Verkaufen'
+            : 'Credential vorzeigen',
         scanOnTap: () {},
         child: qrData.isEmpty
             ? const CircularProgressIndicator()

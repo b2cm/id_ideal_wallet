@@ -76,7 +76,7 @@ class MainPage extends StatelessWidget {
           return Consumer<WalletProvider>(builder: (context, wallet, child) {
             if (wallet.paymentTimer != null) {
               return InvoiceDisplay(
-                invoice: invoiceMap['checking_id'] ?? '',
+                invoice: invoiceMap['payment_request'] ?? '',
                 amount: CurrencyDisplay(
                     amount: amount.toEuro().toStringAsFixed(2),
                     symbol: '€',

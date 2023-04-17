@@ -28,13 +28,13 @@ Widget buildOfferCredentialDialog(
       contentData.add(ExpansionTile(
         title: title,
         subtitle: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: IssuerInfoText(issuer: credential.issuer)),
             IssuerInfoIcon(issuer: credential.issuer)
           ],
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
         ),
         children: subject,
       ));
@@ -58,7 +58,7 @@ Widget buildOfferCredentialDialog(
                         credential: Column(
                           children: contentData,
                         ),
-                        receipt: paymentReceipt != null
+                        receipt: paymentReceipt != null || toPay != null
                             ? Receipt(
                                 items: [
                                     ReceiptItem(
