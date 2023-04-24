@@ -39,6 +39,7 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
       if (value is Map<String, dynamic>) {
         List<Widget> subs = buildCredSubject(value, key);
         children.addAll(subs);
+      } else if (value is List) {
       } else {
         children.add(ListTile(
           subtitle: Text('${before != null ? '$before.' : ''}$key'),
@@ -208,7 +209,7 @@ class CredentialCardState extends State<CredentialCard> {
         cardTitle: widget.credential.type
             .firstWhere((element) => element != 'VerifiableCredential'),
         subjectName:
-            '${widget.credential.credentialSubject['givenName'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+            '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
         bottomLeftText: IssuerInfoText(
             issuer: widget.credential.issuer,
             selfIssued: widget.credential.isSelfIssued()),

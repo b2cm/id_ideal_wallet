@@ -28,6 +28,7 @@ class WalletProvider extends ChangeNotifier {
   SortingType sortingType = SortingType.dateDown;
   List<ExchangeHistoryEntry> lastPayments = [];
   List<VerifiableCredential> credentials = [];
+  List<VerifiableCredential> contextCredentials = [];
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
@@ -230,13 +231,21 @@ class WalletProvider extends ChangeNotifier {
 
   void _buildCredentialList() {
     credentials = [];
+    contextCredentials = [];
     var all = allCredentials();
     for (var cred in all.values) {
       if (cred.w3cCredential == '') {
         continue;
       }
       if (cred.plaintextCredential == '') {
-        credentials.add(VerifiableCredential.fromJson(cred.w3cCredential));
+        var vc = VerifiableCredential.fromJson(cred.w3cCredential);
+        var type =
+            vc.type.firstWhere((element) => element != 'VerifiableCredential');
+        if (type == 'ContextCredential') {
+          contextCredentials.add(vc);
+        } else {
+          credentials.add(vc);
+        }
       } else {
         // TODO: merge w3c and Plaintext credential
       }
@@ -269,6 +278,23 @@ class WalletProvider extends ChangeNotifier {
         credentials = credentials.reversed.toList();
       }
     }
+  }
+
+  List<VerifiableCredential> getCredentialsForContext(String contextId) {
+    var entry = _wallet.getConfigEntry(contextId);
+    if (entry != null) {
+      var decoded = jsonDecode(entry) as List;
+      logger.d(decoded.length);
+      var list = <VerifiableCredential>[];
+      for (var id in decoded) {
+        var credential = _wallet.getCredential(id);
+        if (credential?.w3cCredential != null) {
+          list.add(VerifiableCredential.fromJson(credential!.w3cCredential));
+        }
+      }
+      return list;
+    }
+    return [];
   }
 
   void changeSortingType(SortingType newType) {
@@ -310,7 +336,29 @@ class WalletProvider extends ChangeNotifier {
     await _wallet.storeCredential(vc, '', hdPath,
         keyType: KeyType.ed25519, credDid: newDid);
     _buildCredentialList();
-    await checkValiditySingle(VerifiableCredential.fromJson(vc));
+    var vcParsed = VerifiableCredential.fromJson(vc);
+    var type = vcParsed.type
+        .firstWhere((element) => element != 'VerifiableCredential');
+    if (type == 'ContextCredential') {
+      await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
+    } else {
+      // search if the credential maybe belongs to a context
+      for (var vcs in contextCredentials) {
+        List groupedTypes =
+            vcs.credentialSubject['groupedTypes'].cast<String>();
+        if (groupedTypes.contains(type)) {
+          var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
+          var id = vcParsed.id ?? getHolderDidFromCredential(vc);
+          if (id == '') {
+            id = '${vcParsed.issuanceDate.toIso8601String()}$type';
+          }
+          old.add(id);
+          logger.d(old);
+          await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
+        }
+      }
+    }
+    await checkValiditySingle(vcParsed);
     notifyListeners();
   }
 

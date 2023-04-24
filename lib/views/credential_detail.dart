@@ -87,7 +87,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 }
                 wallet.deleteCredential(credId);
                 Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                //Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
                     builder: (context) => const CredentialPage()));
               },

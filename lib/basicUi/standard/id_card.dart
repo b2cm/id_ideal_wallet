@@ -83,45 +83,45 @@ class IdCard extends StatelessWidget {
                           ),
                   ]),
                 ),
-                Flexible(
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(
-                          subjectName,
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                Row(
+                  children: [
+                    Expanded(
+                        child: Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Text(
+                        subjectName,
+                        overflow: TextOverflow.clip,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Spacer(),
-                      subjectImage != null
-                          ? Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        blurRadius: 6,
-                                        color: Colors.grey,
-                                        spreadRadius: 2)
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage: subjectImage,
-                                ),
+                    )),
+                    const Spacer(),
+                    subjectImage != null
+                        ? Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                      blurRadius: 6,
+                                      color: Colors.grey,
+                                      spreadRadius: 2)
+                                ],
                               ),
-                            )
-                          : const SizedBox(
-                              width: 0,
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundImage: subjectImage,
+                              ),
                             ),
-                    ],
-                  ),
+                          )
+                        : const SizedBox(
+                            width: 0,
+                          ),
+                  ],
                 ),
                 Container(
                   height: 45,
