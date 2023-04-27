@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +17,9 @@ class AddContextCredentialState extends State<AddContextCredential> {
   List<String> availableCredentials = [
     'Lange Nacht der Wissenschaften - Dresden',
     'Lange Nacht der Wissenschaften - Mittweida',
-    //'Lightning Testnetz Wallet'
+    'Lightning Testnetz Wallet',
+    'Spielgeld Wallet',
+    'SSI Test Services'
   ];
 
   List<int> checkedItems = [];
@@ -25,84 +28,18 @@ class AddContextCredentialState extends State<AddContextCredential> {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
     for (var i = 0; i < availableCredentials.length; i++) {
-      if (i == 0) {
+      if (i == 0 && checkedItems.contains(i)) {
         // LNDW DD
-        if (checkedItems.contains(i)) {
-          var did = await wallet.newCredentialDid();
-
-          var contextCred = VerifiableCredential(
-              context: [credentialsV1Iri, schemaOrgIri],
-              type: ['VerifiableCredential', 'ContextCredential'],
-              issuer: did,
-              id: did,
-              credentialSubject: {
-                'id': did,
-                'name': availableCredentials[i],
-                'groupedTypes': ['ChallengeSolvedCredential'],
-                'buttons': [
-                  {
-                    'buttonText': 'Karte anzeigen',
-                    'url': 'maps.google.com',
-                    'backgroundColor': '#4C4CFF'
-                  },
-                  {
-                    'buttonText': 'Ralley absolvieren ',
-                    'url': 'maps.google.com',
-                    'backgroundColor': '#00B200'
-                  }
-                ]
-              },
-              issuanceDate: DateTime.now());
-
-          var signed =
-              await signCredential(wallet.wallet, contextCred.toJson());
-
-          var storageCred = wallet.getCredential(did);
-
-          wallet.storeCredential(signed, storageCred!.hdPath);
-          wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
-        }
-      } else if (i == 1) {
+        issueLNDWContextDresden(wallet);
+      } else if (i == 1 && checkedItems.contains(i)) {
         // LNDW MW
-        if (checkedItems.contains(i)) {
-          var did = await wallet.newCredentialDid();
-          var contextCred = VerifiableCredential(
-              context: [credentialsV1Iri, schemaOrgIri],
-              type: ['VerifiableCredential', 'ContextCredential'],
-              issuer: did,
-              id: did,
-              credentialSubject: {
-                'id': did,
-                'name': availableCredentials[i],
-                'groupedTypes': ['ChallengeSolvedCredentialMW'],
-                'buttons': [
-                  {
-                    'buttonText': 'Karte anzeigen',
-                    'url': 'maps.google.com',
-                    'backgroundColor': '#4C4CFF'
-                  },
-                  {
-                    'buttonText': 'Fragen beantworten',
-                    'url': 'maps.google.com',
-                    'backgroundColor': '#00B200'
-                  },
-                  {
-                    'buttonText': 'Verlosung',
-                    'url': 'maps.google.com',
-                    'backgroundColor': '#00B200'
-                  }
-                ]
-              },
-              issuanceDate: DateTime.now());
-
-          var signed =
-              await signCredential(wallet.wallet, contextCred.toJson());
-
-          var storageCred = wallet.getCredential(did);
-
-          wallet.storeCredential(signed, storageCred!.hdPath);
-          wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
-        }
+        issueLNDWContextMittweida(wallet);
+      } else if (i == 2 && checkedItems.contains(i)) {
+        issueLNTestNetContext(wallet);
+      } else if (i == 3 && checkedItems.contains(i)) {
+        issueSimulatePaymentContext(wallet);
+      } else if (i == 4 && checkedItems.contains(i)) {
+        issueSSITestServiceContext(wallet);
       }
     }
     Navigator.pop(navigatorKey.currentContext!);
@@ -135,4 +72,177 @@ class AddContextCredentialState extends State<AddContextCredential> {
               );
             }));
   }
+}
+
+Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'Lange Nacht der Wissenschaften - Dresden',
+        'groupedTypes': ['ChallengeSolvedCredential'],
+        'buttons': [
+          {
+            'buttonText': 'Karte anzeigen',
+            'webViewTitle': 'Karte',
+            'url': 'maps.google.com',
+            'backgroundColor': '#4C4CFF'
+          },
+          {
+            'buttonText': 'Ralley absolvieren ',
+            'webViewTitle': 'Ralley',
+            'url': 'maps.google.com',
+            'backgroundColor': '#00B200'
+          }
+        ]
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+}
+
+Future<void> issueLNDWContextMittweida(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'Lange Nacht der Wissenschaften - Mittweida',
+        'groupedTypes': ['ChallengeSolvedCredentialMW'],
+        'buttons': [
+          {
+            'buttonText': 'Karte anzeigen',
+            'webViewTitle': 'Karte',
+            'url': 'maps.google.com',
+            'backgroundColor': '#4C4CFF'
+          },
+          {
+            'buttonText': 'Fragen beantworten',
+            'webViewTitle': 'Quiz',
+            'url': 'maps.google.com',
+            'backgroundColor': '#00B200'
+          },
+          {
+            'buttonText': 'Verlosung',
+            'webViewTitle': 'Verlosung',
+            'url': 'maps.google.com',
+            'backgroundColor': '#00B200'
+          }
+        ]
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+}
+
+Future<void> issueLNTestNetContext(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential', 'PaymentContext'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'Lightning Testnet Account',
+        'paymentType': 'LightningTestnetPayment'
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  await createLNWallet(did);
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+}
+
+Future<void> issueSimulatePaymentContext(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential', 'PaymentContext'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'Spielgeld',
+        'paymentType': 'SimulatedPayment'
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  wallet.createFakePayment(did);
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+}
+
+Future<void> issueSSITestServiceContext(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'SSI Test-Services',
+        'groupedTypes': [
+          'IdCard',
+          'EventTicket',
+          'ALG2Bescheid',
+          'DriversLicense',
+          'KinderzuschlagBescheid',
+          'PictureArt',
+          'StudentCard',
+          'WohngeldBescheid'
+        ],
+        'buttons': [
+          {
+            'buttonText': 'Demo-Austellservice',
+            'webViewTitle': 'Austellservice',
+            'url': 'http://167.235.195.132:8081',
+            'backgroundColor': '#4C4CFF'
+          },
+          {
+            'buttonText': 'Ticketshop',
+            'webViewTitle': 'Ticketshop',
+            'url': 'https://167.235.195.132:8082',
+            'backgroundColor': '#00B200'
+          }
+        ]
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }

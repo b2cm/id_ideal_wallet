@@ -8,7 +8,10 @@ import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:provider/provider.dart';
 
 class PaymentOverview extends StatelessWidget {
-  const PaymentOverview({Key? key}) : super(key: key);
+  final VerifiableCredential paymentContext;
+
+  const PaymentOverview({Key? key, required this.paymentContext})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +20,7 @@ class PaymentOverview extends StatelessWidget {
         scanOnTap: () {},
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {
-            var allPayments = wallet.getAllPayments();
+            var allPayments = wallet.getAllPayments(paymentContext.id!);
             return ListView.builder(
                 itemCount: allPayments.length,
                 itemBuilder: (context, index) {

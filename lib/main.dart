@@ -1,16 +1,22 @@
 import 'dart:io';
 
 import 'package:card_swiper/card_swiper.dart';
+import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/balance.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
-import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
+import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
+import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
+import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
+import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
+import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:path_provider/path_provider.dart';
@@ -50,43 +56,43 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
-  void onTopUpSats(SatoshiAmount amount, String memo) async {
-    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-        listen: false);
-    var invoiceMap = await createInvoice(wallet.lnInKey!, amount, memo: memo);
-    var index = invoiceMap['checking_id'];
-    wallet.newPayment(index, memo, amount);
-    showModalBottomSheet<dynamic>(
-        isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        context: navigatorKey.currentContext!,
-        builder: (context) {
-          return Consumer<WalletProvider>(builder: (context, wallet, child) {
-            if (wallet.paymentTimer != null) {
-              return InvoiceDisplay(
-                invoice: invoiceMap['payment_request'] ?? '',
-                amount: CurrencyDisplay(
-                    amount: amount.toEuro().toStringAsFixed(2),
-                    symbol: '€',
-                    mainFontSize: 35,
-                    centered: true),
-                memo: memo,
-              );
-            } else {
-              Future.delayed(
-                  const Duration(seconds: 1),
-                  () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const MainPage()),
-                      (route) => false));
-              return const SizedBox(
-                height: 10,
-              );
-            }
-          });
-        });
-  }
+  // void onTopUpSats(SatoshiAmount amount, String memo) async {
+  //   var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+  //       listen: false);
+  //   var invoiceMap = await createInvoice(wallet.lnInKey!, amount, memo: memo);
+  //   var index = invoiceMap['checking_id'];
+  //   wallet.newPayment(index, memo, amount);
+  //   showModalBottomSheet<dynamic>(
+  //       isScrollControlled: true,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(10.0),
+  //       ),
+  //       context: navigatorKey.currentContext!,
+  //       builder: (context) {
+  //         return Consumer<WalletProvider>(builder: (context, wallet, child) {
+  //           if (wallet.paymentTimer != null) {
+  //             return InvoiceDisplay(
+  //               invoice: invoiceMap['payment_request'] ?? '',
+  //               amount: CurrencyDisplay(
+  //                   amount: amount.toEuro().toStringAsFixed(2),
+  //                   symbol: '€',
+  //                   mainFontSize: 35,
+  //                   centered: true),
+  //               memo: memo,
+  //             );
+  //           } else {
+  //             Future.delayed(
+  //                 const Duration(seconds: 1),
+  //                 () => Navigator.of(context).pushAndRemoveUntil(
+  //                     MaterialPageRoute(builder: (context) => const MainPage()),
+  //                     (route) => false));
+  //             return const SizedBox(
+  //               height: 10,
+  //             );
+  //           }
+  //         });
+  //       });
+  // }
 
   void onTopUpFiat(int amount) {}
 
@@ -100,6 +106,13 @@ class MainPage extends StatelessWidget {
             viewportFraction: 0.87,
             scale: 0.875,
             itemCount: wallet.contextCredentials.length + 1,
+            onTap: (indexOut) {
+              if (indexOut == wallet.contextCredentials.length) {
+                logger.d('Hinzufügen');
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const AddContextCredential()));
+              }
+            },
             itemBuilder: (context, indexOut) {
               var count = indexOut == wallet.contextCredentials.length
                   ? -1
@@ -112,13 +125,16 @@ class MainPage extends StatelessWidget {
               var buttons = <Widget>[];
               if (indexOut != wallet.contextCredentials.length) {
                 var contextCred = wallet.contextCredentials[indexOut];
+
+                // Normal context credential -> only list of Buttons
                 List b = contextCred.credentialSubject['buttons'] ?? [];
                 for (var btn in b) {
                   buttons.add(ElevatedButton(
                     onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
                             builder: (context) => WebViewWindow(
-                                initialUrl: btn['url']!, title: 'title'))),
+                                initialUrl: btn['url']!,
+                                title: btn['webViewTitle'] ?? ''))),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: HexColor.fromHex(btn['backgroundColor']),
                       minimumSize: const Size.fromHeight(50), // NEW
@@ -130,6 +146,109 @@ class MainPage extends StatelessWidget {
                     height: 15,
                   ));
                 }
+
+                // Payment Credential
+                if (contextCred.type.contains('PaymentContext')) {
+                  // Balance
+                  var balance = Balance(
+                    receiveOnTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => StyledScaffoldTitle(
+                                title: 'Zahlung anfordern',
+                                scanOnTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const QrScanner())),
+                                child: TopUp(
+                                    //onTopUpSats: onTopUpSats,
+                                    onTopUpSats: (x, y) {},
+                                    onTopUpFiat: onTopUpFiat)))),
+                    sendOnTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => const QrScanner())),
+                    balance: CurrencyDisplay(
+                      amount:
+                          wallet.balance[contextCred.id!]?.toString() ?? '0.0',
+                      symbol: '€',
+                      mainFontSize: 40,
+                    ),
+                  );
+                  buttons.add(balance);
+                  buttons.add(const SizedBox(
+                    height: 10,
+                  ));
+
+                  // List of last three payments
+                  buttons.add(const Heading(text: 'Letzte Zahlungen'));
+                  var lastPaymentData =
+                      wallet.lastPayments[contextCred.id!] ?? [];
+                  if (lastPaymentData.isNotEmpty) {
+                    var lastPayments = ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount:
+                            wallet.lastPayments[contextCred.id!]?.length ?? 0,
+                        itemBuilder: (context, index) {
+                          return InkWell(
+                            child: TransactionPreview(
+                                title: wallet
+                                    .lastPayments[contextCred.id!]![index]
+                                    .otherParty,
+                                amount: CurrencyDisplay(
+                                    amount: wallet
+                                        .lastPayments[contextCred.id!]![index]
+                                        .action,
+                                    symbol: '€')),
+                            onTap: () {
+                              if (wallet.lastPayments[contextCred.id!]![index]
+                                  .shownAttributes.isNotEmpty) {
+                                var cred = wallet.getCredential(wallet
+                                    .lastPayments[contextCred.id!]![index]
+                                    .shownAttributes
+                                    .first);
+                                if (cred != null &&
+                                    cred.w3cCredential.isNotEmpty) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CredentialDetailView(
+                                        credential:
+                                            VerifiableCredential.fromJson(
+                                                cred.w3cCredential),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          );
+                        });
+                    buttons.add(lastPayments);
+                    if (wallet.getAllPayments(contextCred.id!).length > 3) {
+                      var additional = TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (context) => PaymentOverview(
+                                      paymentContext: contextCred))),
+                          child: const Text('Weitere anzeigen',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              )));
+                      buttons.add(additional);
+                    }
+                  } else {
+                    var empty = const TransactionPreview(
+                      title: 'Keine getätigten Zahlungen',
+                      amount: CurrencyDisplay(
+                        symbol: '',
+                        amount: '',
+                      ),
+                    );
+                    buttons.add(empty);
+                  }
+                }
               }
 
               return Column(children: [
@@ -137,18 +256,13 @@ class MainPage extends StatelessWidget {
                     constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.3),
                     child: indexOut == wallet.contextCredentials.length
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 140),
-                            child: InkWell(
-                                onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const AddContextCredential())),
-                                child: const Icon(
-                                  Icons.add,
-                                  color: Colors.grey,
-                                  size: 90,
-                                )))
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 140),
+                            child: Icon(
+                              Icons.add,
+                              color: Colors.grey,
+                              size: 90,
+                            ))
                         : count == 1
                             ? Padding(
                                 padding:

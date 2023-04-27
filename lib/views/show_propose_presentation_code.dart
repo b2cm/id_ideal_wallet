@@ -41,15 +41,21 @@ class QrRenderState extends State<QrRender> {
   void _proposePresentation() async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
+
+    // TODO: select paymentMethod
+    String paymentId = '';
+
     var id = widget.credential.id ??
         getHolderDidFromCredential(widget.credential.toJson());
     if (id == '') {
       // Offer Credential
-      var invoiceMap = await createInvoice(wallet.lnInKey!, widget.amount!,
+      var invoiceMap = await createInvoice(
+          wallet.getLnInKey(paymentId)!, widget.amount!,
           memo: widget.memo);
 
-      wallet.newPayment(invoiceMap['checking_id'], '',
-          SatoshiAmount.fromUnitAndValue(1, SatoshiUnit.msat));
+      // TODO: select payment method
+      // wallet.newPayment(invoiceMap['checking_id'], '',
+      //    SatoshiAmount.fromUnitAndValue(1, SatoshiUnit.msat));
 
       var paymentAtt = Attachment(
           format: 'lnInvoice',

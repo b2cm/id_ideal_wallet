@@ -12,7 +12,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-Future<void> createLNWallet() async {
+Future<void> createLNWallet(String paymentId) async {
   var id = const Uuid().v4();
   var res = await post(Uri.parse('https://payments.pixeldev.eu/create_user'),
       headers: {'Content-Type': 'application/json'},
@@ -23,7 +23,7 @@ Future<void> createLNWallet() async {
     // everything ok = store to wallet
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
-    wallet.storeLnAccount(answer);
+    wallet.storeLnAccount(paymentId, answer);
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -134,12 +134,17 @@ void payInvoiceInteraction(String invoice) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
-  if (wallet.lnInKey == null) {
-    logger.d('no ln Wallet');
-    throw Exception('no ln wallet');
+  // TODO: Select paymentMethod (user)
+  var paymentMethods = wallet.getSuitablePaymentCredentials(invoice);
+  String paymentId = paymentMethods.first.id!;
+  var lnInKey = wallet.getLnInKey(paymentId);
+  var lnAdminKey = wallet.getLnAdminKey(paymentId);
+  if (lnInKey == null || lnAdminKey == null) {
+    throw Exception('Cant pay: lnInkey or lnAdminKey null. Fatal Error');
+    //TODO: show to user
   }
 
-  var decoded = await decodeInvoice(wallet.lnInKey!, invoice);
+  var decoded = await decodeInvoice(lnInKey, invoice);
   SatoshiAmount toPay = decoded.amount;
   logger.d(toPay.toMSat());
   var description = decoded.description;
@@ -163,7 +168,7 @@ void payInvoiceInteraction(String invoice) async {
                 bool paid = false;
                 var paymentHash = '';
                 try {
-                  paymentHash = await payInvoice(wallet.lnAdminKey!, invoice);
+                  paymentHash = await payInvoice(lnAdminKey, invoice);
                   paid = true;
                 } catch (_) {
                   paid = false;
@@ -175,8 +180,7 @@ void payInvoiceInteraction(String invoice) async {
                     int x = await Future.delayed(const Duration(seconds: 1),
                         () async {
                       try {
-                        success =
-                            await isInvoicePaid(wallet.lnInKey!, paymentHash);
+                        success = await isInvoicePaid(lnInKey, paymentHash);
                         return 0;
                       } catch (_) {
                         return -1;
@@ -190,7 +194,7 @@ void payInvoiceInteraction(String invoice) async {
                 }
 
                 if (success) {
-                  wallet.storePayment('-${toPay.toEuro()}',
+                  wallet.storePayment('paymentId', '-${toPay.toEuro()}',
                       description == '' ? 'Lightning Invoice' : description);
                 }
 

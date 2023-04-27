@@ -13,22 +13,27 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/views/add_context_credential.dart';
 
 import '../functions/util.dart' as my_util;
 
 class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   bool _authRunning = false;
+
   String qrData = '';
+
   late Timer t;
-  Timer? paymentTimer;
-  String? lnAdminKey;
-  String? lnInKey;
-  double balance = -1.0;
   SortingType sortingType = SortingType.dateDown;
-  List<ExchangeHistoryEntry> lastPayments = [];
+
+  Map<String, List<ExchangeHistoryEntry>> lastPayments = {};
+  Map<String, double> balance = {};
+  Timer? paymentTimer;
+
   List<VerifiableCredential> credentials = [];
   List<VerifiableCredential> contextCredentials = [];
+  List<VerifiableCredential> paymentCredentials = [];
+
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
@@ -43,11 +48,18 @@ class WalletProvider extends ChangeNotifier {
       await my_util.openWallet(_wallet);
 
       if (!_wallet.isInitialized()) {
-        _wallet.initialize();
-        _wallet.initializeIssuer(KeyType.ed25519);
+        await _wallet.initialize();
+        await _wallet.initializeIssuer(KeyType.ed25519);
       }
 
+      await updateStorage();
+
       _buildCredentialList();
+
+      if (contextCredentials.isEmpty) {
+        await issueLNDWContextMittweida(this);
+        await issueLNDWContextDresden(this);
+      }
 
       var lastCheck = _wallet.getConfigEntry('lastValidityCheckTime');
       if (lastCheck == null) {
@@ -60,15 +72,6 @@ class WalletProvider extends ChangeNotifier {
         }
       }
 
-      lnAdminKey = _wallet.getConfigEntry('lnAdminKey');
-      lnInKey = _wallet.getConfigEntry('lnInKey');
-
-      if (lnInKey != null) {
-        getLnBalance();
-      }
-
-      _updateLastThreePayments();
-
       _authRunning = false;
 
       var relayedDidsEntry = wallet.getConfigEntry('relayedDids');
@@ -78,6 +81,14 @@ class WalletProvider extends ChangeNotifier {
 
       notifyListeners();
     }
+  }
+
+  String? getLnInKey(String paymentId) {
+    return _wallet.getConfigEntry('lnInKey$paymentId');
+  }
+
+  String? getLnAdminKey(String paymentId) {
+    return _wallet.getConfigEntry('lnInKey$paymentId');
   }
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
@@ -128,6 +139,47 @@ class WalletProvider extends ChangeNotifier {
     if (notify) notifyListeners();
   }
 
+  Future<void> updateStorage() async {
+    var lnAccount = _wallet.getConfigEntry('lnDetails');
+    logger.d(lnAccount);
+    if (lnAccount != null) {
+      // There is an account that needs to be converted into a context credential
+      var asJson = jsonDecode(lnAccount);
+      var did = await newCredentialDid();
+      var contextCred = VerifiableCredential(
+          context: [credentialsV1Iri, schemaOrgIri],
+          type: ['VerifiableCredential', 'ContextCredential', 'PaymentContext'],
+          issuer: did,
+          id: did,
+          credentialSubject: {
+            'id': did,
+            'name': 'Lightning Testnet Account',
+            'paymentType': 'LightningTestnetPayment'
+          },
+          issuanceDate: DateTime.now());
+
+      var signed = await signCredential(_wallet, contextCred.toJson());
+
+      storeLnAccount(did, asJson);
+      var storageCred = getCredential(did);
+      storeCredential(signed, storageCred!.hdPath);
+      storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+
+      var paymentHistory = getAllPayments('');
+      if (paymentHistory.isNotEmpty) {
+        for (var e in paymentHistory) {
+          storePayment(did, e.action, e.otherParty,
+              belongingCredentials: e.shownAttributes, timestamp: e.timestamp);
+        }
+      }
+
+      _wallet.deleteConfigEntry('lnAdminKey');
+      _wallet.deleteConfigEntry('lnInKey');
+      _wallet.deleteConfigEntry('lnDetails');
+      _wallet.deleteExchangeHistory('paymentHistory');
+    }
+  }
+
   void checkValidity() async {
     lastCheckRevocation = DateTime.now();
     await _wallet.storeConfigEntry(
@@ -140,51 +192,71 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void simulatePay(String amount) {
-    balance -= int.parse(amount);
+  void getLnBalance(String paymentId) async {
+    var a = await getBalance(getLnInKey(paymentId)!);
+    balance[paymentId] = a.toEuro();
     notifyListeners();
   }
 
-  void getLnBalance() async {
-    var a = await getBalance(lnInKey!);
-    balance = a.toEuro();
+  void createFakePayment(String paymentId) async {
+    await _wallet.storeConfigEntry('balance$paymentId', '10000');
+    balance[paymentId] = 10000;
     notifyListeners();
   }
 
-  void storeLnAccount(Map<String, dynamic> accountData) async {
+  void fakePay(String paymentId, double amount) async {
+    var value = double.tryParse(_wallet.getConfigEntry('balance$paymentId')!);
+    if (value != null) {
+      value -= amount;
+      await _wallet.storeConfigEntry(
+          'balance$paymentId', value.toStringAsFixed(2));
+      balance[paymentId] = value;
+      notifyListeners();
+    }
+  }
+
+  void getFakeBalance(String paymentId) {
+    balance[paymentId] =
+        double.parse(_wallet.getConfigEntry('balance$paymentId') ?? '0.0');
+  }
+
+  void storeLnAccount(
+      String paymentId, Map<String, dynamic> accountData) async {
     var wallets = accountData['wallets'] as List;
     var w = wallets.first;
-    lnAdminKey = w['adminkey'];
-    lnInKey = w['inkey'];
+    var lnAdminKey = w['adminkey'];
+    var lnInKey = w['inkey'];
 
     if (lnAdminKey == null || lnInKey == null) {
       throw Exception('AdminKey or inKey null - this should not happen');
       // Todo message to user
     }
 
-    await _wallet.storeConfigEntry('lnAdminKey', lnAdminKey!);
-    await _wallet.storeConfigEntry('lnInKey', lnInKey!);
-    await _wallet.storeConfigEntry('lnDetails', jsonEncode(accountData));
+    await _wallet.storeConfigEntry('lnAdminKey$paymentId', lnAdminKey!);
+    await _wallet.storeConfigEntry('lnInKey$paymentId', lnInKey!);
+    await _wallet.storeConfigEntry(
+        'lnDetails$paymentId', jsonEncode(accountData));
 
     notifyListeners();
   }
 
-  void storePayment(String action, String otherParty,
-      [List<String>? belongingCredentials]) async {
-    _wallet.storeExchangeHistoryEntry('paymentHistory', DateTime.now(), action,
-        otherParty, belongingCredentials);
-    _updateLastThreePayments();
-    getLnBalance();
+  void storePayment(String paymentId, String action, String otherParty,
+      {List<String>? belongingCredentials, DateTime? timestamp}) async {
+    _wallet.storeExchangeHistoryEntry('paymentHistory$paymentId',
+        timestamp ?? DateTime.now(), action, otherParty, belongingCredentials);
+    _updateLastThreePayments(paymentId);
+    getLnBalance(paymentId);
     notifyListeners();
   }
 
-  void newPayment(String paymentHash, String memo, SatoshiAmount amount) {
+  void newPayment(
+      String paymentId, String paymentHash, String memo, SatoshiAmount amount) {
     paymentTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      var paid = await isInvoicePaid(lnInKey!, paymentHash);
+      var paid = await isInvoicePaid(getLnInKey(paymentId)!, paymentHash);
       logger.d(paymentHash);
       if (paid) {
         timer.cancel();
-        storePayment('+${amount.toEuro().toStringAsFixed(2)}',
+        storePayment(paymentId, '+${amount.toEuro().toStringAsFixed(2)}',
             memo == '' ? 'Lightning Invoice' : memo);
         paymentTimer = null;
         showModalBottomSheet(
@@ -209,8 +281,8 @@ class WalletProvider extends ChangeNotifier {
     });
   }
 
-  void _updateLastThreePayments() {
-    var payments = getAllPayments();
+  void _updateLastThreePayments(String paymentId) {
+    var payments = getAllPayments(paymentId);
     if (payments.length > 1) {
       payments.sort((e1, e2) {
         if (e1.timestamp.isBefore(e2.timestamp)) {
@@ -223,15 +295,38 @@ class WalletProvider extends ChangeNotifier {
       });
     }
     if (payments.length <= 3) {
-      lastPayments = payments;
+      lastPayments[paymentId] = payments;
     } else {
-      lastPayments = [payments.first, payments[1], payments[2]];
+      lastPayments[paymentId] = [payments.first, payments[1], payments[2]];
     }
+  }
+
+  List<VerifiableCredential> getSuitablePaymentCredentials(String invoice) {
+    var pay = <VerifiableCredential>[];
+
+    String paymentType = '';
+    if (invoice.startsWith('lnbc') || invoice.startsWith('LNBC')) {
+      paymentType = 'LightningPayment';
+    } else if (invoice.startsWith('lntb')) {
+      paymentType = 'LightningTestnetPayment';
+    } else {
+      paymentType = 'SimulatedPayment';
+    }
+
+    for (var p in paymentCredentials) {
+      if (p.credentialSubject['paymentType'] == paymentType) {
+        pay.add(p);
+      }
+    }
+
+    return pay;
   }
 
   void _buildCredentialList() {
     credentials = [];
     contextCredentials = [];
+    paymentCredentials = [];
+
     var all = allCredentials();
     for (var cred in all.values) {
       if (cred.w3cCredential == '') {
@@ -239,9 +334,16 @@ class WalletProvider extends ChangeNotifier {
       }
       if (cred.plaintextCredential == '') {
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
-        var type =
-            vc.type.firstWhere((element) => element != 'VerifiableCredential');
-        if (type == 'ContextCredential') {
+        if (vc.type.contains('ContextCredential')) {
+          if (vc.type.contains('PaymentContext')) {
+            paymentCredentials.add(vc);
+            _updateLastThreePayments(vc.id!);
+            if (vc.credentialSubject['paymentType'] == 'SimulatedPayment') {
+              getFakeBalance(vc.id!);
+            } else {
+              getLnBalance(vc.id!);
+            }
+          }
           contextCredentials.add(vc);
         } else {
           credentials.add(vc);
@@ -284,7 +386,6 @@ class WalletProvider extends ChangeNotifier {
     var entry = _wallet.getConfigEntry(contextId);
     if (entry != null) {
       var decoded = jsonDecode(entry) as List;
-      logger.d(decoded.length);
       var list = <VerifiableCredential>[];
       for (var id in decoded) {
         var credential = _wallet.getCredential(id);
@@ -303,8 +404,9 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ExchangeHistoryEntry> getAllPayments() {
-    return _wallet.getExchangeHistoryEntriesForCredential('paymentHistory') ??
+  List<ExchangeHistoryEntry> getAllPayments(String paymentId) {
+    return _wallet.getExchangeHistoryEntriesForCredential(
+            'paymentHistory$paymentId') ??
         [];
   }
 
@@ -339,22 +441,26 @@ class WalletProvider extends ChangeNotifier {
     var vcParsed = VerifiableCredential.fromJson(vc);
     var type = vcParsed.type
         .firstWhere((element) => element != 'VerifiableCredential');
+    logger.d(type);
     if (type == 'ContextCredential') {
       await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
     } else {
       // search if the credential maybe belongs to a context
       for (var vcs in contextCredentials) {
-        List groupedTypes =
-            vcs.credentialSubject['groupedTypes'].cast<String>();
-        if (groupedTypes.contains(type)) {
-          var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
-          var id = vcParsed.id ?? getHolderDidFromCredential(vc);
-          if (id == '') {
-            id = '${vcParsed.issuanceDate.toIso8601String()}$type';
+        if (vcs.credentialSubject.containsKey('groupedTypes')) {
+          List groupedTypes =
+              vcs.credentialSubject['groupedTypes'].cast<String>();
+          logger.d(groupedTypes);
+          if (groupedTypes.contains(type)) {
+            var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
+            var id = vcParsed.id ?? getHolderDidFromCredential(vc);
+            if (id == '') {
+              id = '${vcParsed.issuanceDate.toIso8601String()}$type';
+            }
+            old.add(id);
+            logger.d(old);
+            await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
           }
-          old.add(id);
-          logger.d(old);
-          await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
         }
       }
     }

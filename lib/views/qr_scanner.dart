@@ -19,7 +19,8 @@ class QrScanner extends StatelessWidget {
             onDetect: (barcode, args) {
               if (barcode.rawValue != null) {
                 final String code = barcode.rawValue!;
-                logger.d('Barcode found! $code');
+                logger.d(
+                    'Barcode found! $code, type: ${barcode.type.name}, format: ${barcode.format.name}');
                 if (code.startsWith('lnbc') ||
                     code.startsWith('LNBC') ||
                     code.startsWith('lntb')) {

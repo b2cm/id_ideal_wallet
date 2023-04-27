@@ -68,13 +68,18 @@ Future<bool> handleOfferCredential(
   //payment requested?
   String? toPay;
   String? invoice;
+  String? paymentId, lnInKey, lnAdminKey;
+
   if (message.attachments!.length > 1) {
     logger.d('with payment');
     var paymentReq = message.attachments!.where(
         (element) => element.format != null && element.format == 'lnInvoice');
     if (paymentReq.isNotEmpty) {
       invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
-      if (invoice != null && wallet.lnInKey == null) {
+
+      var paymentTypes = wallet.getSuitablePaymentCredentials(invoice!);
+
+      if (paymentTypes.isEmpty) {
         await showModalBottomSheet(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.0),
@@ -100,10 +105,21 @@ Future<bool> handleOfferCredential(
             });
         return false;
       }
-      var decoded = await decodeInvoice(wallet.lnInKey!, invoice!);
-      toPay = decoded.amount.toEuro().toStringAsFixed(2);
-      logger.d(toPay);
-      logger.d(decoded.amount.milliSatoshi);
+
+      //TODO: ask user which to use
+      paymentId = paymentTypes.first.id!;
+      var paymentType = paymentTypes.first.credentialSubject['paymentType'];
+
+      if (paymentType != 'SimulatedPayment') {
+        lnInKey = wallet.getLnInKey(paymentId);
+        lnAdminKey = wallet.getLnAdminKey(paymentId);
+        var decoded = await decodeInvoice(lnInKey!, invoice);
+        toPay = decoded.amount.toEuro().toStringAsFixed(2);
+        logger.d(toPay);
+        logger.d(decoded.amount.milliSatoshi);
+      } else {
+        toPay = invoice;
+      }
     }
   }
   Map<String, String> paymentDetails = {};
@@ -121,9 +137,14 @@ Future<bool> handleOfferCredential(
     if (res) {
       if (invoice != null) {
         try {
-          await payInvoice(wallet.lnAdminKey!, invoice);
-          wallet.getLnBalance();
+          if (lnAdminKey != null) {
+            await payInvoice(lnAdminKey, invoice);
+            wallet.getLnBalance(paymentId!);
+          } else {
+            wallet.fakePay(paymentId!, double.parse(toPay!));
+          }
           logger.d('erfolgreich bezahlt');
+          paymentDetails['paymentId'] = paymentId;
           paymentDetails['value'] = '-$toPay';
           paymentDetails['note'] =
               '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
@@ -234,9 +255,11 @@ _sendRequestCredential(
       to: [offer.from!]);
 
   if (paymentDetails.isNotEmpty) {
-    wallet.storePayment(paymentDetails['value']!, paymentDetails['note']!, [
-      '${detail.first.credential.issuanceDate.toIso8601String()}${paymentDetails['note']!}'
-    ]);
+    wallet.storePayment(paymentDetails['paymentId']!, paymentDetails['value']!,
+        paymentDetails['note']!,
+        belongingCredentials: [
+          '${detail.first.credential.issuanceDate.toIso8601String()}${paymentDetails['note']!}'
+        ]);
   }
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
       message, offer.from!);
@@ -286,8 +309,9 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
   logger.d(message.toJson());
 
   if (paymentDetails.isNotEmpty) {
-    wallet.storePayment(
-        paymentDetails['value']!, paymentDetails['note']!, [firstDid]);
+    wallet.storePayment(paymentDetails['paymentId']!, paymentDetails['value']!,
+        paymentDetails['note']!,
+        belongingCredentials: [firstDid]);
   }
 
   sendMessage(myDid, determineReplyUrl(offer.replyUrl, offer.replyTo), wallet,
