@@ -188,10 +188,13 @@ class CredentialCardState extends State<CredentialCard> {
       } else {
         final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
           'image': (match) =>
-              match.value is String && match.value.startsWith('data:image')
+              match.value is String &&
+              match.value.startsWith('data:image') &&
+              (!match.path.contains('background'))
         });
 
         var result = path.read(widget.credential.toJson());
+        logger.d(result.first.path);
         var dataString = result.first.value as String;
         var imageData = dataString.split(',').last;
 
@@ -203,20 +206,60 @@ class CredentialCardState extends State<CredentialCard> {
     }
   }
 
-  Widget buildCard() {
-    return IdCard(
-        subjectImage: image?.image,
-        cardTitle: widget.credential.type
-            .firstWhere((element) => element != 'VerifiableCredential'),
-        subjectName:
-            '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-        bottomLeftText: IssuerInfoText(
-            issuer: widget.credential.issuer,
-            selfIssued: widget.credential.isSelfIssued()),
-        bottomRightText: IssuerInfoIcon(
-          issuer: widget.credential.issuer,
-          selfIssued: widget.credential.isSelfIssued(),
-        ));
+  Widget buildCard(WalletProvider wallet) {
+    return widget.credential.type.contains('ContextCredential')
+        ? widget.credential.type.contains('PaymentContext')
+            ? PaymentCard(
+                receiveOnTap: () {},
+                sendOnTap: () {},
+                balance:
+                    wallet.balance[widget.credential.id]?.toStringAsFixed(2) ??
+                        '0.0',
+                cardTitle: widget.credential.credentialSubject['name'],
+                subjectName: '',
+                bottomLeftText: const SizedBox(
+                  width: 0,
+                ),
+                bottomRightText: const SizedBox(
+                  width: 0,
+                ),
+              )
+            : ContextCredentialCard(
+                cardTitle: '',
+                backgroundImage:
+                    widget.credential.credentialSubject['backgroundImage'] !=
+                            null
+                        ? Image.memory(base64Decode(widget
+                                .credential.credentialSubject['backgroundImage']
+                                .split(',')
+                                .last))
+                            .image
+                        : null,
+                subjectName: widget.credential.credentialSubject['name'],
+                bottomLeftText: const SizedBox(
+                  width: 0,
+                ),
+                bottomRightText: const SizedBox(
+                  width: 0,
+                ))
+        : IdCard(
+            subjectImage: image?.image,
+            backgroundImage:
+                widget.credential.credentialSubject['backgroundImage'] != null
+                    ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
+                        .image
+                    : null,
+            cardTitle: widget.credential.type
+                .firstWhere((element) => element != 'VerifiableCredential'),
+            subjectName:
+                '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+            bottomLeftText: IssuerInfoText(
+                issuer: widget.credential.issuer,
+                selfIssued: widget.credential.isSelfIssued()),
+            bottomRightText: IssuerInfoIcon(
+              issuer: widget.credential.issuer,
+              selfIssued: widget.credential.isSelfIssued(),
+            ));
   }
 
   @override
@@ -235,10 +278,10 @@ class CredentialCardState extends State<CredentialCard> {
             return Container(
               foregroundDecoration: const BoxDecoration(
                   color: Color.fromARGB(125, 255, 255, 255)),
-              child: buildCard(),
+              child: buildCard(wallet),
             );
           } else {
-            return buildCard();
+            return buildCard(wallet);
           }
         }));
   }

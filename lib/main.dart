@@ -3,12 +3,9 @@ import 'dart:io';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/basicUi/standard/balance.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
-import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
-import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
@@ -149,35 +146,6 @@ class MainPage extends StatelessWidget {
 
                 // Payment Credential
                 if (contextCred.type.contains('PaymentContext')) {
-                  // Balance
-                  var balance = Balance(
-                    receiveOnTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => StyledScaffoldTitle(
-                                title: 'Zahlung anfordern',
-                                scanOnTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const QrScanner())),
-                                child: TopUp(
-                                    //onTopUpSats: onTopUpSats,
-                                    onTopUpSats: (x, y) {},
-                                    onTopUpFiat: onTopUpFiat)))),
-                    sendOnTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => const QrScanner())),
-                    balance: CurrencyDisplay(
-                      amount:
-                          wallet.balance[contextCred.id!]?.toString() ?? '0.0',
-                      symbol: '€',
-                      mainFontSize: 40,
-                    ),
-                  );
-                  buttons.add(balance);
-                  buttons.add(const SizedBox(
-                    height: 10,
-                  ));
-
                   // List of last three payments
                   buttons.add(const Heading(text: 'Letzte Zahlungen'));
                   var lastPaymentData =

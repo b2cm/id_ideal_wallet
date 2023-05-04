@@ -62,7 +62,12 @@ class WalletProvider extends ChangeNotifier {
       }
 
       var lastCheck = _wallet.getConfigEntry('lastValidityCheckTime');
-      if (lastCheck == null) {
+      var revState = _wallet.getConfigEntry('revocationState');
+      if (revState != null) {
+        Map<String, dynamic> tmp = jsonDecode(revState);
+        revocationState = tmp.cast<String, int>();
+      }
+      if (lastCheck == null || revocationState.isEmpty) {
         checkValidity();
       } else {
         lastCheckRevocation = DateTime.parse(lastCheck);
@@ -135,6 +140,9 @@ class WalletProvider extends ChangeNotifier {
     }
 
     revocationState[id] = RevocationState.valid.index;
+
+    await _wallet.storeConfigEntry(
+        'revocationState', jsonEncode(revocationState));
 
     if (notify) notifyListeners();
   }

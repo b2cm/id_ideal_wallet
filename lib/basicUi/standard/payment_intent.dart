@@ -56,9 +56,7 @@ class PaymentIntent extends StatelessWidget {
             innerColor: Colors.white,
             text: "Bezahlen",
             outerColor: const Color.fromARGB(255, 35, 216, 108),
-            onSubmit: () {
-              onPaymentAccepted();
-            },
+            onSubmit: onPaymentAccepted,
           ),
         ),
         TextButton(

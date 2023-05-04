@@ -21,8 +21,14 @@ class QrRender extends StatefulWidget {
   final VerifiableCredential credential;
   final SatoshiAmount? amount;
   final String? memo;
+  final VerifiableCredential? paymentContext;
 
-  const QrRender({Key? key, required this.credential, this.amount, this.memo})
+  const QrRender(
+      {Key? key,
+      required this.credential,
+      this.amount,
+      this.memo,
+      this.paymentContext})
       : super(key: key);
 
   @override
@@ -42,28 +48,40 @@ class QrRenderState extends State<QrRender> {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
 
-    // TODO: select paymentMethod
-    String paymentId = '';
+    String? paymentId = widget.paymentContext?.id;
+    String? paymentType =
+        widget.paymentContext?.credentialSubject['paymentType'];
 
     var id = widget.credential.id ??
         getHolderDidFromCredential(widget.credential.toJson());
     if (id == '') {
+      Attachment? paymentAtt;
       // Offer Credential
-      var invoiceMap = await createInvoice(
-          wallet.getLnInKey(paymentId)!, widget.amount!,
-          memo: widget.memo);
+      if (paymentId != null) {
+        if (paymentType == 'SimulatedPayment') {
+          paymentAtt = Attachment(
+              format: 'lnInvoice',
+              data: AttachmentData(json: {
+                'type': 'lnInvoice',
+                'lnInvoice': widget.amount!.toEuro().toStringAsFixed(2)
+              }));
+          wallet.fakePay(paymentId, widget.amount!.toEuro() * -1);
+        } else {
+          var invoiceMap = await createInvoice(
+              wallet.getLnInKey(paymentId)!, widget.amount!,
+              memo: widget.memo);
 
-      // TODO: select payment method
-      // wallet.newPayment(invoiceMap['checking_id'], '',
-      //    SatoshiAmount.fromUnitAndValue(1, SatoshiUnit.msat));
+          wallet.newPayment(
+              paymentId, invoiceMap['checking_id'], '', widget.amount!);
 
-      var paymentAtt = Attachment(
-          format: 'lnInvoice',
-          data: AttachmentData(json: {
-            'type': 'lnInvoice',
-            'lnInvoice': invoiceMap['payment_request']
-          }));
-
+          paymentAtt = Attachment(
+              format: 'lnInvoice',
+              data: AttachmentData(json: {
+                'type': 'lnInvoice',
+                'lnInvoice': invoiceMap['payment_request']
+              }));
+        }
+      }
       var myDid = await wallet.newConnectionDid();
 
       wallet.addRelayedDid(myDid);
@@ -78,7 +96,9 @@ class QrRenderState extends State<QrRender> {
         replyUrl: '$relay/buffer/$myDid',
       );
 
-      offer.attachments!.add(paymentAtt);
+      if (paymentAtt != null) {
+        offer.attachments!.add(paymentAtt);
+      }
 
       var bufferId = const Uuid().v4();
       await post(Uri.parse('$relay/buffer/$bufferId'), body: offer.toString());

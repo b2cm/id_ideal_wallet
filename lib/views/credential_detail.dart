@@ -65,7 +65,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ihnen wird ein Credential angeboten'),
+        title: const Text('Löschen'),
         content: const Card(
             child: Text(
                 'Sind Sie sicher, dass sie dieses Credential löschen möchten?\n Dieser Vorgang kann nicht rückgängig gemacht werden.')),
@@ -271,15 +271,20 @@ class CredentialDetailState extends State<CredentialDetailView> {
                         scanOnTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (context) => const QrScanner())),
-                        child: TopUp(
-                            onTopUpSats: (amount, memo) => Navigator.of(context)
-                                .pushReplacement(MaterialPageRoute(
-                                    builder: (context) => QrRender(
-                                          credential: widget.credential,
-                                          amount: amount,
-                                          memo: memo,
-                                        ))),
-                            onTopUpFiat: (x) {}))))
+                        child: Consumer<WalletProvider>(
+                            builder: (context, wallet, child) {
+                          return TopUp(
+                              paymentMethods: wallet.paymentCredentials,
+                              onTopUpSats: (amount, memo, vc) =>
+                                  Navigator.of(context)
+                                      .pushReplacement(MaterialPageRoute(
+                                          builder: (context) => QrRender(
+                                                credential: widget.credential,
+                                                amount: amount,
+                                                memo: memo,
+                                              ))),
+                              onTopUpFiat: (x) {});
+                        }))))
                 : () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) =>
                         QrRender(credential: widget.credential))),
