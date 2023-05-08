@@ -4,6 +4,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
@@ -27,7 +28,7 @@ class RequesterInfo extends StatefulWidget {
 }
 
 class RequesterInfoState extends State<RequesterInfo> {
-  String info = 'anonym';
+  String info = AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
 
   @override
   void initState() {
@@ -40,7 +41,7 @@ class RequesterInfoState extends State<RequesterInfo> {
       var certInfo = await getCertificateInfoFromUrl(widget.requesterUrl);
       info = certInfo?.subjectOrganization ??
           certInfo?.subjectCommonName ??
-          'anonym';
+          AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
       setState(() {});
     } catch (e) {
       logger.d('Problem bei Zertifikatsabfrage: $e');
@@ -106,7 +107,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int innerPos = 0;
 
     // Requesting entity
-    childList.add(const Text('Die Daten werden übermittelt an:'));
+    childList
+        .add(Text(AppLocalizations.of(navigatorKey.currentContext!)!.dataFor));
     childList.add(RequesterInfo(requesterUrl: widget.otherEndpoint));
     childList.add(const SizedBox(
       height: 10,
@@ -115,7 +117,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     for (var result in widget.results) {
       bool all = false;
       if (result.submissionRequirement != null) {
-        childList.add(const Text('Grund der Anfrage:'));
+        childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
+            .reasonForRequest));
         childList.add(Text(result.submissionRequirement?.purpose ??
             result.submissionRequirement?.name ??
             'Default'));
@@ -141,16 +144,17 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
         for (var i in result.selfIssuable!) {
-          childList.add(
-              const Text('Der Anfragende erlaubt, Daten selbst einzutragen'));
+          childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
+              .selfIssueAllowed));
           childList.add(ElevatedButton(
               onPressed: () async {
                 var res = await Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CredentialSelfIssue(input: [i])));
                 print(res);
                 if (res != null) {
-                  var wallet =
-                      Provider.of<WalletProvider>(context, listen: false);
+                  var wallet = Provider.of<WalletProvider>(
+                      navigatorKey.currentContext!,
+                      listen: false);
                   var did = await wallet.newCredentialDid();
                   if (res is Map) {
                     var credSubject = <dynamic, dynamic>{'id': did};
@@ -176,7 +180,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   }
                 }
               },
-              child: const Text('Daten eintragen')));
+              child: Text(AppLocalizations.of(navigatorKey.currentContext!)!
+                  .enterData)));
         }
       }
 
@@ -263,7 +268,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             builder: (context) {
               return ModalDismissWrapper(
                 child: PaymentFinished(
-                  headline: "Credentials erfolgreich vorgezeigt",
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationSuccessful,
                   success: true,
                   amount: CurrencyDisplay(
                       amount: type,
@@ -289,11 +295,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
-              return const ModalDismissWrapper(
+              return ModalDismissWrapper(
                 child: PaymentFinished(
-                  headline: "Credentials konnten nicht vorgezeigt werden",
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationFailed,
                   success: false,
-                  amount: CurrencyDisplay(
+                  amount: const CurrencyDisplay(
                       amount: '', symbol: '', mainFontSize: 35, centered: true),
                 ),
               );
@@ -335,11 +342,17 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-      title: 'Anfrage',
+      title: AppLocalizations.of(navigatorKey.currentContext!)!.requestTitle,
       scanOnTap: () {},
       footerButtons: [
-        TextButton(onPressed: reject, child: const Text('Ablehnen')),
-        TextButton(onPressed: sendAnswer, child: const Text('Senden'))
+        TextButton(
+            onPressed: reject,
+            child: Text(
+                AppLocalizations.of(navigatorKey.currentContext!)!.reject)),
+        TextButton(
+            onPressed: sendAnswer,
+            child:
+                Text(AppLocalizations.of(navigatorKey.currentContext!)!.send))
       ],
       child: SingleChildScrollView(
           child: Column(

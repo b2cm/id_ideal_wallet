@@ -7,7 +7,7 @@ class Receipt extends StatelessWidget {
       {super.key,
       required this.items,
       required this.total,
-      this.title = 'Rechnung'});
+      required this.title});
 
   final List<ReceiptItem> items;
   final ReceiptItem total;

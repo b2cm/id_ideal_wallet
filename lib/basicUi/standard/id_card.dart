@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 
 import 'currency_display.dart';
 
@@ -246,12 +248,13 @@ class PaymentCard extends IdCard {
             ),
             child: InkWell(
               onTap: receiveOnTap,
-              child: const SizedBox(
+              child: SizedBox(
                   height: 50,
                   child: Center(
                     child: Text(
-                      "Empfangen",
-                      style: TextStyle(
+                      AppLocalizations.of(navigatorKey.currentContext!)!
+                          .receive,
+                      style: const TextStyle(
                           color: Colors.black,
                           fontSize: 19,
                           fontWeight: FontWeight.w600),
@@ -278,12 +281,12 @@ class PaymentCard extends IdCard {
               ),
               child: InkWell(
                 onTap: sendOnTap,
-                child: const SizedBox(
+                child: SizedBox(
                   height: 50,
                   child: Center(
                     child: Text(
-                      "Senden",
-                      style: TextStyle(
+                      AppLocalizations.of(navigatorKey.currentContext!)!.send,
+                      style: const TextStyle(
                           color: Colors.black,
                           fontSize: 19,
                           fontWeight: FontWeight.w600),

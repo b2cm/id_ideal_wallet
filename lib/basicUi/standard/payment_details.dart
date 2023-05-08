@@ -26,13 +26,13 @@ class PaymentDetails extends StatelessWidget {
         const SizedBox(height: 40),
         success
             ? const Image(
-                image: AssetImage("assets/icons/circle-check-regular.png",
-                    package: "id_wallet_design"),
+                image: AssetImage(
+                  "assets/icons/circle-check-regular.png",
+                ),
                 height: 85,
                 width: 85)
             : const Image(
-                image: AssetImage("assets/icons/circle-xmark-regular.png",
-                    package: "id_wallet_design"),
+                image: AssetImage("assets/icons/circle-xmark-regular.png"),
                 height: 85,
                 width: 85),
         const SizedBox(height: 20),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:slide_to_act/slide_to_act.dart';
 
 import 'currency_display.dart';
@@ -54,7 +55,7 @@ class PaymentIntent extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: SlideAction(
             innerColor: Colors.white,
-            text: "Bezahlen",
+            text: AppLocalizations.of(context)!.pay,
             outerColor: const Color.fromARGB(255, 35, 216, 108),
             onSubmit: onPaymentAccepted,
           ),
@@ -62,7 +63,7 @@ class PaymentIntent extends StatelessWidget {
         TextButton(
           // dismiss modal on pressed
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Abbrechen"),
+          child: Text(AppLocalizations.of(context)!.cancel),
         ),
       ],
     );

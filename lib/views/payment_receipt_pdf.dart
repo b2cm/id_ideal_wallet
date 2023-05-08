@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pdf;
@@ -90,11 +92,13 @@ class PdfPreviewPage extends StatelessWidget {
                           '${paymentReceipt.issuanceDate.day.toString().padLeft(2, '0')}.${paymentReceipt.issuanceDate.month.toString().padLeft(2, '0')}.${paymentReceipt.issuanceDate.year}'),
                     ]), // content
                 pdf.Header(
-                    child: pdf.Text('Rechnung',
+                    child: pdf.Text(
+                        AppLocalizations.of(navigatorKey.currentContext!)!
+                            .invoice,
                         style: pdf.TextStyle(
                             fontSize: 16, fontWeight: pdf.FontWeight.bold))),
                 pdf.Text(
-                    'Rechnungsnummer: ${paymentReceipt.credentialSubject['receiptId']}'),
+                    '${AppLocalizations.of(navigatorKey.currentContext!)!.invoiceNumber}: ${paymentReceipt.credentialSubject['receiptId']}'),
                 pdf.SizedBox(height: 15),
                 pdf.Table(
                     border: const pdf.TableBorder(
@@ -118,7 +122,8 @@ class PdfPreviewPage extends StatelessWidget {
                 pdf.Row(
                     mainAxisAlignment: pdf.MainAxisAlignment.spaceBetween,
                     children: [
-                      pdf.Text('Gesamt:'),
+                      pdf.Text(
+                          '${AppLocalizations.of(navigatorKey.currentContext!)!.total}:'),
                       pdf.Text(
                           paymentReceipt.credentialSubject['priceWithMwst'])
                     ])
@@ -133,11 +138,12 @@ class PdfPreviewPage extends StatelessWidget {
     return StyledScaffoldTitle(
       scanOnTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
-      title: 'Rechnung - Vorschau',
+      title:
+          '${AppLocalizations.of(context)!.invoice} - ${AppLocalizations.of(context)!.preview}',
       child: PdfPreview(
         canChangePageFormat: false,
         canDebug: false,
-        pdfFileName: 'Rechnung',
+        pdfFileName: AppLocalizations.of(context)!.invoice,
         build: (context) => _makePdf(PdfPageFormat.a4),
       ),
     );

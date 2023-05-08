@@ -1,5 +1,7 @@
-import 'currency_display.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import 'currency_display.dart';
 
 class Balance extends StatefulWidget {
   const Balance(
@@ -36,7 +38,8 @@ class _BalanceState extends State<Balance> {
             // black border, border radius 25, padding 10
             padding: const EdgeInsets.fromLTRB(16, 9, 0, 0),
             alignment: Alignment.centerLeft,
-            child: const Text("Kontostand", style: TextStyle(fontSize: 20)),
+            child: Text(AppLocalizations.of(context)!.balance,
+                style: const TextStyle(fontSize: 20)),
           ),
           Container(
             // black border, border radius 25, padding 10
@@ -73,12 +76,12 @@ class _BalanceState extends State<Balance> {
                     ),
                     child: InkWell(
                       onTap: () => widget.receiveOnTap(),
-                      child: const SizedBox(
+                      child: SizedBox(
                           height: 50,
                           child: Center(
                             child: Text(
-                              "Empfangen",
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.receive,
+                              style: const TextStyle(
                                   color: Colors.black,
                                   fontSize: 19,
                                   fontWeight: FontWeight.w600),
@@ -101,12 +104,12 @@ class _BalanceState extends State<Balance> {
                       ),
                       child: InkWell(
                         onTap: () => widget.sendOnTap(),
-                        child: const SizedBox(
+                        child: SizedBox(
                             height: 50,
                             child: Center(
                               child: Text(
-                                "Senden",
-                                style: TextStyle(
+                                AppLocalizations.of(context)!.send,
+                                style: const TextStyle(
                                     color: Colors.black,
                                     fontSize: 19,
                                     fontWeight: FontWeight.w600),

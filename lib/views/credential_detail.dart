@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -33,15 +34,15 @@ class HistoryEntries extends StatelessWidget {
           leading: Text(
               '${h.timestamp.day}.${h.timestamp.month}.${h.timestamp.year}, ${h.timestamp.hour}:${h.timestamp.minute}'),
           title: Text(h.action == 'issue'
-              ? 'Ausgestellt'
+              ? AppLocalizations.of(context)!.issued
               : h.action == 'present'
-                  ? 'Vorgezeigt'
-                  : 'Vorzeigen fehlgeschlagen'),
+                  ? AppLocalizations.of(context)!.presented
+                  : AppLocalizations.of(context)!.presentedError),
         );
         entries.add(tile);
       }
       return ExpansionTile(
-        title: const Text('Historie'),
+        title: Text(AppLocalizations.of(context)!.history),
         childrenPadding: const EdgeInsets.all(10),
         children: entries,
       );
@@ -65,16 +66,14 @@ class CredentialDetailState extends State<CredentialDetailView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Löschen'),
-        content: const Card(
-            child: Text(
-                'Sind Sie sicher, dass sie dieses Credential löschen möchten?\n Dieser Vorgang kann nicht rückgängig gemacht werden.')),
+        title: Text(AppLocalizations.of(context)!.delete),
+        content: Card(child: Text(AppLocalizations.of(context)!.deletionNote)),
         actions: [
           TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Abbrechen')),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
               onPressed: () async {
                 var credId = widget.credential.id ??
@@ -91,7 +90,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
                     builder: (context) => const CredentialPage()));
               },
-              child: const Text('Löschen'))
+              child: Text(AppLocalizations.of(context)!.delete))
         ],
       ),
     );
@@ -102,7 +101,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
 
     var issDateValue = widget.credential.issuanceDate;
     var issDate = ListTile(
-        subtitle: const Text('Ausstelldatum'),
+        subtitle: Text(AppLocalizations.of(context)!.issuanceDate),
         title: Text(
             '${issDateValue.day.toString().padLeft(2, '0')}. ${issDateValue.month.toString().padLeft(2, '0')}. ${issDateValue.year}'));
     otherData.add(issDate);
@@ -110,7 +109,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
     var expDate = widget.credential.expirationDate;
     if (expDate != null) {
       var expDateTile = ListTile(
-          subtitle: const Text('Ablaufdatum'),
+          subtitle: Text(AppLocalizations.of(context)!.expirationDate),
           title: Text(
             '${expDate.day.toString().padLeft(2, '0')}. ${expDate.month.toString().padLeft(2, '0')}. ${expDate.year}',
             style: expDate.isBefore(DateTime.now())
@@ -128,23 +127,23 @@ class CredentialDetailState extends State<CredentialDetailView> {
       String statusText = '';
       switch (status) {
         case 0:
-          statusText = 'Gültig';
+          statusText = AppLocalizations.of(context)!.valid;
           break;
         case 1:
-          statusText = 'Abgelaufen';
+          statusText = AppLocalizations.of(context)!.expired;
           break;
         case 2:
-          statusText = 'inaktiv';
+          statusText = AppLocalizations.of(context)!.inactive;
           break;
         case 3:
-          statusText = 'zurückgezogen';
+          statusText = AppLocalizations.of(context)!.revoked;
           break;
         default:
-          statusText = 'Unbekannt';
+          statusText = AppLocalizations.of(context)!.unknown;
           break;
       }
       return ListTile(
-        subtitle: const Text('Status'),
+        subtitle: Text(AppLocalizations.of(context)!.state),
         title: Text(statusText),
         trailing: InkWell(
           child: const Icon(Icons.refresh),
@@ -174,7 +173,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
         issuer.add(const SizedBox(
           height: 10,
         ));
-        issuer.add(const Text('verifiziert von:'));
+        issuer.add(Text(AppLocalizations.of(context)!.verifiedBy));
 
         var dnIss = {
           for (var item in cert.tbsCertificate.issuer!.names)
@@ -185,7 +184,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
         issuer += buildCredSubject(issMap);
       }
     } else if (widget.credential.isSelfIssued()) {
-      issuer.add(const Text('Selbtsausgestellt'));
+      issuer.add(Text(AppLocalizations.of(context)!.selfIssued));
     } else {
       //issuer is String
       issuer.add(Text(widget.credential.issuer));
@@ -202,7 +201,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
       if (receipt != null) {
         var receiptVc = VerifiableCredential.fromJson(receipt.w3cCredential);
         return ExpansionTile(
-          title: const Text('Rechnung'),
+          title: Text(AppLocalizations.of(context)!.invoice),
           trailing: InkWell(
             child: const Icon(Icons.picture_as_pdf),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
@@ -224,19 +223,19 @@ class CredentialDetailState extends State<CredentialDetailView> {
 
   Widget _buildBody() {
     var personalData = ExpansionTile(
-      title: const Text('Persönliche Daten'),
+      title: Text(AppLocalizations.of(context)!.personnelData),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: buildCredSubject(widget.credential.credentialSubject),
     );
     var otherData = ExpansionTile(
-      title: const Text('Sonstige Daten'),
+      title: Text(AppLocalizations.of(context)!.otherData),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: _buildOtherData(),
     );
     var issuerData = ExpansionTile(
-      title: const Text('Aussteller'),
+      title: Text(AppLocalizations.of(context)!.issuer),
       expandedAlignment: Alignment.centerLeft,
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: _buildIssuerData(),
@@ -267,7 +266,8 @@ class CredentialDetailState extends State<CredentialDetailView> {
                     ''
                 ? () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => StyledScaffoldTitle(
-                        title: 'Credential verkaufen',
+                        title:
+                            AppLocalizations.of(context)!.sellCredentialTitle,
                         scanOnTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (context) => const QrScanner())),
@@ -290,9 +290,11 @@ class CredentialDetailState extends State<CredentialDetailView> {
                         QrRender(credential: widget.credential))),
             child: Text(
                 getHolderDidFromCredential(widget.credential.toJson()) == ''
-                    ? 'zum Kauf anbieten'
-                    : 'zum Vorzeigen anbieten')),
-        TextButton(onPressed: _deleteCredential, child: const Text('Löschen'))
+                    ? AppLocalizations.of(context)!.forSale
+                    : AppLocalizations.of(context)!.forShow)),
+        TextButton(
+            onPressed: _deleteCredential,
+            child: Text(AppLocalizations.of(context)!.delete))
       ],
       child: _buildBody(),
     );

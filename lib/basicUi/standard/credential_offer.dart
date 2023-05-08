@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'receipt.dart';
 
@@ -16,8 +17,8 @@ class CredentialOfferDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       const SizedBox(height: 20),
-      const Text("Credential Angebot",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      Text(AppLocalizations.of(context)!.credentialOffer,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
       const SizedBox(height: 20),
       credential,
       const SizedBox(height: 20),
@@ -33,13 +34,13 @@ class CredentialOfferDialog extends StatelessWidget {
           TextButton(
             // dismiss modal on pressed
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Abbrechen"),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           // button 2
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: receipt != null
-                ? const Text("Zahlungspflichtig bestellen")
+                ? Text(AppLocalizations.of(context)!.orderWithPayment)
                 : const Text("Ok"),
             // background color red
           ),

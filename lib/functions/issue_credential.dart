@@ -3,6 +3,7 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
@@ -87,18 +88,19 @@ Future<bool> handleOfferCredential(
             context: navigatorKey.currentContext!,
             builder: (context) {
               return PaymentFinished(
-                headline: "Zahlung nicht möglich",
+                headline: AppLocalizations.of(context)!.noPaymentMethod,
                 success: false,
                 amount: CurrencyDisplay(
                     amount: "-$toPay",
                     symbol: '€',
                     mainFontSize: 35,
                     centered: true),
-                additionalInfo: Column(children: const [
-                  SizedBox(height: 20),
+                additionalInfo: Column(children: [
+                  const SizedBox(height: 20),
                   Text(
-                      "Sie besitzen kein LN-Wallet. \nBitte legen Sie sich eines an und sorgen für ausreichend Deckung.",
-                      style: TextStyle(color: Colors.red),
+                      AppLocalizations.of(navigatorKey.currentContext!)!
+                          .noPaymentMethodNote,
+                      style: const TextStyle(color: Colors.red),
                       overflow: TextOverflow.ellipsis),
                 ]),
               );
@@ -157,7 +159,8 @@ Future<bool> handleOfferCredential(
               builder: (context) {
                 return ModalDismissWrapper(
                   child: PaymentFinished(
-                    headline: "Zahlung erfolgreich",
+                    headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .paymentSuccessful,
                     success: true,
                     amount: CurrencyDisplay(
                         amount: "-$toPay",
@@ -175,17 +178,17 @@ Future<bool> handleOfferCredential(
               context: navigatorKey.currentContext!,
               builder: (context) {
                 return PaymentFinished(
-                  headline: "Zahlung fehlgeschlagen",
+                  headline: AppLocalizations.of(context)!.paymentFailed,
                   success: false,
                   amount: CurrencyDisplay(
                       amount: "-$toPay",
                       symbol: '€',
                       mainFontSize: 35,
                       centered: true),
-                  additionalInfo: Column(children: const [
-                    SizedBox(height: 20),
-                    Text("Zahlung konnte nicht durchgeführt werden",
-                        style: TextStyle(color: Colors.red)),
+                  additionalInfo: Column(children: [
+                    const SizedBox(height: 20),
+                    Text(AppLocalizations.of(context)!.paymentFailedNote,
+                        style: const TextStyle(color: Colors.red)),
                   ]),
                 );
               });
@@ -369,7 +372,7 @@ Future<bool> handleIssueCredential(
               builder: (context) {
                 return ModalDismissWrapper(
                   child: PaymentFinished(
-                    headline: "Credential empfangen",
+                    headline: AppLocalizations.of(context)!.credentialReceived,
                     success: true,
                     amount: CurrencyDisplay(
                         amount: type,

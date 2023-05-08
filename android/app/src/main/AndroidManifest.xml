@@ -43,7 +43,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="wallet.id-ideal.de"
+                    android:host="wallet.bccm.dev"
                     android:scheme="https" />
             </intent-filter>
         </activity>

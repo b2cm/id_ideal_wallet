@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'credential_detail.dart';
 
@@ -14,7 +15,7 @@ Widget buildPresentationDialog(
     }
   }
   return AlertDialog(
-    title: const Text('Diese Credentials wurden soeben vorgezeigt:'),
+    title: Text('${AppLocalizations.of(context)!.noteShownCredentials}:'),
     content: SingleChildScrollView(
       child: Column(
         children: creds,

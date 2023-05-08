@@ -37,8 +37,9 @@ class InitScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(15),
                 child: const Image(
-                  image: AssetImage('assets/images/undraw_agree_re_hor9.png',
-                      package: "id_wallet_design"),
+                  image: AssetImage(
+                    'assets/images/undraw_agree_re_hor9.png',
+                  ),
                   width: 300,
                   height: 300,
                 ),

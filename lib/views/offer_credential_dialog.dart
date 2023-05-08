@@ -1,6 +1,7 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/receipt.dart';
@@ -60,17 +61,18 @@ Widget buildOfferCredentialDialog(
                         ),
                         receipt: paymentReceipt != null || toPay != null
                             ? Receipt(
+                                title: AppLocalizations.of(context)!.invoice,
                                 items: [
-                                    ReceiptItem(
-                                      label: "Credential",
-                                      amount: CurrencyDisplay(
-                                        amount: toPay!,
-                                        symbol: "€",
-                                      ),
+                                  ReceiptItem(
+                                    label: "Credential",
+                                    amount: CurrencyDisplay(
+                                      amount: toPay!,
+                                      symbol: "€",
                                     ),
-                                  ],
+                                  ),
+                                ],
                                 total: ReceiptItem(
-                                    label: "Gesamt",
+                                    label: AppLocalizations.of(context)!.total,
                                     amount: CurrencyDisplay(
                                         amount: toPay, symbol: "€")))
                             : null,

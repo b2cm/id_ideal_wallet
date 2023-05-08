@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -16,17 +17,24 @@ class IssuerInfoText extends StatefulWidget {
 }
 
 class IssuerInfoTextState extends State<IssuerInfoText> {
-  String issuerName = 'Anonymer Aussteller';
+  String issuerName =
+      AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
 
   @override
   void initState() {
     super.initState();
+    //certVerify();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     certVerify();
   }
 
   void certVerify() async {
     if (widget.selfIssued) {
-      issuerName = 'Selbstausgestellt';
+      issuerName = AppLocalizations.of(context)!.selfIssued;
       setState(() {});
     } else if (widget.issuer is Map) {
       if (widget.issuer.containsKey('certificate')) {
@@ -53,11 +61,12 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
           org = commonName;
         }
 
-        issuerName = '$org\n(verifiziert)';
+        issuerName = '$org\n(${AppLocalizations.of(context)!.verified})';
 
         setState(() {});
       } else if (widget.issuer.containsKey('name')) {
-        issuerName = '${widget.issuer['name']}\n(nicht verifiziert)';
+        issuerName =
+            '${widget.issuer['name']}\n(${AppLocalizations.of(context)!.notVerified})';
         setState(() {});
       }
     }

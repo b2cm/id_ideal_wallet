@@ -4,6 +4,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
@@ -254,7 +255,8 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
             builder: (context) {
               return ModalDismissWrapper(
                 child: PaymentFinished(
-                  headline: "Credentials erfolgreich vorgezeigt",
+                  headline:
+                      AppLocalizations.of(context)!.presentationSuccessful,
                   success: true,
                   amount: CurrencyDisplay(
                       amount: type,
@@ -309,11 +311,11 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
-              return const ModalDismissWrapper(
+              return ModalDismissWrapper(
                 child: PaymentFinished(
-                  headline: "Credentials konnten nicht vorgezeigt werden",
+                  headline: AppLocalizations.of(context)!.presentationFailed,
                   success: false,
-                  amount: CurrencyDisplay(
+                  amount: const CurrencyDisplay(
                       amount: '', symbol: '', mainFontSize: 35, centered: true),
                 ),
               );

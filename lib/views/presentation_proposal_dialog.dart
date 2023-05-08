@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Widget buildPresentationProposalDialog(
     BuildContext context, PresentationDefinition definition) {
@@ -33,8 +34,7 @@ Widget buildPresentationProposalDialog(
     }
   }
   return AlertDialog(
-    title: const Text(
-        'Ihr Gegenüber bietet Ihnen an, ein Credential mit folgenden Daten vorzuzeigen:'),
+    title: Text(AppLocalizations.of(context)!.noteOtherShowCredentials),
     content: Column(
       children: proposedAttributes,
     ),
@@ -43,12 +43,12 @@ Widget buildPresentationProposalDialog(
           onPressed: () {
             Navigator.of(context).pop(false);
           },
-          child: const Text('Ignorieren')),
+          child: Text(AppLocalizations.of(context)!.ignore)),
       TextButton(
           onPressed: () {
             Navigator.of(context).pop(true);
           },
-          child: const Text('Anfragen'))
+          child: Text(AppLocalizations.of(context)!.request))
     ],
   );
 }

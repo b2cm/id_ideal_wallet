@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
@@ -16,7 +17,7 @@ class PaymentOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Zahlungen',
+        title: AppLocalizations.of(context)!.payments,
         scanOnTap: () {},
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {

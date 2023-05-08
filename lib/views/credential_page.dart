@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_name.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
@@ -22,7 +23,7 @@ class CredentialPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldName(
-        name: 'Meine Credentials',
+        name: AppLocalizations.of(context)!.credentialPageTitle,
         nameOnTap: () => Navigator.of(context).pop(),
         scanOnTap: () {
           Navigator.of(context)
@@ -45,7 +46,8 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
           subtitle: Text('${before != null ? '$before.' : ''}$key'),
           title: (value is String && value.startsWith('data:'))
               ? InkWell(
-                  child: const Text('Anzeigen'),
+                  child: Text(
+                      AppLocalizations.of(navigatorKey.currentContext!)!.show),
                   onTap: () {
                     if (value.contains('image')) {
                       Navigator.of(navigatorKey.currentContext!).push(
@@ -79,7 +81,7 @@ class Base64ImagePreview extends StatelessWidget {
     return StyledScaffoldTitle(
         scanOnTap: () => Navigator.of(context)
             .push(MaterialPageRoute(builder: (context) => const QrScanner())),
-        title: 'Vorschau',
+        title: AppLocalizations.of(context)!.preview,
         child: Image(
             image: Image.memory(base64Decode(imageDataUri.split(',').last))
                 .image));
@@ -102,7 +104,7 @@ class Base64PdfPreview extends StatelessWidget {
     return StyledScaffoldTitle(
       scanOnTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const QrScanner())),
-      title: 'Vorschau',
+      title: AppLocalizations.of(context)!.preview,
       child: PdfPreview(
         canChangePageFormat: false,
         canDebug: false,
@@ -141,8 +143,8 @@ class CredentialOverview extends StatelessWidget {
             });
       } else {
         wallet.openWallet();
-        return const Center(
-          child: Text('Wallet Öffnen'),
+        return Center(
+          child: Text(AppLocalizations.of(context)!.openWallet),
         );
       }
     });

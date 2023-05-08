@@ -1,6 +1,7 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -128,9 +129,10 @@ Future<bool> handleRequestPresentation(
       await showDialog(
           context: navigatorKey.currentContext!,
           builder: (context) => AlertDialog(
-                title: const Text('Keine Credentials gefunden'),
-                content: const Text(
-                    'Sie besitzen keine Credential, die der Anfrage entsprechen'),
+                title: Text(AppLocalizations.of(navigatorKey.currentContext!)!
+                    .noCredentialsTitle),
+                content: Text(AppLocalizations.of(navigatorKey.currentContext!)!
+                    .noCredentialsNote),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -143,9 +145,10 @@ Future<bool> handleRequestPresentation(
     await showDialog(
         context: navigatorKey.currentContext!,
         builder: (context) => AlertDialog(
-              title: const Text('Keine Credentials gefunden'),
+              title: Text(AppLocalizations.of(navigatorKey.currentContext!)!
+                  .noCredentialsTitle),
               content: Text(
-                  'Sie besitzen keine Credentials, die der Anfrage entsprechen ($e)'),
+                  '${AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote} ($e)'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.of(context).pop(),

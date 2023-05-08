@@ -1,4 +1,5 @@
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
@@ -9,10 +10,12 @@ import 'package:x509b/x509.dart' as x509;
 
 Future<bool> openWallet(WalletStore wallet) async {
   if (!wallet.isWalletOpen()) {
-    var messages = const AndroidAuthMessages(
-        signInTitle: 'Wallet öffnen',
-        cancelButton: 'Abbrechen',
-        biometricHint: 'Verifizieren Sie Ihre Identität');
+    var messages = AndroidAuthMessages(
+        signInTitle:
+            AppLocalizations.of(navigatorKey.currentContext!)!.openWallet,
+        cancelButton: AppLocalizations.of(navigatorKey.currentContext!)!.cancel,
+        biometricHint:
+            AppLocalizations.of(navigatorKey.currentContext!)!.verifyIdentity);
     var auth = LocalAuthentication();
     if (!await auth.isDeviceSupported()) return false;
     logger.d('device supported');
@@ -20,7 +23,7 @@ Future<bool> openWallet(WalletStore wallet) async {
 
     didAuthWork = await auth.authenticate(
         localizedReason:
-            'Zum Öffnen des Wallets ist Ihre Authentifizierung nötig',
+            AppLocalizations.of(navigatorKey.currentContext!)!.localizedReason,
         authMessages: [messages]);
 
     if (didAuthWork) {

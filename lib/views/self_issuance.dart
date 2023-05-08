@@ -5,6 +5,7 @@ import 'package:android_id/android_id.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
@@ -18,7 +19,11 @@ import 'package:provider/provider.dart';
 final emailSchema = JsonSchema.createSchema({
   'type': 'object',
   'properties': {
-    'email': {'type': 'string', 'description': 'E-Mail Adresse'}
+    'email': {
+      'type': 'string',
+      'description':
+          AppLocalizations.of(navigatorKey.currentContext!)!.mailAddress
+    }
   }
 });
 
@@ -40,7 +45,7 @@ final socialMediaSchema = JsonSchema.createSchema({
     },
     'username': {
       'type': 'string',
-      'description': 'Nutzername im gewählten Netzwerk'
+      'description': AppLocalizations.of(navigatorKey.currentContext!)!.username
     }
   }
 });
@@ -51,7 +56,7 @@ class SelfIssueList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Selbstausstellbare Credentials',
+        title: AppLocalizations.of(navigatorKey.currentContext!)!.selfIssuable,
         scanOnTap: () {},
         child: Column(
           children: [
@@ -59,7 +64,7 @@ class SelfIssueList extends StatelessWidget {
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => FixedSelfIssue(
                         schema: emailSchema, type: 'EMailCredential'))),
-                child: const Text('E-Mail Adresse')),
+                child: Text(AppLocalizations.of(context)!.mailAddress)),
             ElevatedButton(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => FixedSelfIssue(
@@ -113,7 +118,7 @@ class SelfIssueList extends StatelessWidget {
                           schema: deviceInfoSchema,
                           type: 'DeviceInformation')));
                 },
-                child: const Text('Geräteinformationen'))
+                child: Text(AppLocalizations.of(context)!.deviceInformation))
           ],
         ));
   }
@@ -167,7 +172,7 @@ class FixedSelfIssue extends StatelessWidget {
         builder: (context) {
           return ModalDismissWrapper(
             child: PaymentFinished(
-              headline: "Credential gespeichert",
+              headline: AppLocalizations.of(context)!.stored,
               success: true,
               amount: CurrencyDisplay(
                   amount: type, symbol: '', mainFontSize: 35, centered: true),
@@ -179,7 +184,8 @@ class FixedSelfIssue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Selbstausstellung: $type',
+        title:
+            '${AppLocalizations.of(navigatorKey.currentContext!)!.selfIssuance}: $type',
         scanOnTap: () {},
         child: JsonSchemaForm(
           schema: schema,
@@ -228,7 +234,7 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Selbstausstellung',
+        title: AppLocalizations.of(context)!.selfIssuance,
         scanOnTap: () {},
         child: JsonSchemaForm(
           schema: schema,

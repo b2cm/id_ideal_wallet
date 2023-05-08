@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
@@ -38,11 +40,21 @@ class App extends StatelessWidget {
     return MaterialApp(
       theme: idWalletDesignTheme.theme,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('de'),
+        Locale('en'),
+      ],
       navigatorKey: navigatorKey,
       home: const MainPage(),
       onGenerateRoute: (args) {
         if (args.name != null && args.name!.contains('oob')) {
-          handleDidcommMessage('https://wallet.id-ideal.de${args.name}');
+          handleDidcommMessage('https://wallet.bccm.dev${args.name}');
         }
         return null;
       },
@@ -147,7 +159,8 @@ class MainPage extends StatelessWidget {
                 // Payment Credential
                 if (contextCred.type.contains('PaymentContext')) {
                   // List of last three payments
-                  buttons.add(const Heading(text: 'Letzte Zahlungen'));
+                  buttons.add(Heading(
+                      text: AppLocalizations.of(context)!.lastPayments));
                   var lastPaymentData =
                       wallet.lastPayments[contextCred.id!] ?? [];
                   if (lastPaymentData.isNotEmpty) {
@@ -198,8 +211,8 @@ class MainPage extends StatelessWidget {
                               MaterialPageRoute(
                                   builder: (context) => PaymentOverview(
                                       paymentContext: contextCred))),
-                          child: const Text('Weitere anzeigen',
-                              style: TextStyle(
+                          child: Text(AppLocalizations.of(context)!.showMore,
+                              style: const TextStyle(
                                 color: Colors.black54,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -207,8 +220,8 @@ class MainPage extends StatelessWidget {
                       buttons.add(additional);
                     }
                   } else {
-                    var empty = const TransactionPreview(
-                      title: 'Keine getätigten Zahlungen',
+                    var empty = TransactionPreview(
+                      title: AppLocalizations.of(context)!.noPayments,
                       amount: CurrencyDisplay(
                         symbol: '',
                         amount: '',
@@ -289,17 +302,18 @@ class MainPage extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
               icon: Icon(Icons.co_present), label: 'Credentials'),
           BottomNavigationBarItem(
-              icon: Image(
+              icon: const Image(
                   image: AssetImage("assets/icons/scan-qr-solid.png"),
                   height: 30,
                   width: 30),
-              label: 'Scannen'),
+              label: AppLocalizations.of(context)!.scan),
           BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: 'Einstellungen'),
+              icon: const Icon(Icons.settings),
+              label: AppLocalizations.of(context)!.settings),
         ],
         currentIndex: 1,
         onTap: (index) {

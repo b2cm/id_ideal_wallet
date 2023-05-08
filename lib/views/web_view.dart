@@ -99,7 +99,8 @@ class WebViewWindowState extends State<WebViewWindow> {
                       (controller, navigationAction) async {
                     var uri = navigationAction.request.url!;
 
-                    if (uri.authority.contains('wallet.id-ideal.de') &&
+                    if ((uri.authority.contains('wallet.id-ideal.de') ||
+                            uri.authority.contains('wallet.bccm.dev')) &&
                         uri.query.contains('oob')) {
                       handleDidcommMessage(uri.toString());
                       return NavigationActionPolicy.CANCEL;

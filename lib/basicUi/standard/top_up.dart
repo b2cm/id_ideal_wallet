@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 
 class TopUp extends StatefulWidget {
@@ -39,8 +40,8 @@ class _TopUpState extends State<TopUp> {
                   ? const SizedBox(
                       height: 0,
                     )
-                  : const Text('Zahlungemethode',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  : Text(AppLocalizations.of(context)!.paymentMethod,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
               widget.paymentMethods == null
                   ? ToggleButtons(
                       direction: Axis.horizontal,
@@ -99,18 +100,18 @@ class _TopUpState extends State<TopUp> {
                   TextField(
                       controller: _amountControllerSats,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Betrag in Satoshi',
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: AppLocalizations.of(context)!.amountSatoshi,
                       ),
                     )
                   : // toogle button to switch between fiat and sats
                   TextField(
                       controller: _amountControllerFiat,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Betrag in Euro',
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: AppLocalizations.of(context)!.amountEuro,
                       ),
                     ),
               if (_selectedReceiveOption[0]) const SizedBox(height: 20),
@@ -139,8 +140,8 @@ class _TopUpState extends State<TopUp> {
                     {widget.onTopUpFiat(int.parse(_amountControllerFiat.text))}
                 },
                 child: _selectedReceiveOption[0]
-                    ? const Text('Zahlung anfordern')
-                    : const Text('Aufladen'),
+                    ? Text(AppLocalizations.of(context)!.requestPayment)
+                    : Text(AppLocalizations.of(context)!.chargeMoney),
               ),
             ])));
   }

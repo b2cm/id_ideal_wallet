@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'currency_display.dart';
@@ -22,8 +23,8 @@ class InvoiceDisplay extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          "Zahlung anfordern",
+        Text(
+          AppLocalizations.of(context)!.requestPayment,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 22,
@@ -63,9 +64,9 @@ class InvoiceDisplay extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text(
-            "Zurück",
-            style: TextStyle(
+          child: Text(
+            AppLocalizations.of(context)!.back,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.black,

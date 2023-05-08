@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
@@ -55,16 +56,16 @@ class StyledScaffoldWebView extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
               icon: Icon(Icons.co_present), label: 'Credentials'),
           BottomNavigationBarItem(
-              icon: Image(
+              icon: const Image(
                   image: AssetImage("assets/icons/scan-qr-solid.png"),
                   height: 30,
                   width: 30),
-              label: 'Scannen'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              label: AppLocalizations.of(context)!.scan),
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         ],
         currentIndex: 1,
         onTap: (index) {

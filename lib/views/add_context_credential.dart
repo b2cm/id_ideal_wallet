@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
@@ -49,9 +50,11 @@ class AddContextCredentialState extends State<AddContextCredential> {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         footerButtons: [
-          TextButton(onPressed: store, child: const Text('Anlegen'))
+          TextButton(
+              onPressed: store,
+              child: Text(AppLocalizations.of(context)!.create))
         ],
-        title: 'title',
+        title: AppLocalizations.of(context)!.contextCredentialTitle,
         scanOnTap: () {},
         child: ListView.builder(
             itemCount: availableCredentials.length,

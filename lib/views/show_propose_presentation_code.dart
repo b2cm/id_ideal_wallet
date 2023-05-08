@@ -6,6 +6,7 @@ import 'package:dart_multihash/dart_multihash.dart' as multihash;
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
@@ -172,8 +173,8 @@ class QrRenderState extends State<QrRender> {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         title: getHolderDidFromCredential(widget.credential.toJson()) == ''
-            ? 'Credential Verkaufen'
-            : 'Credential vorzeigen',
+            ? AppLocalizations.of(context)!.sellCredentialTitle
+            : AppLocalizations.of(context)!.presentCredential,
         scanOnTap: () {},
         child: qrData.isEmpty
             ? const CircularProgressIndicator()
