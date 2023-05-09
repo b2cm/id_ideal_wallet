@@ -117,7 +117,6 @@ class MainPage extends StatelessWidget {
             itemCount: wallet.contextCredentials.length + 1,
             onTap: (indexOut) {
               if (indexOut == wallet.contextCredentials.length) {
-                logger.d('Hinzufügen');
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const AddContextCredential()));
               }
@@ -138,18 +137,21 @@ class MainPage extends StatelessWidget {
                 // Normal context credential -> only list of Buttons
                 List b = contextCred.credentialSubject['buttons'] ?? [];
                 for (var btn in b) {
-                  buttons.add(ElevatedButton(
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => WebViewWindow(
-                                initialUrl: btn['url']!,
-                                title: btn['webViewTitle'] ?? ''))),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: HexColor.fromHex(btn['backgroundColor']),
-                      minimumSize: const Size.fromHeight(50), // NEW
+                  buttons.add(
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => WebViewWindow(
+                                  initialUrl: btn['url']!,
+                                  title: btn['webViewTitle'] ?? ''))),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            HexColor.fromHex(btn['backgroundColor']),
+                        minimumSize: const Size.fromHeight(50), // NEW
+                      ),
+                      child: Text(btn['buttonText']),
                     ),
-                    child: Text(btn['buttonText']),
-                  ));
+                  );
 
                   buttons.add(const SizedBox(
                     height: 15,
@@ -222,7 +224,7 @@ class MainPage extends StatelessWidget {
                   } else {
                     var empty = TransactionPreview(
                       title: AppLocalizations.of(context)!.noPayments,
-                      amount: CurrencyDisplay(
+                      amount: const CurrencyDisplay(
                         symbol: '',
                         amount: '',
                       ),
@@ -319,17 +321,14 @@ class MainPage extends StatelessWidget {
         onTap: (index) {
           switch (index) {
             case 0:
-              logger.d('Credentials');
               Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) => const CredentialPage()));
               break;
             case 1:
-              logger.d('Scanner');
               Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const QrScanner()));
               break;
             case 2:
-              logger.d('Einstellungen');
               break;
           }
         },

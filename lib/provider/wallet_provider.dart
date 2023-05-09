@@ -57,7 +57,7 @@ class WalletProvider extends ChangeNotifier {
       _buildCredentialList();
 
       if (contextCredentials.isEmpty) {
-        await issueLNDWContextMittweida(this);
+        //await issueLNDWContextMittweida(this);
         await issueLNDWContextDresden(this);
       }
 
