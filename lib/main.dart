@@ -53,8 +53,16 @@ class App extends StatelessWidget {
       navigatorKey: navigatorKey,
       home: const MainPage(),
       onGenerateRoute: (args) {
+        logger.d(args.name);
         if (args.name != null && args.name!.contains('oob')) {
           handleDidcommMessage('https://wallet.bccm.dev${args.name}');
+        } else if (args.name != null && args.name!.contains('webview')) {
+          logger.d(args);
+          var asUri = Uri.parse('https://wallet.bccm.dev${args.name}');
+          return MaterialPageRoute(
+              builder: (context) => WebViewWindow(
+                  initialUrl: asUri.queryParameters['url']!,
+                  title: asUri.queryParameters['title'] ?? ''));
         }
         return null;
       },
@@ -222,7 +230,7 @@ class MainPage extends StatelessWidget {
                   } else {
                     var empty = TransactionPreview(
                       title: AppLocalizations.of(context)!.noPayments,
-                      amount: CurrencyDisplay(
+                      amount: const CurrencyDisplay(
                         symbol: '',
                         amount: '',
                       ),

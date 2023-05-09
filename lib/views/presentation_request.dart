@@ -116,6 +116,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
     for (var result in widget.results) {
       bool all = false;
+
       if (result.submissionRequirement != null) {
         childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
             .reasonForRequest));
@@ -125,6 +126,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         childList.add(const SizedBox(
           height: 10,
         ));
+
         if (result.submissionRequirement!.rule ==
             SubmissionRequirementRule.all) {
           all = true;

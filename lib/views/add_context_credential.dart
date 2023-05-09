@@ -229,8 +229,8 @@ Future<void> issueSSITestServiceContext(WalletProvider wallet) async {
         ],
         'buttons': [
           {
-            'buttonText': 'Demo-Austellservice',
-            'webViewTitle': 'Austellservice',
+            'buttonText': 'Demo-Ausstellservice',
+            'webViewTitle': 'Ausstellservice',
             'url': 'http://167.235.195.132:8081',
             'backgroundColor': '#4C4CFF'
           },
