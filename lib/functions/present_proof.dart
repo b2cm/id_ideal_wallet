@@ -118,6 +118,8 @@ Future<bool> handleRequestPresentation(
 
       Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
+                name: definition.name,
+                purpose: definition.purpose,
                 message: message,
                 otherEndpoint:
                     determineReplyUrl(message.replyUrl, message.replyTo),
