@@ -83,5 +83,7 @@
   "credentialOffer": "Credential Offer",
   "balance": "Balance",
   "noteGetInformation": "like to have the following information",
-  "notePresentationPurpose": "specifies to use the data for"
+  "notePresentationPurpose": "specifies to use the data for",
+  "missingDataTitle": "Missing data",
+  "missingDataNote": "The requester asks you to tell a little more about yourself. Please fill in the requested data."
 }

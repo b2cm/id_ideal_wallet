@@ -7,7 +7,6 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/show_propose_presentation_code.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -258,8 +257,6 @@ class CredentialDetailState extends State<CredentialDetailView> {
     return StyledScaffoldTitle(
       title: widget.credential.type
           .firstWhere((element) => element != 'VerifiableCredential'),
-      scanOnTap: () => Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => const QrScanner())),
       footerButtons: [
         TextButton(
             onPressed: getHolderDidFromCredential(widget.credential.toJson()) ==
@@ -268,9 +265,6 @@ class CredentialDetailState extends State<CredentialDetailView> {
                     builder: (context) => StyledScaffoldTitle(
                         title:
                             AppLocalizations.of(context)!.sellCredentialTitle,
-                        scanOnTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => const QrScanner())),
                         child: Consumer<WalletProvider>(
                             builder: (context, wallet, child) {
                           return TopUp(

@@ -6,13 +6,11 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
-import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_name.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -23,13 +21,8 @@ class CredentialPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffoldName(
-        name: AppLocalizations.of(context)!.credentialPageTitle,
-        nameOnTap: () => Navigator.of(context).pop(),
-        scanOnTap: () {
-          Navigator.of(context)
-              .push(MaterialPageRoute(builder: (context) => const QrScanner()));
-        },
+    return StyledScaffoldTitle(
+        title: AppLocalizations.of(context)!.credentialPageTitle,
         child: const CredentialOverview());
   }
 }
@@ -80,8 +73,6 @@ class Base64ImagePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        scanOnTap: () => Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => const QrScanner())),
         title: AppLocalizations.of(context)!.preview,
         child: Image(
             image: Image.memory(base64Decode(imageDataUri.split(',').last))
@@ -103,8 +94,6 @@ class Base64PdfPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-      scanOnTap: () => Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => const QrScanner())),
       title: AppLocalizations.of(context)!.preview,
       child: PdfPreview(
         canChangePageFormat: false,

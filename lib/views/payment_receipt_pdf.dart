@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pdf;
 import 'package:printing/printing.dart';
@@ -136,8 +135,6 @@ class PdfPreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-      scanOnTap: () => Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => const QrScanner())),
       title:
           '${AppLocalizations.of(context)!.invoice} - ${AppLocalizations.of(context)!.preview}',
       child: PdfPreview(

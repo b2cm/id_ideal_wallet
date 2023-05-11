@@ -18,7 +18,6 @@ class PaymentOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         title: AppLocalizations.of(context)!.payments,
-        scanOnTap: () {},
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {
             var allPayments = wallet.getAllPayments(paymentContext.id!);

@@ -128,6 +128,7 @@ class PresentationRequestDialog extends StatefulWidget {
 class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   //'Database' for Checkboxes
   Map<String, bool> selectedCredsPerResult = {};
+  bool needEnterData = false;
 
   @override
   initState() {
@@ -135,12 +136,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int outerPos = 0;
     int innerPos = 0;
     for (var res in widget.results) {
+      innerPos = 0;
       for (var c in res.credentials) {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
           if (res.submissionRequirement?.min != null &&
-              innerPos <= res.submissionRequirement!.min!) {
+              innerPos < res.submissionRequirement!.min!) {
             selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
           } else {
             selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
@@ -193,6 +195,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       bool all = false;
 
       var outerTileChildList = <Widget>[];
+      var outerTileExpanded = false;
 
       // if (result.submissionRequirement != null) {
       //   childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
@@ -222,19 +225,33 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
+        needEnterData = true;
         for (var i in result.selfIssuable!) {
-          childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
-              .selfIssueAllowed));
-          childList.add(ElevatedButton(
-              onPressed: () async {
-                var res = await Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => CredentialSelfIssue(input: [i])));
-                if (res != null) {
-                  var wallet = Provider.of<WalletProvider>(
-                      navigatorKey.currentContext!,
-                      listen: false);
-                  var did = await wallet.newCredentialDid();
-                  if (res is Map) {
+          outerTileExpanded = true;
+          // outerTileChildList.add(Text(
+          //     AppLocalizations.of(navigatorKey.currentContext!)!
+          //         .selfIssueAllowed));
+          outerTileChildList.add(
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+              child: ElevatedButton(
+                onPressed: () async {
+                  Map res;
+                  int index;
+                  (res, index) = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => CredentialSelfIssue(
+                        input: [i],
+                        outerPos: pos,
+                      ),
+                    ),
+                  );
+                  if (res.isNotEmpty) {
+                    var wallet = Provider.of<WalletProvider>(
+                        navigatorKey.currentContext!,
+                        listen: false);
+                    var did = await wallet.newCredentialDid();
+
                     var credSubject = <dynamic, dynamic>{'id': did};
                     credSubject.addAll(res);
                     var cred = VerifiableCredential(
@@ -245,27 +262,37 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                         issuanceDate: DateTime.now());
                     var signed = await signCredential(wallet.wallet, cred);
                     logger.d(signed);
-                    result.selfIssuable!.remove(i);
-                    if (result.selfIssuable!.isEmpty) {
-                      result.selfIssuable = null;
+                    widget.results[index].selfIssuable!.remove(i);
+                    if (widget.results[index].selfIssuable!.isEmpty) {
+                      widget.results[index].selfIssuable = null;
                     }
-                    result.credentials
+                    widget.results[index].credentials
                         .add(VerifiableCredential.fromJson(signed));
+                    logger.d(widget.results);
                     selectedCredsPerResult[
-                        'o${pos}i${result.credentials.length - 1}'] = true;
-                    logger.d(selectedCredsPerResult);
+                            'o${pos}i${widget.results[index].credentials.length - 1}'] =
+                        true;
+                    needEnterData = false;
                     setState(() {});
                   }
-                }
-              },
-              child: Text(AppLocalizations.of(navigatorKey.currentContext!)!
-                  .enterData)));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent.shade700,
+                  minimumSize: const Size.fromHeight(45),
+                ),
+                child: Text(AppLocalizations.of(navigatorKey.currentContext!)!
+                    .enterData),
+              ),
+            ),
+          );
         }
       }
       int credCount = 0;
       var selectedCredNames = <String>[];
+      innerPos = 0;
       for (var v in result.credentials) {
         var key = 'o${outerPos}i$innerPos';
+        logger.d(key);
         if (selectedCredsPerResult[key]!) {
           credCount++;
           selectedCredNames.add(v.type
@@ -292,6 +319,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
 
       var outerTile = ExpansionTile(
+        initiallyExpanded: outerTileExpanded,
         title: SizedBox(
           child: RichText(
             text: TextSpan(
@@ -352,125 +380,144 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   }
 
   Future<void> sendAnswer() async {
-    var wallet = Provider.of<WalletProvider>(context, listen: false);
-    List<FilterResult> finalSend = [];
-    int outerPos = 0;
-    int innerPos = 0;
-    for (var result in widget.results) {
-      List<VerifiableCredential> credList = [];
-      for (var cred in result.credentials) {
-        if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
-          credList.add(cred);
-        }
-        innerPos++;
-      }
-      outerPos++;
-      finalSend.add(FilterResult(
-          credentials: credList,
-          matchingDescriptorIds: result.matchingDescriptorIds,
-          presentationDefinitionId: result.presentationDefinitionId,
-          submissionRequirement: result.submissionRequirement));
-    }
-    if (widget.isOidc) {
-      var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
-          loadDocumentFunction: loadDocumentFast);
-      var casted = VerifiablePresentation.fromJson(vp);
-      logger.d(await verifyPresentation(vp, widget.nonce!,
-          loadDocumentFunction: loadDocumentFast));
-      logger.d(jsonDecode(vp));
-      var res = await post(Uri.parse(widget.otherEndpoint),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body:
-              'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
-
-      logger.d(res.statusCode);
-      logger.d(res.body);
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        for (var cred in casted.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present',
-              widget.receiverDid);
-        }
-
-        String type = '';
-        for (var c in casted.verifiableCredential!) {
-          type +=
-              '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
-        }
-        type = type.substring(0, type.length - 1);
-
-        await showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
-                      .presentationSuccessful,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: type,
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
-        Navigator.of(context).pop();
-      } else {
-        for (var cred in casted.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present failed',
-              widget.receiverDid);
-        }
-
-        await showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
-                      .presentationFailed,
-                  success: false,
-                  amount: const CurrencyDisplay(
-                      amount: '', symbol: '', mainFontSize: 35, centered: true),
-                ),
-              );
-            });
-        Navigator.of(context).pop();
-      }
+    if (needEnterData) {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text(AppLocalizations.of(context)!.missingDataTitle),
+                content: Text(AppLocalizations.of(context)!.missingDataNote),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Ok'))
+                ],
+              ));
     } else {
-      var vp = await buildPresentation(finalSend, wallet.wallet,
-          widget.message!.presentationDefinition.first.challenge);
-      var presentationMessage = Presentation(
-          replyUrl: '$relay/buffer/${widget.myDid}',
-          returnRoute: ReturnRouteValue.thread,
-          to: [widget.receiverDid],
-          from: widget.myDid,
-          verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
-          threadId: widget.message!.threadId ?? widget.message!.id,
-          parentThreadId: widget.message!.parentThreadId);
-      sendMessage(widget.myDid, widget.otherEndpoint, wallet,
-          presentationMessage, widget.receiverDid);
-      for (var pres in presentationMessage.verifiablePresentation) {
-        for (var cred in pres.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present',
-              widget.receiverDid);
+      var wallet = Provider.of<WalletProvider>(context, listen: false);
+      List<FilterResult> finalSend = [];
+      int outerPos = 0;
+      int innerPos = 0;
+      for (var result in widget.results) {
+        List<VerifiableCredential> credList = [];
+        innerPos = 0;
+        for (var cred in result.credentials) {
+          if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
+            credList.add(cred);
+          }
+          innerPos++;
         }
+        outerPos++;
+        finalSend.add(FilterResult(
+            credentials: credList,
+            matchingDescriptorIds: result.matchingDescriptorIds,
+            presentationDefinitionId: result.presentationDefinitionId,
+            submissionRequirement: result.submissionRequirement));
       }
-      Navigator.of(context).pop();
+      if (widget.isOidc) {
+        var vp = await buildPresentation(
+            finalSend, wallet.wallet, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast);
+        var casted = VerifiablePresentation.fromJson(vp);
+        logger.d(await verifyPresentation(vp, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast));
+        logger.d(jsonDecode(vp));
+        var res = await post(Uri.parse(widget.otherEndpoint),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body:
+                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+
+        logger.d(res.statusCode);
+        logger.d(res.body);
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          for (var cred in casted.verifiableCredential!) {
+            wallet.storeExchangeHistoryEntry(
+                getHolderDidFromCredential(cred.toJson()),
+                DateTime.now(),
+                'present',
+                widget.receiverDid);
+          }
+
+          String type = '';
+          for (var c in casted.verifiableCredential!) {
+            type +=
+                '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+          }
+          type = type.substring(0, type.length - 1);
+
+          await showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .presentationSuccessful,
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: type,
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
+          Navigator.of(context).pop();
+        } else {
+          for (var cred in casted.verifiableCredential!) {
+            wallet.storeExchangeHistoryEntry(
+                getHolderDidFromCredential(cred.toJson()),
+                DateTime.now(),
+                'present failed',
+                widget.receiverDid);
+          }
+
+          await showModalBottomSheet(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .presentationFailed,
+                    success: false,
+                    amount: const CurrencyDisplay(
+                        amount: '',
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
+          Navigator.of(context).pop();
+        }
+      } else {
+        var vp = await buildPresentation(finalSend, wallet.wallet,
+            widget.message!.presentationDefinition.first.challenge);
+        var presentationMessage = Presentation(
+            replyUrl: '$relay/buffer/${widget.myDid}',
+            returnRoute: ReturnRouteValue.thread,
+            to: [widget.receiverDid],
+            from: widget.myDid,
+            verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+            threadId: widget.message!.threadId ?? widget.message!.id,
+            parentThreadId: widget.message!.parentThreadId);
+        sendMessage(widget.myDid, widget.otherEndpoint, wallet,
+            presentationMessage, widget.receiverDid);
+        for (var pres in presentationMessage.verifiablePresentation) {
+          for (var cred in pres.verifiableCredential!) {
+            wallet.storeExchangeHistoryEntry(
+                getHolderDidFromCredential(cred.toJson()),
+                DateTime.now(),
+                'present',
+                widget.receiverDid);
+          }
+        }
+        Navigator.of(context).pop();
+      }
     }
     // Navigator.of(context).pop();
   }

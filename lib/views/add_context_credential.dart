@@ -55,7 +55,6 @@ class AddContextCredentialState extends State<AddContextCredential> {
               child: Text(AppLocalizations.of(context)!.create))
         ],
         title: AppLocalizations.of(context)!.contextCredentialTitle,
-        scanOnTap: () {},
         child: ListView.builder(
             itemCount: availableCredentials.length,
             itemBuilder: (context, index) {
