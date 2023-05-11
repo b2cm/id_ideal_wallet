@@ -4,8 +4,10 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
 
 class QrScanner extends StatelessWidget {
   const QrScanner({Key? key}) : super(key: key);
@@ -36,9 +38,18 @@ class QrScanner extends StatelessWidget {
                   Navigator.of(context).pop();
                 } else if (code.contains('webview')) {
                   var asUri = Uri.parse(code);
+                  var uriToCall = Uri.parse(asUri.queryParameters['url']!);
+                  var wallet = Provider.of<WalletProvider>(
+                      navigatorKey.currentContext!,
+                      listen: false);
+                  var newQuery = {'lndwId': wallet.lndwId};
+                  newQuery.addAll(uriToCall.queryParameters);
+                  var newUriToCall =
+                      uriToCall.replace(queryParameters: newQuery);
+                  logger.d(newUriToCall);
                   Navigator.of(context).pushReplacement(MaterialPageRoute(
                       builder: (context) => WebViewWindow(
-                          initialUrl: asUri.queryParameters['url']!,
+                          initialUrl: newUriToCall.toString(),
                           title: asUri.queryParameters['title'] ?? '')));
                 } else {
                   handleDidcommMessage(code);

@@ -65,6 +65,7 @@ class App extends StatelessWidget {
           var newQuery = {'lndwId': wallet.lndwId};
           newQuery.addAll(uriToCall.queryParameters);
           var newUriToCall = uriToCall.replace(queryParameters: newQuery);
+          logger.d(newUriToCall);
           return MaterialPageRoute(
               builder: (context) => WebViewWindow(
                   initialUrl: newUriToCall.toString(),
@@ -126,6 +127,7 @@ class MainPage extends StatelessWidget {
         if (wallet.isOpen()) {
           return SafeArea(
               child: Swiper(
+            loop: false,
             viewportFraction: 0.87,
             scale: 0.875,
             itemCount: wallet.contextCredentials.length,
