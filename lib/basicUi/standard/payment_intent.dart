@@ -1,6 +1,6 @@
+import 'package:action_slider/action_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:slide_to_act/slide_to_act.dart';
 
 import 'currency_display.dart';
 
@@ -53,11 +53,13 @@ class PaymentIntent extends StatelessWidget {
             : const SizedBox(height: 0),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: SlideAction(
-            innerColor: Colors.white,
-            text: AppLocalizations.of(context)!.pay,
-            outerColor: const Color.fromARGB(255, 35, 216, 108),
-            onSubmit: onPaymentAccepted,
+          child: ActionSlider.standard(
+            backgroundColor: Colors.white,
+            toggleColor: const Color.fromARGB(255, 35, 216, 108),
+            action: (controller) {
+              onPaymentAccepted();
+            },
+            child: Text(AppLocalizations.of(context)!.pay),
           ),
         ),
         TextButton(
