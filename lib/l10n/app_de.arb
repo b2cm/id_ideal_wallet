@@ -81,5 +81,7 @@
   "receive": "Empfangen",
   "orderWithPayment": "Zahlungspflichtig bestellen",
   "credentialOffer": "Credential Angebot",
-  "balance": "Kontostand"
+  "balance": "Kontostand",
+  "noteGetInformation": "möchte folgende Informationen von Dir",
+  "notePresentationPurpose": "gibt an, die Daten für folgendes zu verwenden"
 }

@@ -81,5 +81,7 @@
   "receive": "receive",
   "orderWithPayment": "Order with obligation to pay",
   "credentialOffer": "Credential Offer",
-  "balance": "Balance"
+  "balance": "Balance",
+  "noteGetInformation": "like to have the following information",
+  "notePresentationPurpose": "specifies to use the data for"
 }

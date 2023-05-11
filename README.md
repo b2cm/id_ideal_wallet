@@ -19,6 +19,13 @@ purpose.
 
 This branch supports http as transport protocol for didcomm messages.
 
+## App-Link
+
+- `https://wallet.bccm.dev`
+- App is able to scan codes pointing to a
+  webview: `https://wallet.bccm.dev/webview?url=https://maps.google.com&title=Karte`, where url
+  parameter is mandatory and title optional
+
 **Important Notes**
 
 - because the wallet store potential sensitive data the smartphone you run it on must offer an

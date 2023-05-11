@@ -13,6 +13,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
@@ -151,6 +152,17 @@ class CredentialOverview extends StatelessWidget {
   }
 }
 
+class IsPicture implements Fun1<bool, Maybe> {
+  @override
+  final name = 'is_picture';
+
+  @override
+  bool call(Maybe arg) => arg
+      .type<String>() // Make sure it's a string
+      .map((value) => value.startsWith('data:image'))
+      .or(false); // for non-string values return false
+}
+
 class CredentialCard extends StatefulWidget {
   final VerifiableCredential credential;
 
@@ -188,19 +200,17 @@ class CredentialCardState extends State<CredentialCard> {
         image = Image.memory(base64Decode(imgB64.split(',')[1]));
         setState(() {});
       } else {
-        final path = JsonPath(r'$.credentialSubject..[?image]', filters: {
-          'image': (match) =>
-              match.value is String &&
-              match.value.startsWith('data:image') &&
-              (!match.path.contains('background'))
-        });
+        final parser = JsonPathParser(functions: [IsPicture()]);
+        final path = parser.parse(r'$.credentialSubject..[?image]');
 
         var result = path.read(widget.credential.toJson());
         logger.d(result.first.path);
-        var dataString = result.first.value as String;
-        var imageData = dataString.split(',').last;
+        if (!result.first.path.contains('background')) {
+          var dataString = result.first.value as String;
+          var imageData = dataString.split(',').last;
 
-        image = Image.memory(base64Decode(imageData));
+          image = Image.memory(base64Decode(imageData));
+        }
         setState(() {});
       }
     } catch (e) {

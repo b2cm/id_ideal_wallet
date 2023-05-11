@@ -354,7 +354,9 @@ class WalletProvider extends ChangeNotifier {
           }
           contextCredentials.add(vc);
         } else {
-          credentials.add(vc);
+          if (!vc.type.contains('PaymentReceipt')) {
+            credentials.add(vc);
+          }
         }
       } else {
         // TODO: merge w3c and Plaintext credential
@@ -492,8 +494,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getAllCredentials();
   }
 
-  void deleteCredential(String credDid) {
-    _wallet.deleteCredential(credDid);
+  void deleteCredential(String credDid) async {
+    await _wallet.deleteCredential(credDid);
+    await _wallet.deleteExchangeHistory(credDid);
+    await _wallet.deleteConfigEntry(credDid);
     _buildCredentialList();
     notifyListeners();
   }

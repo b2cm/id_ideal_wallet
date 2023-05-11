@@ -2,14 +2,13 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/util.dart';
+import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
-import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -20,8 +19,11 @@ import '../functions/didcomm_message_handler.dart';
 
 class RequesterInfo extends StatefulWidget {
   final String requesterUrl;
+  final String followingText;
 
-  const RequesterInfo({Key? key, required this.requesterUrl}) : super(key: key);
+  const RequesterInfo(
+      {Key? key, required this.requesterUrl, required this.followingText})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => RequesterInfoState();
@@ -29,6 +31,7 @@ class RequesterInfo extends StatefulWidget {
 
 class RequesterInfoState extends State<RequesterInfo> {
   String info = AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
+  bool isVerified = false;
 
   @override
   void initState() {
@@ -42,6 +45,9 @@ class RequesterInfoState extends State<RequesterInfo> {
       info = certInfo?.subjectOrganization ??
           certInfo?.subjectCommonName ??
           AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
+      if (certInfo != null) {
+        isVerified = true;
+      }
       setState(() {});
     } catch (e) {
       logger.d('Problem bei Zertifikatsabfrage: $e');
@@ -50,12 +56,50 @@ class RequesterInfoState extends State<RequesterInfo> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(info);
+    return SizedBox(
+      child: RichText(
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: 17,
+            color: Colors.grey.shade700,
+            fontWeight: FontWeight.w500,
+          ),
+          children: [
+            TextSpan(
+              text: info,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            WidgetSpan(
+              child: Container(
+                padding: const EdgeInsets.only(
+                  left: 1,
+                  bottom: 5,
+                ),
+                child: Icon(
+                  isVerified ? Icons.check_circle : Icons.close,
+                  size: 14,
+                  color: isVerified
+                      ? Colors.greenAccent.shade700
+                      : Colors.redAccent.shade700,
+                ),
+              ),
+            ),
+            TextSpan(
+                text: widget.followingText,
+                style: const TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.normal)),
+          ],
+        ),
+      ),
+    );
   }
 }
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
+  final String? name, purpose;
   final String myDid;
   final String otherEndpoint;
   final String receiverDid;
@@ -69,6 +113,8 @@ class PresentationRequestDialog extends StatefulWidget {
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
+      this.name,
+      this.purpose,
       this.message,
       this.isOidc = false,
       this.nonce})
@@ -93,7 +139,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
-          selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
+          if (res.submissionRequirement?.min != null &&
+              innerPos <= res.submissionRequirement!.min!) {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+          } else {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
+          }
         }
         innerPos++;
       }
@@ -106,40 +157,68 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int outerPos = 0;
     int innerPos = 0;
 
+    //overall name
+    if (widget.name != null) {
+      childList.add(
+        Text(
+          widget.name!,
+          style: const TextStyle(
+            fontSize: 26,
+            color: Color(0xFF3b3b3b),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+    }
+
     // Requesting entity
-    childList
-        .add(Text(AppLocalizations.of(navigatorKey.currentContext!)!.dataFor));
-    childList.add(RequesterInfo(requesterUrl: widget.otherEndpoint));
+    childList.add(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: RequesterInfo(
+          requesterUrl: widget.otherEndpoint,
+          followingText:
+              ' ${AppLocalizations.of(navigatorKey.currentContext!)!.noteGetInformation}:',
+        ),
+      ),
+    );
     childList.add(const SizedBox(
       height: 10,
     ));
 
     for (var result in widget.results) {
       bool all = false;
-      if (result.submissionRequirement != null) {
-        childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
-            .reasonForRequest));
-        childList.add(Text(result.submissionRequirement?.purpose ??
-            result.submissionRequirement?.name ??
-            'Default'));
-        childList.add(const SizedBox(
-          height: 10,
-        ));
-        if (result.submissionRequirement!.rule ==
-            SubmissionRequirementRule.all) {
-          all = true;
-          childList
-              .add(const Text('Wähle mindestens eins dieser Credentials aus'));
-        } else {
-          if (result.submissionRequirement!.count != null) {
-            childList.add(Text(
-                'Wähle ${result.submissionRequirement!.count!} Credential(s) aus'));
-          } else if (result.submissionRequirement!.min != null) {
-            childList.add(Text(
-                'Wähle mindestens ${result.submissionRequirement!.min!} Credential(s) aus'));
-          }
-        }
-      }
+
+      var outerTileChildList = <Widget>[];
+
+      // if (result.submissionRequirement != null) {
+      //   childList.add(Text(AppLocalizations.of(navigatorKey.currentContext!)!
+      //       .reasonForRequest));
+      //   childList.add(Text(result.submissionRequirement?.purpose ??
+      //       result.submissionRequirement?.name ??
+      //       'Default'));
+      //   childList.add(const SizedBox(
+      //     height: 10,
+      //   ));
+      //
+      //   if (result.submissionRequirement!.rule ==
+      //       SubmissionRequirementRule.all) {
+      //     all = true;
+      //     childList
+      //         .add(const Text('Wähle mindestens eins dieser Credentials aus'));
+      //   } else {
+      //     if (result.submissionRequirement!.count != null) {
+      //       childList.add(Text(
+      //           'Wähle ${result.submissionRequirement!.count!} Credential(s) aus'));
+      //     } else if (result.submissionRequirement!.min != null) {
+      //       childList.add(Text(
+      //           'Wähle mindestens ${result.submissionRequirement!.min!} Credential(s) aus'));
+      //     }
+      //   }
+      // }
 
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
@@ -150,7 +229,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               onPressed: () async {
                 var res = await Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CredentialSelfIssue(input: [i])));
-                print(res);
                 if (res != null) {
                   var wallet = Provider.of<WalletProvider>(
                       navigatorKey.currentContext!,
@@ -184,12 +262,19 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   .enterData)));
         }
       }
-
+      int credCount = 0;
+      var selectedCredNames = <String>[];
       for (var v in result.credentials) {
         var key = 'o${outerPos}i$innerPos';
-        childList.add(
+        if (selectedCredsPerResult[key]!) {
+          credCount++;
+          selectedCredNames.add(v.type
+              .firstWhere((element) => element != 'VerifiableCredential'));
+        }
+        outerTileChildList.add(
           ExpansionTile(
             leading: Checkbox(
+                activeColor: Colors.greenAccent.shade700,
                 onChanged: (bool? newValue) {
                   setState(() {
                     if (newValue != null) {
@@ -205,8 +290,64 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         );
         innerPos++;
       }
+
+      var outerTile = ExpansionTile(
+        title: SizedBox(
+          child: RichText(
+            text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 21,
+                  color: Color(0xFF3b3b3b),
+                  fontWeight: FontWeight.bold,
+                ),
+                children: [
+                  TextSpan(
+                      text: '${credCount}x ',
+                      style: TextStyle(
+                        fontSize: 21,
+                        color: Colors.greenAccent.shade700,
+                        fontWeight: FontWeight.bold,
+                      )),
+                  TextSpan(
+                      text: result.submissionRequirement?.name ??
+                          selectedCredNames.toSet().join(', '))
+                ]),
+          ),
+        ),
+        subtitle: result.submissionRequirement?.purpose != null
+            ? Text(
+                result.submissionRequirement!.purpose!,
+                style: const TextStyle(color: Colors.black),
+              )
+            : null,
+        children: outerTileChildList,
+      );
+      childList.add(outerTile);
       outerPos++;
     }
+
+    // overall purpose
+    if (widget.purpose != null) {
+      childList.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              child: RequesterInfo(
+                  requesterUrl: widget.otherEndpoint,
+                  followingText:
+                      ' ${AppLocalizations.of(context)!.notePresentationPurpose}:\n${widget.purpose}'),
+            ),
+          ),
+        ),
+      );
+    }
+
     return childList;
   }
 
@@ -341,23 +482,38 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffoldTitle(
-      title: AppLocalizations.of(navigatorKey.currentContext!)!.requestTitle,
-      scanOnTap: () {},
-      footerButtons: [
-        TextButton(
-            onPressed: reject,
-            child: Text(
-                AppLocalizations.of(navigatorKey.currentContext!)!.reject)),
-        TextButton(
-            onPressed: sendAnswer,
-            child:
-                Text(AppLocalizations.of(navigatorKey.currentContext!)!.send))
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: SingleChildScrollView(
+            child: Column(
+              children: buildChilds(),
+            ),
+          ),
+        ),
+      ),
+      persistentFooterButtons: [
+        Column(
+          children: [
+            ElevatedButton(
+                onPressed: reject,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  minimumSize: const Size.fromHeight(45),
+                ),
+                child: Text(AppLocalizations.of(context)!.cancel)),
+            const SizedBox(height: 5),
+            ElevatedButton(
+                onPressed: sendAnswer,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent.shade700,
+                  minimumSize: const Size.fromHeight(45),
+                ),
+                child: Text(AppLocalizations.of(context)!.send)),
+          ],
+        )
       ],
-      child: SingleChildScrollView(
-          child: Column(
-        children: buildChilds(),
-      )),
     );
   }
 }

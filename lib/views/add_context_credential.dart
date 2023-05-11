@@ -5,7 +5,6 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/imageData.dart';
 import 'package:provider/provider.dart';
 
 class AddContextCredential extends StatefulWidget {
@@ -221,8 +220,8 @@ Future<void> issueSSITestServiceContext(WalletProvider wallet) async {
         ],
         'buttons': [
           {
-            'buttonText': 'Demo-Austellservice',
-            'webViewTitle': 'Austellservice',
+            'buttonText': 'Demo-Ausstellservice',
+            'webViewTitle': 'Ausstellservice',
             'url': 'http://167.235.195.132:8081',
             'backgroundColor': '#4C4CFF'
           },
