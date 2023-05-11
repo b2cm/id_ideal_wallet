@@ -175,7 +175,6 @@ class QrRenderState extends State<QrRender> {
         title: getHolderDidFromCredential(widget.credential.toJson()) == ''
             ? AppLocalizations.of(context)!.sellCredentialTitle
             : AppLocalizations.of(context)!.presentCredential,
-        scanOnTap: () {},
         child: qrData.isEmpty
             ? const CircularProgressIndicator()
             : QrImageView(data: qrData));

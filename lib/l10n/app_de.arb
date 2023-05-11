@@ -83,5 +83,7 @@
   "credentialOffer": "Credential Angebot",
   "balance": "Kontostand",
   "noteGetInformation": "möchte folgende Informationen von Dir",
-  "notePresentationPurpose": "gibt an, die Daten für folgendes zu verwenden"
+  "notePresentationPurpose": "gibt an, die Daten für folgendes zu verwenden",
+  "missingDataTitle": "Fehlende Daten",
+  "missingDataNote": "Der Anfragende bittet dich noch etwas mehr über Dich zu veraten. Bitte trage die geforderten Daten ein."
 }

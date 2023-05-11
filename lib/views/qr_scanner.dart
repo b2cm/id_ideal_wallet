@@ -16,7 +16,6 @@ class QrScanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         title: 'QR-Code Scanner',
-        scanOnTap: () {},
         child: MobileScanner(
             allowDuplicates: false,
             onDetect: (barcode, args) {

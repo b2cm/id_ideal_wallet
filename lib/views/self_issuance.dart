@@ -57,7 +57,6 @@ class SelfIssueList extends StatelessWidget {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         title: AppLocalizations.of(navigatorKey.currentContext!)!.selfIssuable,
-        scanOnTap: () {},
         child: Column(
           children: [
             ElevatedButton(
@@ -186,7 +185,6 @@ class FixedSelfIssue extends StatelessWidget {
     return StyledScaffoldTitle(
         title:
             '${AppLocalizations.of(navigatorKey.currentContext!)!.selfIssuance}: $type',
-        scanOnTap: () {},
         child: JsonSchemaForm(
           schema: schema,
           controller: SchemaFormController(schema),
@@ -197,8 +195,11 @@ class FixedSelfIssue extends StatelessWidget {
 
 class CredentialSelfIssue extends StatefulWidget {
   final List<InputDescriptorConstraints> input;
+  final int outerPos;
 
-  const CredentialSelfIssue({Key? key, required this.input}) : super(key: key);
+  const CredentialSelfIssue(
+      {Key? key, required this.input, required this.outerPos})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => CredentialSelfIssueState();
@@ -235,10 +236,12 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
         title: AppLocalizations.of(context)!.selfIssuance,
-        scanOnTap: () {},
         child: JsonSchemaForm(
           schema: schema,
           controller: controller,
+          afterValidation: (credData) {
+            Navigator.of(context).pop((credData, widget.outerPos));
+          },
         ));
   }
 }
