@@ -7,6 +7,8 @@ import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
+import 'imageData.dart';
+
 class AddContextCredential extends StatefulWidget {
   const AddContextCredential({super.key});
 
@@ -80,15 +82,9 @@ Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
       credentialSubject: {
         'id': did,
         'name': 'Lange Nacht der Wissenschaften - Dresden',
-        'groupedTypes': ['ChallengeSolvedCredential'],
+        'groupedTypes': ['ChallengeSolvedCredential', 'JuniorDiplomAntrag'],
         'backgroundImage': backgroundDD,
         'buttons': [
-          {
-            'buttonText': 'Karte anzeigen',
-            'webViewTitle': 'Karte',
-            'url': 'maps.google.com',
-            'backgroundColor': '#4C4CFF'
-          },
           {
             'buttonText': 'Ralley absolvieren ',
             'webViewTitle': 'Ralley',

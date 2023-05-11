@@ -32,12 +32,12 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  #  dart_ssi:
-  #    git:
-  #      url: https://github.com/b2cm/dart_ssi
-  #      ref: didcomm
   dart_ssi:
-    path: ../flutter_ssi_wallet
+    git:
+      url: https://github.com/b2cm/dart_ssi
+      ref: didcomm
+  #  dart_ssi:
+  #    path: ../flutter_ssi_wallet
   #dart_ssi: ^2.1.0
   path_provider: ^2.0.12
   local_auth: ^2.1.0
@@ -58,7 +58,7 @@ dependencies:
       url: https://github.com/SaOtto/x509/
       ref: verification
   printing: ^5.9.3
-  pdf: ^3.8.4
+  pdf: ^3.10.3
   json_schema_form:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form

@@ -277,9 +277,11 @@ class CredentialCardState extends State<CredentialCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) =>
-                CredentialDetailView(credential: widget.credential))),
+        onTap: () => widget.credential.type.contains('ContextCredential')
+            ? Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) =>
+                    CredentialDetailView(credential: widget.credential)))
+            : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           var id = widget.credential.id ??
               getHolderDidFromCredential(widget.credential.toJson());

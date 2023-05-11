@@ -14,6 +14,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
+import 'package:uuid/uuid.dart';
 
 import '../functions/util.dart' as my_util;
 
@@ -22,6 +23,7 @@ class WalletProvider extends ChangeNotifier {
   bool _authRunning = false;
 
   String qrData = '';
+  String? lndwId;
 
   late Timer t;
   SortingType sortingType = SortingType.dateDown;
@@ -59,6 +61,12 @@ class WalletProvider extends ChangeNotifier {
       if (contextCredentials.isEmpty) {
         //await issueLNDWContextMittweida(this);
         await issueLNDWContextDresden(this);
+      }
+
+      lndwId = _wallet.getConfigEntry('lndwId');
+      if (lndwId == null) {
+        lndwId = const Uuid().v4();
+        _wallet.storeConfigEntry('lndwId', lndwId!);
       }
 
       var lastCheck = _wallet.getConfigEntry('lastValidityCheckTime');

@@ -59,9 +59,15 @@ class App extends StatelessWidget {
         } else if (args.name != null && args.name!.contains('webview')) {
           logger.d(args);
           var asUri = Uri.parse('https://wallet.bccm.dev${args.name}');
+          var uriToCall = Uri.parse(asUri.queryParameters['url']!);
+          var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+              listen: false);
+          var newQuery = {'lndwId': wallet.lndwId};
+          newQuery.addAll(uriToCall.queryParameters);
+          var newUriToCall = uriToCall.replace(queryParameters: newQuery);
           return MaterialPageRoute(
               builder: (context) => WebViewWindow(
-                  initialUrl: asUri.queryParameters['url']!,
+                  initialUrl: newUriToCall.toString(),
                   title: asUri.queryParameters['title'] ?? ''));
         }
         return null;
@@ -122,7 +128,7 @@ class MainPage extends StatelessWidget {
               child: Swiper(
             viewportFraction: 0.87,
             scale: 0.875,
-            itemCount: wallet.contextCredentials.length + 1,
+            itemCount: wallet.contextCredentials.length,
             onTap: (indexOut) {
               if (indexOut == wallet.contextCredentials.length) {
                 Navigator.of(context).push(MaterialPageRoute(
@@ -150,7 +156,8 @@ class MainPage extends StatelessWidget {
                       onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) => WebViewWindow(
-                                  initialUrl: btn['url']!,
+                                  initialUrl:
+                                      '${btn['url']!}?lndwId=${wallet.lndwId}',
                                   title: btn['webViewTitle'] ?? ''))),
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
