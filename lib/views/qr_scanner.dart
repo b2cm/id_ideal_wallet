@@ -41,8 +41,9 @@ class QrScanner extends StatelessWidget {
                   var wallet = Provider.of<WalletProvider>(
                       navigatorKey.currentContext!,
                       listen: false);
-                  var newQuery = {'lndwId': wallet.lndwId};
+                  var newQuery = {'wid': wallet.lndwId};
                   newQuery.addAll(uriToCall.queryParameters);
+                  logger.d(newQuery);
                   var newUriToCall =
                       uriToCall.replace(queryParameters: newQuery);
                   logger.d(newUriToCall);

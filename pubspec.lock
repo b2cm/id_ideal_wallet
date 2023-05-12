@@ -523,10 +523,10 @@ packages:
     dependency: transitive
     description:
       name: local_auth_ios
-      sha256: "604078f6492fe7730fc5bb8e4f2cfe2bc287a9b499ea0ff30a29925fc1873728"
+      sha256: "503a938c4edde6b244c6ee3b1e2e675ddb7e37e79d5056658dbed1997cf04785"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1"
+    version: "1.1.2"
   local_auth_platform_interface:
     dependency: transitive
     description:

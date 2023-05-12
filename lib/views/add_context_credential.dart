@@ -87,7 +87,7 @@ Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
           {
             'buttonText': 'Ralley absolvieren ',
             'webViewTitle': 'Ralley',
-            'url': 'maps.google.com',
+            'url': 'https://157.90.70.84:8082/#/',
             'backgroundColor': '#00B200'
           }
         ]

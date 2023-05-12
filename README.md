@@ -30,9 +30,10 @@ This branch supports http as transport protocol for didcomm messages.
 - App is able to scan codes pointing to a
   webview: `https://wallet.bccm.dev/webview?url=https://maps.google.com&title=Karte`, where url
   parameter is mandatory and title optional
-- the wallet will add an additional query-parameter to the url of the url-property: `lndwId=<uuid>`.
+- if the url for the webview contains fragment and query it MUST be percent-encoded
+- the wallet will add an additional query-parameter to the url of the url-property: `wid=<uuid>`.
   For the given example this means a webview with initial
-  url `https://maps.google.com?lndwId=<uuid>` is opened.
+  url `https://maps.google.com?wid=<uuid>` is opened.
 
 **Important Notes**
 

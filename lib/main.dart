@@ -62,7 +62,7 @@ class App extends StatelessWidget {
           var uriToCall = Uri.parse(asUri.queryParameters['url']!);
           var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
               listen: false);
-          var newQuery = {'lndwId': wallet.lndwId};
+          var newQuery = {'wid': wallet.lndwId};
           newQuery.addAll(uriToCall.queryParameters);
           var newUriToCall = uriToCall.replace(queryParameters: newQuery);
           logger.d(newUriToCall);
@@ -159,7 +159,7 @@ class MainPage extends StatelessWidget {
                           MaterialPageRoute(
                               builder: (context) => WebViewWindow(
                                   initialUrl:
-                                      '${btn['url']!}?lndwId=${wallet.lndwId}',
+                                      '${btn['url']!}?wid=${wallet.lndwId}',
                                   title: btn['webViewTitle'] ?? ''))),
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
