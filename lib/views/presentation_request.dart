@@ -557,7 +557,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   backgroundColor: Colors.greenAccent.shade700,
                   minimumSize: const Size.fromHeight(45),
                 ),
-                child: Text(AppLocalizations.of(context)!.send)),
+                child: Text(AppLocalizations.of(context)!.sendPresentation)),
           ],
         )
       ],

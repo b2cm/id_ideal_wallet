@@ -9,10 +9,12 @@ class StyledScaffoldTitle extends StatelessWidget {
       {super.key,
       required this.title,
       required this.child,
+      this.currentlyActive,
       this.footerButtons});
 
   final String title;
   final Widget child;
+  final int? currentlyActive;
   final List<Widget>? footerButtons;
 
   @override
@@ -34,33 +36,41 @@ class StyledScaffoldTitle extends StatelessWidget {
       // padding only left and right
       persistentFooterButtons: footerButtons,
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.black,
+        selectedItemColor: currentlyActive == null
+            ? Colors.black
+            : Colors.greenAccent.shade700,
         unselectedItemColor: Colors.black,
         items: [
           const BottomNavigationBarItem(
               icon: Icon(Icons.co_present), label: 'Credentials'),
           BottomNavigationBarItem(
-              icon: const Image(
-                  image: AssetImage("assets/icons/scan-qr-solid.png"),
-                  height: 30,
-                  width: 30),
+              icon: const Icon(
+                Icons.qr_code_scanner_sharp,
+                size: 30,
+              ),
               label: AppLocalizations.of(context)!.scan),
           const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         ],
-        currentIndex: 1,
+        currentIndex: currentlyActive ?? 1,
         onTap: (index) {
           switch (index) {
             case 0:
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const CredentialPage()));
+              if (currentlyActive != 0) {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const CredentialPage()));
+              }
               break;
             case 1:
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const QrScanner()));
+              if (currentlyActive != 1) {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const QrScanner()));
+              }
               break;
             case 2:
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const MainPage()));
+              if (currentlyActive != 2) {
+                Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainPage()));
+              }
               break;
           }
         },

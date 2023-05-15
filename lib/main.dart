@@ -314,10 +314,10 @@ class MainPage extends StatelessWidget {
           const BottomNavigationBarItem(
               icon: Icon(Icons.co_present), label: 'Credentials'),
           BottomNavigationBarItem(
-              icon: const Image(
-                  image: AssetImage("assets/icons/scan-qr-solid.png"),
-                  height: 30,
-                  width: 30),
+              icon: const Icon(
+                Icons.qr_code_scanner_sharp,
+                size: 30,
+              ),
               label: AppLocalizations.of(context)!.scan),
           BottomNavigationBarItem(
               icon: const Icon(Icons.settings),

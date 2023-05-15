@@ -27,7 +27,7 @@ class StyledScaffoldWebView extends StatelessWidget {
           children: [
             InkWell(
                 onTap: backOnTap,
-                child: const Icon(Icons.arrow_back, size: 30)),
+                child: const Icon(Icons.arrow_back, size: 40)),
           ],
         ),
         backgroundColor: Colors.white,
@@ -37,7 +37,7 @@ class StyledScaffoldWebView extends StatelessWidget {
         title: Text(title, style: const TextStyle(color: Colors.black)),
         actions: [
           InkWell(
-              onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 30)),
+              onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),
           const SizedBox(
             width: 5,
           ),
@@ -45,7 +45,7 @@ class StyledScaffoldWebView extends StatelessWidget {
               onTap: () => Navigator.of(context).pop(),
               child: const Icon(
                 Icons.close,
-                size: 30,
+                size: 40,
               )),
           const SizedBox(
             width: 5,

@@ -58,6 +58,7 @@
   "presentationFailed": "Credentials could not be presented",
   "reject": "reject",
   "send": "send",
+  "sendPresentation": "send credentials",
   "username": "User name in the selected network",
   "mailAddress": "e-mail addresse",
   "selfIssuable": "Self-issuable credentials",
