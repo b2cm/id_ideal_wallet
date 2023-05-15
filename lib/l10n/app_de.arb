@@ -58,6 +58,7 @@
   "presentationFailed": "Nachweise konnten nicht vorgezeigt werden",
   "reject": "Ablehnen",
   "send": "Senden",
+  "sendPresentation": "Nachweise senden",
   "username": "Nutzername im gewählten Netzwerk",
   "mailAddress": "E-Mail Adresse",
   "selfIssuable": "Selbstausstellbare Nachweise",

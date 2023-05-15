@@ -22,6 +22,7 @@ class CredentialPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
+        currentlyActive: 0,
         title: AppLocalizations.of(context)!.credentialPageTitle,
         child: const CredentialOverview());
   }
