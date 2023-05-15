@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:provider/provider.dart';
 
 class WebViewWindow extends StatefulWidget {
   final String initialUrl;
@@ -60,11 +63,24 @@ class WebViewWindowState extends State<WebViewWindow> {
               await webViewController!.canGoBack()) {
             webViewController?.goBack();
           } else {
-            Navigator.of(context).pop();
+            Navigator.of(navigatorKey.currentContext!)
+                .popUntil((route) => route.isFirst);
           }
         },
-        reloadOnTap: () {
-          webViewController?.reload();
+        reloadOnTap: () async {
+          var initialUri = await webViewController?.getUrl();
+          if (initialUri?.fragment != null &&
+              initialUri!.fragment.contains('wid')) {
+            webViewController?.reload();
+          } else {
+            var wallet = Provider.of<WalletProvider>(
+                navigatorKey.currentContext!,
+                listen: false);
+            webViewController?.loadUrl(
+                urlRequest: URLRequest(
+                    url: WebUri.uri(Uri.parse(
+                        '$initialUri${initialUri.toString().contains('?') ? '&wid=${wallet.lndwId}' : '?wid=${wallet.lndwId}'}'))));
+          }
         },
         child: SafeArea(
             child: Column(children: <Widget>[

@@ -41,15 +41,16 @@ class QrScanner extends StatelessWidget {
                   var wallet = Provider.of<WalletProvider>(
                       navigatorKey.currentContext!,
                       listen: false);
-                  var newQuery = {'wid': wallet.lndwId};
-                  newQuery.addAll(uriToCall.queryParameters);
-                  logger.d(newQuery);
-                  var newUriToCall =
-                      uriToCall.replace(queryParameters: newQuery);
-                  logger.d(newUriToCall);
+                  // var newQuery = {'wid': wallet.lndwId};
+                  // newQuery.addAll(uriToCall.queryParameters);
+                  // logger.d(newQuery);
+                  // var newUriToCall =
+                  //     uriToCall.replace(queryParameters: newQuery);
+                  // logger.d(newUriToCall);
                   Navigator.of(context).pushReplacement(MaterialPageRoute(
                       builder: (context) => WebViewWindow(
-                          initialUrl: newUriToCall.toString(),
+                          initialUrl:
+                              '$uriToCall${uriToCall.toString().contains('?') ? '&' : '?'}wid=${wallet.lndwId}',
                           title: asUri.queryParameters['title'] ?? '')));
                 } else {
                   handleDidcommMessage(code);

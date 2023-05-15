@@ -59,17 +59,34 @@ class App extends StatelessWidget {
         } else if (args.name != null && args.name!.contains('webview')) {
           logger.d(args);
           var asUri = Uri.parse('https://wallet.bccm.dev${args.name}');
-          var uriToCall = Uri.parse(asUri.queryParameters['url']!);
-          var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-              listen: false);
-          var newQuery = {'wid': wallet.lndwId};
-          newQuery.addAll(uriToCall.queryParameters);
-          var newUriToCall = uriToCall.replace(queryParameters: newQuery);
-          logger.d(newUriToCall);
+          logger.d(asUri);
+          logger.d(asUri.queryParameters);
+          var uriToCall =
+              '${Uri.parse(asUri.queryParameters['url']!)}${asUri.hasFragment ? '#${asUri.fragment}' : ''}';
+          logger.d(uriToCall);
+
+          // var newQuery = {'wid': wallet.lndwId};
+          // newQuery.addAll(uriToCall.queryParameters);
+          // var newUriToCall = uriToCall.replace(queryParameters: newQuery);
+          // logger.d(newUriToCall);
           return MaterialPageRoute(
-              builder: (context) => WebViewWindow(
-                  initialUrl: newUriToCall.toString(),
-                  title: asUri.queryParameters['title'] ?? ''));
+              builder: (context) =>
+                  Consumer<WalletProvider>(builder: (context, wallet, child) {
+                    if (wallet.isOpen()) {
+                      logger.d(uriToCall);
+                      return WebViewWindow(
+                          initialUrl:
+                              '$uriToCall${uriToCall.toString().contains('?') ? '&' : '?'}wid=${wallet.lndwId}',
+                          title: asUri.queryParameters['title'] ?? '');
+                    } else {
+                      return const Scaffold(
+                        body: SafeArea(
+                            child: Center(
+                          child: CircularProgressIndicator(),
+                        )),
+                      );
+                    }
+                  }));
         }
         return null;
       },

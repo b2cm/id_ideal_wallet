@@ -42,7 +42,8 @@ class StyledScaffoldWebView extends StatelessWidget {
             width: 5,
           ),
           InkWell(
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () =>
+                  Navigator.of(context).popUntil((route) => route.isFirst),
               child: const Icon(
                 Icons.close,
                 size: 30,
