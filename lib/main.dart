@@ -363,6 +363,10 @@ class MainPage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const QrScanner()));
               break;
             case 2:
+              logger.d('Einstellungen');
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const WebViewWindow(
+                      initialUrl: 'https://hidy.eu/app', title: 'About')));
               break;
           }
         },
