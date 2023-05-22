@@ -1,4 +1,4 @@
-package de.hswm.id_ideal_wallet
+package eu.hidy.app
 
 import android.view.WindowManager.LayoutParams
 import io.flutter.embedding.android.FlutterFragmentActivity
