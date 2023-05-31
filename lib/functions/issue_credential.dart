@@ -4,6 +4,7 @@ import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
@@ -12,7 +13,6 @@ import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
 import '../provider/wallet_provider.dart';
-import '../views/offer_credential_dialog.dart';
 import 'didcomm_message_handler.dart';
 
 bool handleProposeCredential(ProposeCredential message, WalletProvider wallet) {
@@ -130,10 +130,13 @@ Future<bool> handleOfferCredential(
       entry.protocol == DidcommProtocol.discoverFeature.value) {
     //show data to user
     var res = await showCupertinoModalPopup(
-        context: navigatorKey.currentContext!,
-        barrierColor: Colors.white,
-        builder: (BuildContext context) =>
-            buildOfferCredentialDialog(context, message.detail!, toPay));
+      context: navigatorKey.currentContext!,
+      barrierColor: Colors.white,
+      builder: (BuildContext context) => CredentialOfferDialog(
+        credentials: message.detail!,
+        toPay: toPay,
+      ),
+    );
 
     //pay the credential
     if (res) {

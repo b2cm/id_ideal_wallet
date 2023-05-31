@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
@@ -179,44 +180,6 @@ Future<void> handleOfferOidc(String offerUri) async {
   }
 }
 
-Widget buildOfferCredentialDialogOidc(
-    BuildContext context, List<dynamic> credentials) {
-  List<Widget> contentData = [];
-
-  for (var d in credentials) {
-    var type =
-        d['types'].firstWhere((element) => element != 'VerifiableCredential');
-
-    var title = Text(type,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
-    contentData.add(const SizedBox(
-      height: 10,
-    ));
-
-    contentData.add(ExpansionTile(
-      title: title,
-    ));
-  }
-
-  return SafeArea(
-      child: Material(
-          child:
-              // rounded corners on the top
-              Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                  ),
-                  child: Padding(
-                      // padding only left and right
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: CredentialOfferDialog(
-                        credential: Column(
-                          children: contentData,
-                        ),
-                        receipt: null,
-                      )))));
-}
-
 Future<void> handlePresentationRequestOidc(String request) async {
   var asUri = Uri.parse(request);
 
@@ -269,43 +232,23 @@ Future<void> handlePresentationRequestOidc(String request) async {
     var filtered =
         searchCredentialsForPresentationDefinition(creds, definition);
     logger.d('successfully filtered');
-    if (filtered.isNotEmpty) {
-      Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
-          builder: (context) => PresentationRequestDialog(
-                otherEndpoint: clientId,
-                receiverDid: clientId,
-                myDid: 'myDid',
-                results: filtered,
-                isOidc: true,
-                nonce: requestObject.nonce,
-              )));
-    } else {
-      await showDialog(
-          context: navigatorKey.currentContext!,
-          builder: (context) => AlertDialog(
-                title: const Text('Keine Credentials gefunden'),
-                content: const Text(
-                    'Sie besitzen keine Credentials, die der Anfrage entsprechen'),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Ok'))
-                ],
-              ));
-    }
+
+    Navigator.of(navigatorKey.currentContext!).push(
+      MaterialPageRoute(
+        builder: (context) => PresentationRequestDialog(
+          otherEndpoint: clientId,
+          receiverDid: clientId,
+          myDid: 'myDid',
+          results: filtered,
+          isOidc: true,
+          nonce: requestObject.nonce,
+        ),
+      ),
+    );
   } catch (e, stack) {
     logger.e(e, ['', stack]);
-    await showDialog(
-        context: navigatorKey.currentContext!,
-        builder: (context) => AlertDialog(
-              title: const Text('Keine Credentials gefunden'),
-              content: Text(
-                  'Sie besitzen keine Credentials, die der Anfrage entsprechen ($e)'),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Ok'))
-              ],
-            ));
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
   }
 }

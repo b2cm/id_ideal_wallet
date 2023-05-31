@@ -65,8 +65,8 @@
   "deviceInformation": "device information",
   "stored": "credential saved",
   "selfIssuance": "Self-Issuance",
-  "noCredentialsTitle": "Cant't find any credentials",
-  "noCredentialsNote": "You do not have credentials that match the request",
+  "noCredentialsTitle": "Incorrect request",
+  "noCredentialsNote": "You have just received a request that cannot be processed. Either functions are requested that your application does not currently support or your counterpart made a mistake when creating it.",
   "paymentSuccessful": "payment successful",
   "paymentFailed": "payment failed",
   "paymentFailedNote": "Payment could not be performed",
@@ -95,5 +95,7 @@
   "unknownMessageExplanation": "This message is currently not supported.\n Therefore, the interaction cannot be continued.",
   "malformedEncryptedMessage": "An error occurred while decrypting a message.",
   "waiting": "Just a moment, please.",
-  "waitingSendPresentation": "Your answer is sent."
+  "waitingSendPresentation": "Your answer is sent.",
+  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials. Find out how you can obtain the missing credentials.",
+  "attention": "Attention"
 }

@@ -65,8 +65,8 @@
   "deviceInformation": "Geräteinformationen",
   "stored": "Nachweis gespeichert",
   "selfIssuance": "Selbstausstellung",
-  "noCredentialsTitle": "Keine Nachweise gefunden",
-  "noCredentialsNote": " Sie besitzen keine Nachweise, die der Anfrage entsprechen",
+  "noCredentialsTitle": "Fehlerhafte Anfrage",
+  "noCredentialsNote": " Sie haben soeben eine Anfrage erhalten, die nicht verarbeitet werden kann. Entweder werden Funktionen verlangt, die Ihre Anwendung aktuell noch nicht unterstützt oder Ihr Gegenüber hat bei der Erstellung einen Fehler begangen.",
   "paymentSuccessful": "Zahlung erfolgreich",
   "paymentFailed": "Zahlung fehlgeschlagen",
   "paymentFailedNote": "Zahlung konnte nicht durchgeführt werden",
@@ -95,5 +95,7 @@
   "unknownMessageExplanation": "Diese Nachricht wird derzeit nicht unterstützt.\n Die Interaktion kann daher nicht fortgesetzt werden.",
   "malformedEncryptedMessage": "Beim Entschlüsseln einer Nachricht ist ein Fehler aufgetreten.",
   "waiting": "Einen kleinen Moment bitte.",
-  "waitingSendPresentation": "Ihre Antwort wird gesendet."
+  "waitingSendPresentation": "Ihre Antwort wird gesendet.",
+  "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen. Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
+  "attention": "Achtung"
 }

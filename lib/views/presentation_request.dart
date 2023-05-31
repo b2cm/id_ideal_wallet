@@ -130,6 +130,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   Map<String, bool> selectedCredsPerResult = {};
   bool needEnterData = false;
   bool send = false;
+  bool fulfillable = true;
 
   @override
   initState() {
@@ -290,6 +291,10 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         innerPos++;
       }
 
+      if (!result.fulfilled) {
+        fulfillable = false;
+      }
+
       var outerTile = ExpansionTile(
         initiallyExpanded: outerTileExpanded,
         title: SizedBox(
@@ -302,10 +307,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 ),
                 children: [
                   TextSpan(
-                      text: '${credCount}x ',
+                      text:
+                          '$credCount / ${result.submissionRequirement?.min ?? result.submissionRequirement?.count ?? '1'} ',
                       style: TextStyle(
                         fontSize: 21,
-                        color: Colors.greenAccent.shade700,
+                        color: result.fulfilled
+                            ? Colors.greenAccent.shade700
+                            : Colors.red,
                         fontWeight: FontWeight.bold,
                       )),
                   TextSpan(
@@ -483,6 +491,51 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           persistentFooterButtons: [
             Column(
               children: [
+                fulfillable
+                    ? const SizedBox(
+                        height: null,
+                      )
+                    : SizedBox(
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(
+                              fontSize: 17,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: AppLocalizations.of(context)!.attention,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              WidgetSpan(
+                                child: Container(
+                                  padding: const EdgeInsets.only(
+                                    left: 1,
+                                    bottom: 5,
+                                  ),
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    size: 18,
+                                    color: Colors.redAccent.shade700,
+                                  ),
+                                ),
+                              ),
+                              TextSpan(
+                                  text:
+                                      '\n${AppLocalizations.of(context)!.errorNotEnoughCredentials}',
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.normal)),
+                            ],
+                          ),
+                        ),
+                      ),
+                SizedBox(
+                  height: fulfillable ? 0 : 5,
+                ),
                 ElevatedButton(
                     onPressed: reject,
                     style: ElevatedButton.styleFrom(
@@ -490,38 +543,44 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                       minimumSize: const Size.fromHeight(45),
                     ),
                     child: Text(AppLocalizations.of(context)!.cancel)),
-                const SizedBox(height: 5),
-                ElevatedButton(
-                    onPressed: () async {
-                      if (needEnterData) {
-                        showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!
-                                      .missingDataTitle),
-                                  content: Text(AppLocalizations.of(context)!
-                                      .missingDataNote),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Ok'))
-                                  ],
-                                ));
-                      } else {
-                        setState(() {
-                          send = true;
-                        });
-                        await Future.delayed(
-                            const Duration(milliseconds: 50), sendAnswer);
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.greenAccent.shade700,
-                      minimumSize: const Size.fromHeight(45),
-                    ),
-                    child:
-                        Text(AppLocalizations.of(context)!.sendPresentation)),
+                SizedBox(height: fulfillable ? 5 : 0),
+                fulfillable
+                    ? ElevatedButton(
+                        onPressed: () async {
+                          if (needEnterData) {
+                            showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                      title: Text(AppLocalizations.of(context)!
+                                          .missingDataTitle),
+                                      content: Text(
+                                          AppLocalizations.of(context)!
+                                              .missingDataNote),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Ok'))
+                                      ],
+                                    ));
+                          } else {
+                            setState(() {
+                              send = true;
+                            });
+                            await Future.delayed(
+                                const Duration(milliseconds: 50), sendAnswer);
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.greenAccent.shade700,
+                          minimumSize: const Size.fromHeight(45),
+                        ),
+                        child: Text(
+                            AppLocalizations.of(context)!.sendPresentation))
+                    : const SizedBox(
+                        height: 0,
+                      ),
               ],
             )
           ],

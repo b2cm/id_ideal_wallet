@@ -256,7 +256,9 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        });
+        }).timeout(const Duration(seconds: 20), onTimeout: () {
+      return Response('Timeout', 400);
+    });
 
     if (res.statusCode == 201 || res.statusCode == 200) {
       logger.d('getResponse: ${res.body}');
