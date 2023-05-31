@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 
@@ -68,8 +67,7 @@ class StyledScaffoldTitle extends StatelessWidget {
               break;
             case 2:
               if (currentlyActive != 2) {
-                Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MainPage()));
+                Navigator.of(context).popUntil((route) => route.isFirst);
               }
               break;
           }

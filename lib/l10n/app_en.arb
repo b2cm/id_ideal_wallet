@@ -65,8 +65,8 @@
   "deviceInformation": "device information",
   "stored": "credential saved",
   "selfIssuance": "Self-Issuance",
-  "noCredentialsTitle": "Cant't find any credentials",
-  "noCredentialsNote": "You do not have credentials that match the request",
+  "noCredentialsTitle": "Incorrect request",
+  "noCredentialsNote": "You have just received a request that cannot be processed. Either functions are requested that your application does not currently support or your counterpart made a mistake when creating it.",
   "paymentSuccessful": "payment successful",
   "paymentFailed": "payment failed",
   "paymentFailedNote": "Payment could not be performed",
@@ -86,5 +86,16 @@
   "noteGetInformation": "like to have the following information",
   "notePresentationPurpose": "specifies to use the data for",
   "missingDataTitle": "Missing data",
-  "missingDataNote": "The requester asks you to tell a little more about yourself. Please fill in the requested data."
+  "missingDataNote": "The requester asks you to tell a little more about yourself. Please fill in the requested data.",
+  "downloadFailed": "Download failed",
+  "downloadFailedExplanation": "The request of the counterpart can not be downloaded.",
+  "unexpectedMessage": "Unexpected message",
+  "malformedMessage": "Incorrect message",
+  "malformedOOBExplanation": "The message cannot be read.\n You can try to scan the QR code one more time. \n If the error persists, contact the support of the request creator.",
+  "unknownMessageExplanation": "This message is currently not supported.\n Therefore, the interaction cannot be continued.",
+  "malformedEncryptedMessage": "An error occurred while decrypting a message.",
+  "waiting": "Just a moment, please.",
+  "waitingSendPresentation": "Your answer is sent.",
+  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials. Find out how you can obtain the missing credentials.",
+  "attention": "Attention"
 }

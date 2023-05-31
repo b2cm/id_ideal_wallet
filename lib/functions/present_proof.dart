@@ -89,74 +89,24 @@ Future<bool> handleRequestPresentation(
     var filtered =
         searchCredentialsForPresentationDefinition(creds, definition);
     logger.d('successfully filtered');
-    if (filtered.isNotEmpty) {
-      // if (filtered.isNotEmpty && filtered.first.credentials.isNotEmpty) {
-      //   List<FilterResult> finalShow = [];
-      //   //filter List of credentials -> check for duplicates by type
-      //   for (var result in filtered) {
-      //     List<VerifiableCredential> filteredCreds = [];
-      //     for (var cred in result.credentials) {
-      //       if (filteredCreds.isEmpty) {
-      //         filteredCreds.add(cred);
-      //       } else {
-      //         bool typeFound = false;
-      //         for (var cred2 in filteredCreds) {
-      //           if (cred.isOfSameType(cred2)) {
-      //             typeFound = true;
-      //             break;
-      //           }
-      //         }
-      //         if (!typeFound) filteredCreds.add(cred);
-      //       }
-      //     }
-      //     finalShow.add(FilterResult(
-      //         credentials: filteredCreds,
-      //         presentationDefinitionId: definition.id,
-      //         matchingDescriptorIds: result.matchingDescriptorIds,
-      //         submissionRequirement: result.submissionRequirement));
-      //   }
-
-      Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
-          builder: (context) => PresentationRequestDialog(
-                name: definition.name,
-                purpose: definition.purpose,
-                message: message,
-                otherEndpoint:
-                    determineReplyUrl(message.replyUrl, message.replyTo),
-                receiverDid: message.from!,
-                myDid: myDid,
-                results: filtered,
-              )));
-    } else {
-      await showDialog(
-          context: navigatorKey.currentContext!,
-          builder: (context) => AlertDialog(
-                title: Text(AppLocalizations.of(navigatorKey.currentContext!)!
-                    .noCredentialsTitle),
-                content: Text(AppLocalizations.of(navigatorKey.currentContext!)!
-                    .noCredentialsNote),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Ok'))
-                ],
-              ));
-    }
+    Navigator.of(navigatorKey.currentContext!).push(
+      MaterialPageRoute(
+        builder: (context) => PresentationRequestDialog(
+          name: definition.name,
+          purpose: definition.purpose,
+          message: message,
+          otherEndpoint: determineReplyUrl(message.replyUrl, message.replyTo),
+          receiverDid: message.from!,
+          myDid: myDid,
+          results: filtered,
+        ),
+      ),
+    );
   } catch (e, stack) {
     logger.e(e, ['', stack]);
-    await showDialog(
-        context: navigatorKey.currentContext!,
-        builder: (context) => AlertDialog(
-              title: Text(AppLocalizations.of(navigatorKey.currentContext!)!
-                  .noCredentialsTitle),
-              content: Text(
-                  '${AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote} ($e)'),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Ok'))
-              ],
-            ));
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
   }
   return false;
 }

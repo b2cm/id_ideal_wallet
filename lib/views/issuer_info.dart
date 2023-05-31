@@ -1,3 +1,4 @@
+import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
@@ -7,9 +8,10 @@ import 'package:x509b/x509.dart' as x509;
 class IssuerInfoText extends StatefulWidget {
   final dynamic issuer;
   final bool selfIssued;
+  final String? endpoint;
 
   const IssuerInfoText(
-      {Key? key, required this.issuer, this.selfIssued = false})
+      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
       : super(key: key);
 
   @override
@@ -64,6 +66,12 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName = '$org\n(${AppLocalizations.of(context)!.verified})';
 
         setState(() {});
+      } else if (widget.endpoint != null) {
+        var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+        issuerName = certInfo?.subjectOrganization ??
+            certInfo?.subjectCommonName ??
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+        setState(() {});
       } else if (widget.issuer.containsKey('name')) {
         issuerName =
             '${widget.issuer['name']}\n(${AppLocalizations.of(context)!.notVerified})';
@@ -86,9 +94,10 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
 class IssuerInfoIcon extends StatefulWidget {
   final dynamic issuer;
   final bool selfIssued;
+  final String? endpoint;
 
   const IssuerInfoIcon(
-      {Key? key, required this.issuer, this.selfIssued = false})
+      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
       : super(key: key);
 
   @override
@@ -149,6 +158,12 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
         marker = Icons.question_mark;
         iconColor = Colors.black54;
         setState(() {});
+      }
+    } else if (widget.endpoint != null) {
+      var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+      if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
+        marker = Icons.verified_outlined;
+        iconColor = Colors.green;
       }
     }
   }
