@@ -86,5 +86,14 @@
   "noteGetInformation": "like to have the following information",
   "notePresentationPurpose": "specifies to use the data for",
   "missingDataTitle": "Missing data",
-  "missingDataNote": "The requester asks you to tell a little more about yourself. Please fill in the requested data."
+  "missingDataNote": "The requester asks you to tell a little more about yourself. Please fill in the requested data.",
+  "downloadFailed": "Download failed",
+  "downloadFailedExplanation": "The request of the counterpart can not be downloaded.",
+  "unexpectedMessage": "Unexpected message",
+  "malformedMessage": "Incorrect message",
+  "malformedOOBExplanation": "The message cannot be read.\n You can try to scan the QR code one more time. \n If the error persists, contact the support of the request creator.",
+  "unknownMessageExplanation": "This message is currently not supported.\n Therefore, the interaction cannot be continued.",
+  "malformedEncryptedMessage": "An error occurred while decrypting a message.",
+  "waiting": "Just a moment, please.",
+  "waitingSendPresentation": "Your answer is sent."
 }

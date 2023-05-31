@@ -28,6 +28,7 @@ Widget buildOfferCredentialDialog(
 
       contentData.add(ExpansionTile(
         title: title,
+        initiallyExpanded: true,
         subtitle: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

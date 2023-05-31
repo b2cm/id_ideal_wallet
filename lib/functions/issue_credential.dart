@@ -307,6 +307,8 @@ _sendProposeCredential(OfferCredential offer, WalletProvider wallet,
   //Sign attachment with credentialDid
   for (var a in message.attachments!) {
     await a.data.sign(wallet.wallet, firstDid);
+    var verify = await a.data.verifyJws(firstDid);
+    logger.d(verify);
   }
 
   logger.d(message.toJson());
@@ -377,7 +379,7 @@ Future<bool> handleIssueCredential(
                     amount: CurrencyDisplay(
                         amount: type,
                         symbol: '',
-                        mainFontSize: 35,
+                        mainFontSize: 18,
                         centered: true),
                   ),
                 );

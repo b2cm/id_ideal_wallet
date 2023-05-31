@@ -239,6 +239,7 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
         child: JsonSchemaForm(
           schema: schema,
           controller: controller,
+          validationButtonText: 'Ok',
           afterValidation: (credData) {
             Navigator.of(context).pop((credData, widget.outerPos));
           },

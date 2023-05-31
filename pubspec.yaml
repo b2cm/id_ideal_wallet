@@ -59,6 +59,8 @@ dependencies:
       ref: verification
   printing: ^5.9.3
   pdf: ^3.8.4
+  #  json_schema_form:
+  #    path: ../json_schema_form
   json_schema_form:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form

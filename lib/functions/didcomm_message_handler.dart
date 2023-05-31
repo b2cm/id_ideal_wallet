@@ -26,47 +26,52 @@ Future<bool> handleDidcommMessage(String message) async {
       try {
         await a.data.resolveData();
       } catch (e) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .downloadFailedExplanation);
         logger.e(e);
       }
     }
   }
   switch (plaintext.type) {
-    case 'https://didcomm.org/out-of-band/2.0/invitation':
+    case DidcommMessages.invitation:
       return handleInvitation(
           OutOfBandMessage.fromJson(plaintext.toJson()), wallet);
-    case 'https://didcomm.org/issue-credential/3.0/propose-credential':
+
+    case DidcommMessages.proposeCredential:
       return handleProposeCredential(
           ProposeCredential.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/issue-credential/3.0/offer-credential':
+    case DidcommMessages.offerCredential:
       return handleOfferCredential(
           OfferCredential.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/issue-credential/3.0/request-credential':
+    case DidcommMessages.requestCredential:
       return handleRequestCredential(
           RequestCredential.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/issue-credential/3.0/issue-credential':
+    case DidcommMessages.issueCredential:
       return handleIssueCredential(
           IssueCredential.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/present-proof/3.0/propose-presentation':
+    case DidcommMessages.proposePresentation:
       return handleProposePresentation(
           ProposePresentation.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/present-proof/3.0/request-presentation':
+    case DidcommMessages.requestPresentation:
       return handleRequestPresentation(
           RequestPresentation.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/present-proof/3.0/presentation':
+    case DidcommMessages.presentation:
       return handlePresentation(
           Presentation.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/report-problem/2.0/problem-report':
+    case DidcommMessages.problemReport:
       return handleProblemReport(
           ProblemReport.fromJson(plaintext.toJson()), wallet);
 
-    case 'https://didcomm.org/discover-features/2.0/queries':
+    case DidcommMessages.discoverFeatureQuery:
       return handleDiscoverFeatureQuery(
           QueryMessage.fromJson(plaintext.toJson()), wallet);
 
@@ -74,6 +79,10 @@ Future<bool> handleDidcommMessage(String message) async {
       return handleEmptyMessage(plaintext, wallet);
 
     default:
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.unexpectedMessage,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .unknownMessageExplanation);
       throw Exception('Unsupported message type');
   }
 }
@@ -89,10 +98,20 @@ Future<bool> handleEmptyMessage(
   return true;
 }
 
+bool isUri(String mayBeUri) {
+  try {
+    Uri.parse(mayBeUri);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 Future<DidcommPlaintextMessage> getPlaintext(
     String message, WalletProvider wallet) async {
   logger.d(message);
-  try {
+
+  if (isUri(message) && message.contains('_oob')) {
     var uri = Uri.parse(message);
     if (uri.queryParameters.containsKey('_oob')) {
       var oob = oobMessageFromUrl(message);
@@ -121,7 +140,12 @@ Future<DidcommPlaintextMessage> getPlaintext(
         return oob;
       }
     }
-  } catch (e) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.unexpectedMessage,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .malformedOOBExplanation);
+    throw Exception('No proper oob message');
+  } else if (isEncryptedMessage(message)) {
     try {
       var encrypted = DidcommEncryptedMessage.fromJson(message);
       var decrypted = await encrypted.decrypt(wallet.wallet);
@@ -139,27 +163,29 @@ Future<DidcommPlaintextMessage> getPlaintext(
         return getPlaintext(decrypted.toString(), wallet);
       }
     } catch (e) {
-      try {
-        var signed = DidcommSignedMessage.fromJson(message);
-        if (signed.payload is DidcommPlaintextMessage) {
-          return signed.payload as DidcommPlaintextMessage;
-        } else {
-          return getPlaintext(signed.payload.toString(), wallet);
-        }
-      } catch (e) {
-        try {
-          var plain = DidcommPlaintextMessage.fromJson(message);
-          return plain;
-        } catch (e) {
-          throw Exception(
-              'Unexpected message format - only expect Signed or encrypted messages: $e');
-        }
-      }
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.malformedMessage,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .malformedEncryptedMessage);
+      throw Exception('Decryption Error');
     }
+  } else if (isSignedMessage(message)) {
+    var signed = DidcommSignedMessage.fromJson(message);
+    if (signed.payload is DidcommPlaintextMessage) {
+      return signed.payload as DidcommPlaintextMessage;
+    } else {
+      return getPlaintext(signed.payload.toString(), wallet);
+    }
+  } else if (isPlaintextMessage(message)) {
+    var plain = DidcommPlaintextMessage.fromJson(message);
+    return plain;
+  } else {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.unexpectedMessage,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .malformedOOBExplanation);
+    throw Exception('unsupported message');
   }
-
-  throw Exception(
-      'Unexpected message format - only expect Signed or encrypted messages');
 }
 
 Future<bool> handleInvitation(
@@ -241,11 +267,11 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
           if (p.verifiableCredential != null) {
             for (var c in p.verifiableCredential!) {
               type +=
-                  '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')},''';
+                  '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')}, \n''';
             }
           }
         }
-        type = type.substring(0, type.length - 1);
+        type = type.substring(0, type.length - 3);
 
         showModalBottomSheet(
             shape: RoundedRectangleBorder(
@@ -261,7 +287,7 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
                   amount: CurrencyDisplay(
                       amount: type,
                       symbol: '',
-                      mainFontSize: 35,
+                      mainFontSize: 18,
                       centered: true),
                 ),
               );
@@ -305,21 +331,8 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
             }
           }
         }
-        showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(context)!.presentationFailed,
-                  success: false,
-                  amount: const CurrencyDisplay(
-                      amount: '', symbol: '', mainFontSize: 35, centered: true),
-                ),
-              );
-            });
+        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+            .presentationFailed);
       }
     }
   } else {
@@ -329,4 +342,25 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
 
 bool handleProblemReport(ProblemReport message, WalletProvider wallet) {
   return false;
+}
+
+void showErrorMessage(String headline, [String? subtext]) {
+  showModalBottomSheet(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      context: navigatorKey.currentContext!,
+      builder: (context) {
+        return ModalDismissWrapper(
+          child: PaymentFinished(
+            headline: headline,
+            success: false,
+            amount: CurrencyDisplay(
+                amount: subtext ?? '',
+                symbol: '',
+                mainFontSize: 18,
+                centered: true),
+          ),
+        );
+      });
 }
