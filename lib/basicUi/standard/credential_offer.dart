@@ -61,50 +61,50 @@ class CredentialOfferDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child:
-            // rounded corners on the top
-            Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-          ),
-          child: Padding(
-            // padding only left and right
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  AppLocalizations.of(context)!.credentialOffer,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Column(
-                  children: buildContent(),
-                ),
-                const SizedBox(height: 20),
-                toPay != null
-                    ? Receipt(
-                        title: AppLocalizations.of(context)!.invoice,
-                        items: [
-                          ReceiptItem(
-                            label: "Credential",
-                            amount: CurrencyDisplay(
-                              amount: toPay!,
-                              symbol: "€",
+      body: SecuredWidget(
+        child: SafeArea(
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Padding(
+              // padding only left and right
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    AppLocalizations.of(context)!.credentialOffer,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  Column(
+                    children: buildContent(),
+                  ),
+                  const SizedBox(height: 20),
+                  toPay != null
+                      ? Receipt(
+                          title: AppLocalizations.of(context)!.invoice,
+                          items: [
+                            ReceiptItem(
+                              label: "Credential",
+                              amount: CurrencyDisplay(
+                                amount: toPay!,
+                                symbol: "€",
+                              ),
                             ),
+                          ],
+                          total: ReceiptItem(
+                            label: AppLocalizations.of(context)!.total,
+                            amount: CurrencyDisplay(amount: toPay, symbol: "€"),
                           ),
-                        ],
-                        total: ReceiptItem(
-                          label: AppLocalizations.of(context)!.total,
-                          amount: CurrencyDisplay(amount: toPay, symbol: "€"),
+                        )
+                      : const SizedBox(
+                          height: 0,
                         ),
-                      )
-                    : const SizedBox(
-                        height: 0,
-                      ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -131,11 +131,53 @@ class CredentialOfferDialog extends StatelessWidget {
               ),
               child: toPay != null
                   ? Text(AppLocalizations.of(context)!.orderWithPayment)
-                  : const Text("Ok"),
+                  : Text(AppLocalizations.of(context)!.accept),
             )
           ],
         )
       ],
     );
+  }
+}
+
+class SecuredWidget extends StatefulWidget {
+  final Widget child;
+
+  const SecuredWidget({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  SecuredWidgetState createState() => SecuredWidgetState();
+}
+
+class SecuredWidgetState extends State<SecuredWidget> {
+  DateTime? currentBackPressTime;
+
+  Future<bool> onWillPop() {
+    DateTime now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime!) > const Duration(seconds: 2)) {
+      currentBackPressTime = now;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: const Duration(seconds: 1),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(30.0),
+          ),
+        ),
+        backgroundColor: Colors.black.withOpacity(0.6),
+        behavior: SnackBarBehavior.floating,
+        content: Text(AppLocalizations.of(context)!.cancelWarning),
+      ));
+      return Future.value(false);
+    }
+    return Future.value(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(onWillPop: onWillPop, child: widget.child);
   }
 }
