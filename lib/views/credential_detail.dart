@@ -87,7 +87,9 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 Navigator.of(context).pop();
                 //Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => const CredentialPage()));
+                    builder: (context) => const CredentialPage(
+                          initialSelection: 'all',
+                        )));
               },
               child: Text(AppLocalizations.of(context)!.delete))
         ],

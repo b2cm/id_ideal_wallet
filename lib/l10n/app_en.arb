@@ -99,5 +99,7 @@
   "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials. Find out how you can obtain the missing credentials.",
   "attention": "Attention",
   "cancelWarning": "Tap again to cancel",
-  "accept": "Accept"
+  "accept": "Accept",
+  "noteNoCredentials": "No Credentials",
+  "allCredentials": "All Credentials"
 }

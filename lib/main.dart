@@ -329,7 +329,9 @@ class MainPage extends StatelessWidget {
             case 0:
               logger.d('Credentials');
               Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const CredentialPage()));
+                  builder: (context) => const CredentialPage(
+                        initialSelection: 'all',
+                      )));
               break;
             case 1:
               logger.d('Scanner');

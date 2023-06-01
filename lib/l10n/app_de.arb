@@ -99,5 +99,7 @@
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen. Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
   "attention": "Achtung",
   "cancelWarning": "Zum Abbrechen erneut tippen",
-  "accept": "Annehmen"
+  "accept": "Annehmen",
+  "noteNoCredentials": "Keine Nachweise vorhanden",
+  "allCredentials": "Alle Nachweise"
 }
