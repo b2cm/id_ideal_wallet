@@ -97,5 +97,7 @@
   "waiting": "Einen kleinen Moment bitte.",
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen. Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
-  "attention": "Achtung"
+  "attention": "Achtung",
+  "cancelWarning": "Zum Abbrechen erneut tippen",
+  "accept": "Annehmen"
 }

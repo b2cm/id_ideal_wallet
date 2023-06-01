@@ -97,5 +97,7 @@
   "waiting": "Just a moment, please.",
   "waitingSendPresentation": "Your answer is sent.",
   "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials. Find out how you can obtain the missing credentials.",
-  "attention": "Attention"
+  "attention": "Attention",
+  "cancelWarning": "Tap again to cancel",
+  "accept": "Accept"
 }

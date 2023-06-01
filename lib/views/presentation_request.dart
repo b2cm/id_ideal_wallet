@@ -6,6 +6,7 @@ import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
@@ -481,10 +482,12 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     return Stack(
       children: [
         Scaffold(
-          body: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: buildChilds(),
+          body: SecuredWidget(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: buildChilds(),
+                ),
               ),
             ),
           ),
