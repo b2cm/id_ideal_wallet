@@ -205,6 +205,31 @@ Future<void> issueSimulatePaymentContext(WalletProvider wallet) async {
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }
 
+Future<void> issueMemberCardContext(WalletProvider wallet) async {
+  var did = await wallet.newCredentialDid();
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: [
+        'VerifiableCredential',
+        'ContextCredential',
+      ],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'name': 'Kundenkarten',
+        'groupedTypes': ['MemberCard'],
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+}
+
 Future<void> issueSSITestServiceContext(WalletProvider wallet) async {
   var did = await wallet.newCredentialDid();
 

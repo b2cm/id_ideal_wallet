@@ -4,6 +4,7 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/views/add_member_card.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -16,8 +17,14 @@ class QrScanner extends StatelessWidget {
         currentlyActive: 1,
         title: 'QR-Code Scanner',
         child: MobileScanner(
-            allowDuplicates: false,
-            onDetect: (barcode, args) {
+            controller: MobileScannerController(
+              detectionSpeed: DetectionSpeed.noDuplicates,
+              facing: CameraFacing.back,
+              torchEnabled: false,
+            ),
+            onDetect: (capture) {
+              final List<Barcode> codes = capture.barcodes;
+              var barcode = codes.first;
               if (barcode.rawValue != null) {
                 final String code = barcode.rawValue!;
                 logger.d(
@@ -27,22 +34,27 @@ class QrScanner extends StatelessWidget {
                     code.startsWith('lntb')) {
                   logger.d('LN-Invoice found');
                   payInvoiceInteraction(code);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('openid-credential-offer')) {
                   handleOfferOidc(code);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('openid-presentation-request')) {
                   handlePresentationRequestOidc(code);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.contains('webview')) {
                   var asUri = Uri.parse(code);
                   Navigator.of(context).pushReplacement(MaterialPageRoute(
                       builder: (context) => WebViewWindow(
                           initialUrl: asUri.queryParameters['url']!,
                           title: asUri.queryParameters['title'] ?? '')));
+                } else if (code.length < 35) {
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                      builder: (context) => AddMemberCard(
+                          initialNumber: code,
+                          initialBarcodeType: barcode.format)));
                 } else {
                   handleDidcommMessage(code);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               }
             }));

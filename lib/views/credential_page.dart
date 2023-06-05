@@ -278,12 +278,8 @@ class CredentialCardState extends State<CredentialCard> {
             : ContextCredentialCard(
                 cardTitle: '',
                 backgroundImage:
-                    widget.credential.credentialSubject['backgroundImage'] !=
-                            null
-                        ? Image.memory(base64Decode(widget
-                                .credential.credentialSubject['backgroundImage']
-                                .split(',')
-                                .last))
+                    widget.credential.credentialSubject['backgroundImage'] != null
+                        ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
                             .image
                         : null,
                 subjectName: widget.credential.credentialSubject['name'],
@@ -293,24 +289,40 @@ class CredentialCardState extends State<CredentialCard> {
                 bottomRightText: const SizedBox(
                   width: 0,
                 ))
-        : IdCard(
-            subjectImage: image?.image,
-            backgroundImage:
-                widget.credential.credentialSubject['backgroundImage'] != null
-                    ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
-                        .image
-                    : null,
-            cardTitle: widget.credential.type
-                .firstWhere((element) => element != 'VerifiableCredential'),
-            subjectName:
-                '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-            bottomLeftText: IssuerInfoText(
-                issuer: widget.credential.issuer,
-                selfIssued: widget.credential.isSelfIssued()),
-            bottomRightText: IssuerInfoIcon(
-              issuer: widget.credential.issuer,
-              selfIssued: widget.credential.isSelfIssued(),
-            ));
+        : widget.credential.type.contains('MemberCard')
+            ? MemberCard(
+                barcodeType: widget.credential.credentialSubject['barcodeType'],
+                memberNumber: widget.credential.credentialSubject['number'],
+                cardTitle: widget.credential.credentialSubject['name'],
+                subjectName: '',
+                bottomLeftText: IssuerInfoText(
+                    issuer: widget.credential.issuer,
+                    selfIssued: widget.credential.isSelfIssued()),
+                bottomRightText: IssuerInfoIcon(
+                  issuer: widget.credential.issuer,
+                  selfIssued: widget.credential.isSelfIssued(),
+                ))
+            : IdCard(
+                subjectImage: image?.image,
+                backgroundImage:
+                    widget.credential.credentialSubject['backgroundImage'] != null
+                        ? Image.memory(base64Decode(widget
+                                .credential.credentialSubject['backgroundImage']
+                                .split(',')
+                                .last))
+                            .image
+                        : null,
+                cardTitle: widget.credential.type
+                    .firstWhere((element) => element != 'VerifiableCredential'),
+                subjectName:
+                    '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+                bottomLeftText: IssuerInfoText(
+                    issuer: widget.credential.issuer,
+                    selfIssued: widget.credential.isSelfIssued()),
+                bottomRightText: IssuerInfoIcon(
+                  issuer: widget.credential.issuer,
+                  selfIssued: widget.credential.isSelfIssued(),
+                ));
   }
 
   @override

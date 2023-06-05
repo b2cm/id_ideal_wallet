@@ -20,6 +20,7 @@ import '../functions/util.dart' as my_util;
 class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   bool _authRunning = false;
+  bool _hasMemberCardContext = false;
 
   String qrData = '';
 
@@ -75,6 +76,11 @@ class WalletProvider extends ChangeNotifier {
             const Duration(days: 1)) {
           checkValidity();
         }
+      }
+
+      var memberContext = _wallet.getConfigEntry('hasMemberCardContext');
+      if (memberContext != null) {
+        _hasMemberCardContext = true;
       }
 
       _authRunning = false;
@@ -536,6 +542,27 @@ class WalletProvider extends ChangeNotifier {
         }
       }
     }
+  }
+
+  Future<void> addMemberCard(Map<String, String> subject) async {
+    if (!_hasMemberCardContext) {
+      await issueMemberCardContext(this);
+      _hasMemberCardContext = true;
+      await _wallet.storeConfigEntry('hasMemberCardContext', 'true');
+    }
+
+    var did = await newCredentialDid();
+    var storage = getCredential(did);
+    var vc = VerifiableCredential(
+        context: ['schema.org'],
+        issuer: did,
+        issuanceDate: DateTime.now(),
+        type: ['MemberCard'],
+        credentialSubject: {'id': did, ...subject});
+
+    var signed = await signCredential(_wallet, vc.toJson());
+    storeCredential(signed, storage!.hdPath);
+    wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
   }
 
   WalletStore get wallet => _wallet;

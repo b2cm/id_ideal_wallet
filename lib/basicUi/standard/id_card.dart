@@ -1,3 +1,4 @@
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
@@ -193,6 +194,44 @@ class ContextCredentialCard extends IdCard {
 
   @override
   Widget buildHeader() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
+class MemberCard extends IdCard {
+  final String barcodeType;
+  final String memberNumber;
+
+  const MemberCard(
+      {super.key,
+      required this.barcodeType,
+      required this.memberNumber,
+      required super.cardTitle,
+      required super.subjectName,
+      required super.bottomLeftText,
+      required super.bottomRightText,
+      super.backgroundImage});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        height: 70,
+        child: BarcodeWidget(
+          data: memberNumber,
+          barcode: Barcode.fromType(BarcodeType.values
+              .firstWhere((element) => element.name == barcodeType)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget buildFooter() {
+    // TODO: implement buildFooter
     return const SizedBox(
       height: 0,
     );
