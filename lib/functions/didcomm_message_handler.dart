@@ -336,6 +336,10 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
             .presentationFailed);
       }
+
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
+          AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
     }
   } else {
     throw Exception('We do not support other transports');

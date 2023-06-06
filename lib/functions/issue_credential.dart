@@ -342,7 +342,16 @@ Future<bool> handleIssueCredential(
       var req = RequestCredential.fromJson(previosMessage.toJson());
       var cred = message.credentials![i];
       var challenge = req.detail![i].options.challenge;
-      var verified = await verifyCredential(cred, expectedChallenge: challenge);
+      var verified = true;
+      try {
+        verified = await verifyCredential(cred, expectedChallenge: challenge);
+      } catch (e) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .wrongCredentialNote);
+        return false;
+      }
       if (verified) {
         var credDid = getHolderDidFromCredential(cred.toJson());
         Credential? storageCred;

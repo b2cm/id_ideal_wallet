@@ -21,13 +21,17 @@ class CurrencyDisplay extends StatelessWidget {
           centered ? MainAxisAlignment.center : MainAxisAlignment.start,
       children: [
         amount is String
-            ? Text(
-                amount,
-                style: TextStyle(
-                  fontSize: mainFontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
+            ? Container(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                width: 350,
+                child: Text(
+                  amount,
+                  maxLines: 6,
+                  style: TextStyle(
+                    fontSize: mainFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ))
             : amount,
         Padding(
           padding: const EdgeInsets.only(bottom: 2),
