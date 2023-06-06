@@ -4,7 +4,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
-import 'package:id_ideal_wallet/views/add_member_card.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -60,11 +59,11 @@ class QrScanner extends StatelessWidget {
                           initialUrl:
                               '$uriToCall${uriToCall.toString().contains('?') ? '&' : '?'}wid=${wallet.lndwId}',
                           title: asUri.queryParameters['title'] ?? '')));
-                } else if (code.length < 35) {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (context) => AddMemberCard(
-                          initialNumber: code,
-                          initialBarcodeType: barcode.format)));
+                  // } else if (code.length < 35) {
+                  //   Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  //       builder: (context) => AddMemberCard(
+                  //           initialNumber: code,
+                  //           initialBarcodeType: barcode.format)));
                 } else {
                   handleDidcommMessage(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
