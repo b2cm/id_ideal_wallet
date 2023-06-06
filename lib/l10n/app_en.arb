@@ -96,8 +96,14 @@
   "malformedEncryptedMessage": "An error occurred while decrypting a message.",
   "waiting": "Just a moment, please.",
   "waitingSendPresentation": "Your answer is sent.",
-  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials. Find out how you can obtain the missing credentials.",
+  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials.\nFind out how you can obtain the missing credentials.",
   "attention": "Attention",
   "cancelWarning": "Tap again to cancel",
-  "accept": "Accept"
+  "accept": "Accept",
+  "noteNoCredentials": "No Credentials",
+  "allCredentials": "All Credentials",
+  "sendFailed": "Sending failed",
+  "sendFailedNote": "Sending a message failed or the message could not be processed by the other side",
+  "wrongCredential": "Incorrect Credential",
+  "wrongCredentialNote": "Your counterpart has issued a credential that bears an incorrect signature.\nInform him about this."
 }

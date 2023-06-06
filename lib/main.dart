@@ -356,7 +356,9 @@ class MainPage extends StatelessWidget {
           switch (index) {
             case 0:
               Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const CredentialPage()));
+                  builder: (context) => const CredentialPage(
+                        initialSelection: 'all',
+                      )));
               break;
             case 1:
               Navigator.of(context).push(

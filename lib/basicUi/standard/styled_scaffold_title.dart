@@ -9,12 +9,14 @@ class StyledScaffoldTitle extends StatelessWidget {
       required this.title,
       required this.child,
       this.currentlyActive,
-      this.footerButtons});
+      this.footerButtons,
+      this.appBarActions});
 
-  final String title;
+  final dynamic title;
   final Widget child;
   final int? currentlyActive;
   final List<Widget>? footerButtons;
+  final List<Widget>? appBarActions;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,10 @@ class StyledScaffoldTitle extends StatelessWidget {
         ),
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(title, style: const TextStyle(color: Colors.black)),
+        title: title is String
+            ? Text(title, style: const TextStyle(color: Colors.black))
+            : title,
+        actions: appBarActions,
       ),
       // padding with red background
       body: Container(
@@ -56,7 +61,9 @@ class StyledScaffoldTitle extends StatelessWidget {
             case 0:
               if (currentlyActive != 0) {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const CredentialPage()));
+                    builder: (context) => const CredentialPage(
+                          initialSelection: 'all',
+                        )));
               }
               break;
             case 1:

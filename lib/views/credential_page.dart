@@ -16,15 +16,100 @@ import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
-class CredentialPage extends StatelessWidget {
-  const CredentialPage({Key? key}) : super(key: key);
+class CredentialPage extends StatefulWidget {
+  final String initialSelection;
+
+  const CredentialPage({Key? key, required this.initialSelection})
+      : super(key: key);
+
+  @override
+  CredentialPageState createState() => CredentialPageState();
+}
+
+class CredentialPageState extends State<CredentialPage> {
+  String currentSelection = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    currentSelection = widget.initialSelection;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffoldTitle(
-        currentlyActive: 0,
-        title: AppLocalizations.of(context)!.credentialPageTitle,
-        child: const CredentialOverview());
+    return Consumer<WalletProvider>(builder: (context, wallet, child) {
+      if (wallet.isOpen()) {
+        var itemList = [
+          DropdownMenuItem(
+            value: 'all',
+            child: Text(AppLocalizations.of(context)!.allCredentials),
+          ),
+          ...wallet.contextCredentials.map((e) => DropdownMenuItem(
+                value: e.id,
+                child: Text(
+                  e.credentialSubject['name'] ??
+                      e.type.firstWhere(
+                          (element) => element != 'VerifiableCredential'),
+                  maxLines: 2,
+                ),
+              ))
+        ];
+
+        var credentialList = currentSelection == 'all'
+            ? wallet.credentials
+            : wallet.getCredentialsForContext(currentSelection);
+        return StyledScaffoldTitle(
+            currentlyActive: 0,
+            title: DropdownButton(
+              isExpanded: true,
+              value: currentSelection,
+              items: itemList,
+              onChanged: (String? value) {
+                setState(() {
+                  currentSelection = value!;
+                });
+              },
+            ),
+            appBarActions: [
+              InkWell(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Coming soon')));
+                  },
+                  child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Icon(Icons.search, size: 30)))
+            ],
+            child: credentialList.isEmpty
+                ? Center(
+                    child:
+                        Text(AppLocalizations.of(context)!.noteNoCredentials))
+                : ListView.builder(
+                    itemCount: credentialList.length,
+                    itemBuilder: (context, index) {
+                      var cred = credentialList[index];
+                      var type = cred.type.firstWhere(
+                          (element) => element != 'VerifiableCredential');
+                      if (type != 'PaymentReceipt') {
+                        return Column(children: [
+                          CredentialCard(credential: cred),
+                          const SizedBox(
+                            height: 10,
+                          )
+                        ]);
+                      } else {
+                        return const SizedBox(
+                          height: 0,
+                        );
+                      }
+                    }));
+      } else {
+        wallet.openWallet();
+        return Center(
+          child: Text(AppLocalizations.of(context)!.openWallet),
+        );
+      }
+    });
   }
 }
 
@@ -103,42 +188,6 @@ class Base64PdfPreview extends StatelessWidget {
         build: (context) => _makePdf(),
       ),
     );
-  }
-}
-
-class CredentialOverview extends StatelessWidget {
-  const CredentialOverview({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<WalletProvider>(builder: (context, wallet, child) {
-      if (wallet.isOpen()) {
-        return ListView.builder(
-            itemCount: wallet.credentials.length,
-            itemBuilder: (context, index) {
-              var cred = wallet.credentials[index];
-              var type = cred.type
-                  .firstWhere((element) => element != 'VerifiableCredential');
-              if (type != 'PaymentReceipt') {
-                return Column(children: [
-                  CredentialCard(credential: cred),
-                  const SizedBox(
-                    height: 10,
-                  )
-                ]);
-              } else {
-                return const SizedBox(
-                  height: 0,
-                );
-              }
-            });
-      } else {
-        wallet.openWallet();
-        return Center(
-          child: Text(AppLocalizations.of(context)!.openWallet),
-        );
-      }
-    });
   }
 }
 
@@ -229,12 +278,8 @@ class CredentialCardState extends State<CredentialCard> {
             : ContextCredentialCard(
                 cardTitle: '',
                 backgroundImage:
-                    widget.credential.credentialSubject['backgroundImage'] !=
-                            null
-                        ? Image.memory(base64Decode(widget
-                                .credential.credentialSubject['backgroundImage']
-                                .split(',')
-                                .last))
+                    widget.credential.credentialSubject['backgroundImage'] != null
+                        ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
                             .image
                         : null,
                 subjectName: widget.credential.credentialSubject['name'],
@@ -244,31 +289,49 @@ class CredentialCardState extends State<CredentialCard> {
                 bottomRightText: const SizedBox(
                   width: 0,
                 ))
-        : IdCard(
-            subjectImage: image?.image,
-            backgroundImage:
-                widget.credential.credentialSubject['backgroundImage'] != null
-                    ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
-                        .image
-                    : null,
-            cardTitle: widget.credential.type
-                .firstWhere((element) => element != 'VerifiableCredential'),
-            subjectName:
-                '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-            bottomLeftText: IssuerInfoText(
-                issuer: widget.credential.issuer,
-                selfIssued: widget.credential.isSelfIssued()),
-            bottomRightText: IssuerInfoIcon(
-              issuer: widget.credential.issuer,
-              selfIssued: widget.credential.isSelfIssued(),
-            ));
+        : widget.credential.type.contains('MemberCard')
+            ? MemberCard(
+                barcodeType: widget.credential.credentialSubject['barcodeType'],
+                memberNumber: widget.credential.credentialSubject['number'],
+                cardTitle: widget.credential.credentialSubject['name'],
+                subjectName: '',
+                bottomLeftText: IssuerInfoText(
+                    issuer: widget.credential.issuer,
+                    selfIssued: widget.credential.isSelfIssued()),
+                bottomRightText: IssuerInfoIcon(
+                  issuer: widget.credential.issuer,
+                  selfIssued: widget.credential.isSelfIssued(),
+                ))
+            : IdCard(
+                subjectImage: image?.image,
+                backgroundImage:
+                    widget.credential.credentialSubject['backgroundImage'] != null
+                        ? Image.memory(base64Decode(widget
+                                .credential.credentialSubject['backgroundImage']
+                                .split(',')
+                                .last))
+                            .image
+                        : null,
+                cardTitle: widget.credential.type
+                    .firstWhere((element) => element != 'VerifiableCredential'),
+                subjectName:
+                    '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+                bottomLeftText: IssuerInfoText(
+                    issuer: widget.credential.issuer,
+                    selfIssued: widget.credential.isSelfIssued()),
+                bottomRightText: IssuerInfoIcon(
+                  issuer: widget.credential.issuer,
+                  selfIssued: widget.credential.isSelfIssued(),
+                ));
   }
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
         onTap: () => widget.credential.type.contains('ContextCredential')
-            ? null
+            ? Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) =>
+                    CredentialPage(initialSelection: widget.credential.id!)))
             : Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) =>
                     CredentialDetailView(credential: widget.credential))),

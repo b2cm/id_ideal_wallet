@@ -96,8 +96,14 @@
   "malformedEncryptedMessage": "Beim Entschlüsseln einer Nachricht ist ein Fehler aufgetreten.",
   "waiting": "Einen kleinen Moment bitte.",
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
-  "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen. Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
+  "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen.\n Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
   "attention": "Achtung",
   "cancelWarning": "Zum Abbrechen erneut tippen",
-  "accept": "Annehmen"
+  "accept": "Annehmen",
+  "noteNoCredentials": "Keine Nachweise vorhanden",
+  "allCredentials": "Alle Nachweise",
+  "sendFailed": "Senden Fehlgeschlagen",
+  "sendFailedNote": "Das Senden einer Nachricht ist fehlgeschlagen oder die Nachricht konnte von der Gegenseite nicht verarbeitet werden.",
+  "wrongCredential": "Fehlerhafter Nachweis",
+  "wrongCredentialNote": "Dein Gegenüber hat einen Nachweis ausgestellt, der eine fehlerhafte Signatur trägt. \nTeilen Sie dies ihm mit."
 }
