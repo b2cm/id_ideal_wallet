@@ -405,6 +405,7 @@ Future<bool> handleIssueCredential(
 
       var ack = EmptyMessage(
           from: entry.myDid,
+          to: [message.from!],
           ack: [message.id],
           threadId: message.threadId ?? message.id);
 

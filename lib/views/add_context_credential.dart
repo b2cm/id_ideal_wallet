@@ -87,7 +87,7 @@ Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
           {
             'buttonText': 'Ralley absolvieren ',
             'webViewTitle': 'Ralley',
-            'url': 'https://157.90.70.84:8082/#/',
+            'url': 'https://lndw84b9dcfb0e65.id-ideal.de/lndw/#/',
             'backgroundColor': '#00B200'
           }
         ]
