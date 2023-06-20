@@ -96,7 +96,7 @@
   "malformedEncryptedMessage": "An error occurred while decrypting a message.",
   "waiting": "Just a moment, please.",
   "waitingSendPresentation": "Your answer is sent.",
-  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials.\nFind out how you can obtain the missing credentials.",
+  "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials (selected).\nFind out how you can obtain the missing credentials or select the missing ones.",
   "attention": "Attention",
   "cancelWarning": "Tap again to cancel",
   "accept": "Accept",

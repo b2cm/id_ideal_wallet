@@ -161,6 +161,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     List<Widget> childList = [];
     int outerPos = 0;
     int innerPos = 0;
+    fulfillable = true;
 
     //overall name
     if (widget.name != null) {
@@ -296,6 +297,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         fulfillable = false;
       }
 
+      var minCount = result.submissionRequirement?.min ??
+          result.submissionRequirement?.count ??
+          1;
+      if (credCount < minCount) {
+        fulfillable = false;
+      }
+
       var outerTile = ExpansionTile(
         initiallyExpanded: outerTileExpanded,
         title: SizedBox(
@@ -308,8 +316,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 ),
                 children: [
                   TextSpan(
-                      text:
-                          '$credCount / ${result.submissionRequirement?.min ?? result.submissionRequirement?.count ?? '1'} ',
+                      text: '$credCount / $minCount ',
                       style: TextStyle(
                         fontSize: 21,
                         color: result.fulfilled

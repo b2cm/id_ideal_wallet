@@ -81,7 +81,11 @@ Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
       credentialSubject: {
         'id': did,
         'name': 'Lange Nacht der Wissenschaften - Dresden',
-        'groupedTypes': ['ChallengeSolvedCredential', 'JuniorDiplomAntrag'],
+        'groupedTypes': [
+          'ChallengeSolvedCredential',
+          'JuniorDiplom',
+          'Losticket'
+        ],
         'backgroundImage': backgroundDD,
         'buttons': [
           {

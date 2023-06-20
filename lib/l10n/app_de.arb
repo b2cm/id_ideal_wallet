@@ -96,7 +96,7 @@
   "malformedEncryptedMessage": "Beim Entschlüsseln einer Nachricht ist ein Fehler aufgetreten.",
   "waiting": "Einen kleinen Moment bitte.",
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
-  "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen.\n Informieren Sie sich, wie Sie die fehlenden Nachweise erlangen können.",
+  "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen bzw. ausgewählt haben.\nInformieren Sie sich, wie Sie die fehlenden Nachweise erlangen können oder wählen Sie die fehlenden aus.",
   "attention": "Achtung",
   "cancelWarning": "Zum Abbrechen erneut tippen",
   "accept": "Annehmen",
