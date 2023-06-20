@@ -58,3 +58,27 @@ This branch supports http as transport protocol for didcomm messages.
   after `flutter pub get`
 - samples services to test the wallet can be found
   in [this](https://github.com/b2cm/didcomm_examples) repository
+
+## App Links in iOS (universal links)
+
+1. Add "FlutterDeepLinkingEnabled": YES (boolean) to the Info.plist
+2. In Singing & Capabilities, add applinks:wallet.bccm.dev to the domains
+3. Create a file <https://wallet.bccm.dev/.well-known/apple-app-site-association> (must be https), with this content:
+
+```json
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "9MY7ZZP3KS.eu.hidy.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
+```
+(the weird code before the identifier is the team id, which can be found in the development team apple ID)
+  
+4. Make sure that the file is delivered as content-type: application/json (it has no extension, so configure the web server accordingly)
+5. Write the app-internal code to handle routing
