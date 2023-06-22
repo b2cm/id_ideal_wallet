@@ -50,7 +50,7 @@ dependencies:
     git:
       url: https://github.com/theyakka/qr.flutter.git
   json_path: any
-  json_schema2: any
+  json_schema2: ^5.1.2+2
   provider: ^6.0.4
   logger: ^1.1.0
   x509b:

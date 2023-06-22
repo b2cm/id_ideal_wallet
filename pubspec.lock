@@ -33,14 +33,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.7"
-  args:
-    dependency: transitive
-    description:
-      name: args
-      sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.2"
   asn1lib:
     dependency: transitive
     description:
@@ -206,10 +198,10 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: "68df85238b3dfe525b71677b482b1746edc20bfa"
+      resolved-ref: "1684c648cd3cd1df78ab96e4088d6ea90d1e890f"
       url: "https://github.com/b2cm/dart_ssi"
     source: git
-    version: "2.1.0"
+    version: "3.0.0"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -454,14 +446,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.7"
-  json_class:
-    dependency: transitive
-    description:
-      name: json_class
-      sha256: "6a9cc5edd2ecabdda178572289aa9eb10052aff6836b62b0b6e9983a3a6597ea"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.1+2"
   json_ld_processor:
     dependency: transitive
     description:
@@ -490,16 +474,16 @@ packages:
     dependency: "direct main"
     description:
       name: json_schema2
-      sha256: "7d9dfbaa34200ae7be3c408817f1a497bef6ef72a9455fdc378b9510bfbb1b66"
+      sha256: d5434c96573089e58986f7e32348ecb7e44b7a72b16fe5fce334abe15bab7a70
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.4+2"
+    version: "5.1.2+2"
   json_schema_form:
     dependency: "direct main"
     description:
       path: "."
       ref: HEAD
-      resolved-ref: dea59a29c08e99acedc524c2b126f12c05417b2d
+      resolved-ref: bec75cb22fda746d8ed7c77abdb1996dfc9b4758
       url: "https://github.com/SaOtto/flutter_json_schema_form"
     source: git
     version: "0.0.1"
@@ -784,14 +768,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.1"
-  rest_client:
-    dependency: transitive
-    description:
-      name: rest_client
-      sha256: "7bc13fc4d36cfdcb98b4936fd7871d07cd69b97d98fad8223e8016785ea14b3b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.1+9"
   rfc_6901:
     dependency: transitive
     description:
@@ -958,22 +934,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.3.0"
-  yaml:
-    dependency: transitive
-    description:
-      name: yaml
-      sha256: "75769501ea3489fca56601ff33454fe45507ea3bfb014161abc3b43ae25989d5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.2"
-  yaon:
-    dependency: transitive
-    description:
-      name: yaon
-      sha256: "232d9420adcc4a4f6b7b6dd9c8b1f1377b0f2db8a23108b0017f0294f52b41c3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2"
 sdks:
   dart: ">=3.0.0 <4.0.0"
   flutter: ">=3.10.0"
