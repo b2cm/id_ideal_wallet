@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -148,7 +150,7 @@ class IdCard extends StatelessWidget {
                 ? DecorationImage(
                     image: backgroundImage!,
                     fit: BoxFit.cover,
-                    //opacity: 0.25,
+                    //opacity: 0.7,
                   )
                 : null,
           ),
@@ -212,20 +214,36 @@ class LNDWCard extends IdCard {
   @override
   Widget buildCenterOverlay() {
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(subjectName,
-                  overflow: TextOverflow.clip,
-                  style: const TextStyle(
-                    backgroundColor: Colors.transparent,
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ))
-            ]));
+        padding: const EdgeInsets.only(left: 30, right: 15),
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          cardTitle.isEmpty
+              ? const SizedBox(
+                  width: 0,
+                )
+              : Image(
+                  width: 40,
+                  height: 60,
+                  image: Image.memory(base64Decode(cardTitle.split(',').last))
+                      .image),
+          Text(
+              subjectName
+                  .replaceAll(' ', '\n')
+                  .replaceAll('ae', 'ä')
+                  .replaceAll('ue', 'ü')
+                  .replaceAll('oe', 'ö'),
+              //overflow: TextOverflow.clip,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              maxLines: 3,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                backgroundColor: Colors.transparent,
+                color: Colors.white,
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ))
+        ]));
   }
 
   @override

@@ -319,7 +319,8 @@ class CredentialCardState extends State<CredentialCard> {
                     widget.credential.type.contains('Losticket') ||
                     widget.credential.type.contains('JuniorDiplom')
                 ? LNDWCard(
-                    cardTitle: '',
+                    cardTitle:
+                        widget.credential.credentialSubject['icon'] ?? '',
                     backgroundImage: widget.background != null
                         ? Image.memory(base64Decode(widget.background!.split(',').last))
                             .image
@@ -341,8 +342,7 @@ class CredentialCardState extends State<CredentialCard> {
                         : null,
                     cardTitle: widget.credential.type.firstWhere(
                         (element) => element != 'VerifiableCredential'),
-                    subjectName:
-                        '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+                    subjectName: '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
                     bottomLeftText: IssuerInfoText(issuer: widget.credential.issuer, selfIssued: widget.credential.isSelfIssued()),
                     bottomRightText: IssuerInfoIcon(
                       issuer: widget.credential.issuer,
