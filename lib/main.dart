@@ -268,6 +268,9 @@ class MainPage extends StatelessWidget {
                 }
               }
 
+              String? overallBackground = wallet.contextCredentials[indexOut]
+                  .credentialSubject['backgroundImage'];
+
               return Column(children: [
                 ConstrainedBox(
                     constraints: BoxConstraints(
@@ -285,6 +288,7 @@ class MainPage extends StatelessWidget {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 10),
                                 child: CredentialCard(
+                                    background: overallBackground,
                                     credential:
                                         wallet.contextCredentials[indexOut]))
                             : Swiper(
@@ -297,6 +301,7 @@ class MainPage extends StatelessWidget {
                                 viewportFraction: 0.8,
                                 scale: 0.95,
                                 itemBuilder: (context, index) => CredentialCard(
+                                    background: overallBackground,
                                     credential: index == 0
                                         ? wallet.contextCredentials[indexOut]
                                         : wallet.credentials[index - 1]),

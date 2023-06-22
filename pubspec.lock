@@ -45,10 +45,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: ab96a1cb3beeccf8145c52e449233fe68364c9641623acd3adad66f8184f1039
+      sha256: b74e3842a52c61f8819a1ec8444b4de5419b41a7465e69d4aa681445377398b0
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.4.1"
   async:
     dependency: transitive
     description:
@@ -206,7 +206,7 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: c7eba28abedd18481cfb43f9a1c9f604bda9b5ee
+      resolved-ref: "68df85238b3dfe525b71677b482b1746edc20bfa"
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "2.1.0"
@@ -307,10 +307,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_inappwebview
-      sha256: "48d916e60b17649e338ac94f5d85fd28af8673a4a03d303d178dc61aa2a1f1c8"
+      sha256: fad1f2740ff4b5b7da378a639f54beeb9d787b6339c89a9de00494d92372c0bb
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0-beta.23"
+    version: "6.0.0-beta.24+1"
   flutter_inappwebview_internal_annotations:
     dependency: transitive
     description:
@@ -523,10 +523,10 @@ packages:
     dependency: transitive
     description:
       name: local_auth_android
-      sha256: "523dd636ce061ddb296cbc3db410cb8f21efb7d8798f7b9532c8038ce2f8bad5"
+      sha256: "36a78898198386d36d4e152b8cb46059b18f0e2017f813a0e833e216199f8950"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.31"
+    version: "1.0.32"
   local_auth_ios:
     dependency: transitive
     description:
@@ -970,10 +970,10 @@ packages:
     dependency: transitive
     description:
       name: yaon
-      sha256: "01ca95714b241aa40853f4119fffd60b56e21cb247d964ed2e9890d23fa1d3e0"
+      sha256: "232d9420adcc4a4f6b7b6dd9c8b1f1377b0f2db8a23108b0017f0294f52b41c3"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1"
+    version: "1.1.2"
 sdks:
   dart: ">=3.0.0 <4.0.0"
   flutter: ">=3.10.0"

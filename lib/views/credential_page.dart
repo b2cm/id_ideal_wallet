@@ -90,9 +90,20 @@ class CredentialPageState extends State<CredentialPage> {
                       var cred = credentialList[index];
                       var type = cred.type.firstWhere(
                           (element) => element != 'VerifiableCredential');
+                      var id =
+                          cred.id ?? getHolderDidFromCredential(cred.toJson());
+                      if (id == '') {
+                        id = '${cred.issuanceDate.toIso8601String()}$type';
+                      }
+
                       if (type != 'PaymentReceipt') {
                         return Column(children: [
-                          CredentialCard(credential: cred),
+                          CredentialCard(
+                            credential: cred,
+                            background: wallet
+                                .getContextForCredential(id)
+                                ?.credentialSubject['backgroundImage'],
+                          ),
                           const SizedBox(
                             height: 10,
                           )
@@ -204,8 +215,10 @@ class IsPicture implements Fun1<bool, Maybe> {
 
 class CredentialCard extends StatefulWidget {
   final VerifiableCredential credential;
+  final String? background;
 
-  const CredentialCard({Key? key, required this.credential}) : super(key: key);
+  const CredentialCard({Key? key, required this.credential, this.background})
+      : super(key: key);
 
   @override
   State<StatefulWidget> createState() => CredentialCardState();
@@ -302,27 +315,39 @@ class CredentialCardState extends State<CredentialCard> {
                   issuer: widget.credential.issuer,
                   selfIssued: widget.credential.isSelfIssued(),
                 ))
-            : IdCard(
-                subjectImage: image?.image,
-                backgroundImage:
-                    widget.credential.credentialSubject['backgroundImage'] != null
-                        ? Image.memory(base64Decode(widget
-                                .credential.credentialSubject['backgroundImage']
-                                .split(',')
-                                .last))
+            : widget.credential.type.contains('ChallengeSolvedCredential') ||
+                    widget.credential.type.contains('Losticket') ||
+                    widget.credential.type.contains('JuniorDiplom')
+                ? LNDWCard(
+                    cardTitle: '',
+                    backgroundImage: widget.background != null
+                        ? Image.memory(base64Decode(widget.background!.split(',').last))
                             .image
                         : null,
-                cardTitle: widget.credential.type
-                    .firstWhere((element) => element != 'VerifiableCredential'),
-                subjectName:
-                    '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-                bottomLeftText: IssuerInfoText(
-                    issuer: widget.credential.issuer,
-                    selfIssued: widget.credential.isSelfIssued()),
-                bottomRightText: IssuerInfoIcon(
-                  issuer: widget.credential.issuer,
-                  selfIssued: widget.credential.isSelfIssued(),
-                ));
+                    subjectName: widget.credential.credentialSubject['stand'] ??
+                        widget.credential.type.firstWhere(
+                            (element) => element != 'VerifiableCredential'),
+                    bottomLeftText: const SizedBox(
+                      width: 0,
+                    ),
+                    bottomRightText: const SizedBox(
+                      width: 0,
+                    ))
+                : IdCard(
+                    subjectImage: image?.image,
+                    backgroundImage: widget.background != null
+                        ? Image.memory(base64Decode(widget.background!.split(',').last))
+                            .image
+                        : null,
+                    cardTitle: widget.credential.type.firstWhere(
+                        (element) => element != 'VerifiableCredential'),
+                    subjectName:
+                        '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+                    bottomLeftText: IssuerInfoText(issuer: widget.credential.issuer, selfIssued: widget.credential.isSelfIssued()),
+                    bottomRightText: IssuerInfoIcon(
+                      issuer: widget.credential.issuer,
+                      selfIssued: widget.credential.isSelfIssued(),
+                    ));
   }
 
   @override

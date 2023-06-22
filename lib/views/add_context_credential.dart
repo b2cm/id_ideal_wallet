@@ -89,8 +89,8 @@ Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
         'backgroundImage': backgroundDD,
         'buttons': [
           {
-            'buttonText': 'Ralley absolvieren ',
-            'webViewTitle': 'Ralley',
+            'buttonText': 'Rallye absolvieren ',
+            'webViewTitle': 'Rallye',
             'url': 'https://lndw84b9dcfb0e65.id-ideal.de/lndw/#/',
             'backgroundColor': '#00B200'
           }

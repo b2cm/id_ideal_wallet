@@ -148,7 +148,7 @@ class IdCard extends StatelessWidget {
                 ? DecorationImage(
                     image: backgroundImage!,
                     fit: BoxFit.cover,
-                    opacity: 0.25,
+                    //opacity: 0.25,
                   )
                 : null,
           ),
@@ -179,10 +179,53 @@ class ContextCredentialCard extends IdCard {
         child: Text(subjectName,
             overflow: TextOverflow.clip,
             style: const TextStyle(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: 15,
               fontWeight: FontWeight.bold,
             )));
+  }
+
+  @override
+  Widget buildFooter() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
+class LNDWCard extends IdCard {
+  const LNDWCard(
+      {super.key,
+      required super.cardTitle,
+      required super.subjectName,
+      required super.bottomLeftText,
+      required super.bottomRightText,
+      super.backgroundImage});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(subjectName,
+                  overflow: TextOverflow.clip,
+                  style: const TextStyle(
+                    backgroundColor: Colors.transparent,
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ))
+            ]));
   }
 
   @override

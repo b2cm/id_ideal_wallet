@@ -484,12 +484,22 @@ class WalletProvider extends ChangeNotifier {
             old.add(id);
             logger.d(old);
             await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
+            await _wallet.storeConfigEntry('${id}_context', vcs.id!);
           }
         }
       }
     }
     await checkValiditySingle(vcParsed);
     notifyListeners();
+  }
+
+  VerifiableCredential? getContextForCredential(String credentialId) {
+    var contextId = _wallet.getConfigEntry('${credentialId}_context');
+    if (contextId != null) {
+      var contextCred = getCredential(contextId);
+      return VerifiableCredential.fromJson(contextCred!.w3cCredential);
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>?> privateKeyForConnectionDidAsJwk(String did) {
