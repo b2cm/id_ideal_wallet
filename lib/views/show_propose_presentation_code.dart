@@ -13,7 +13,7 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_path/json_path.dart';
-import 'package:json_schema2/json_schema2.dart';
+import 'package:json_schema2/json_schema.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -122,7 +122,7 @@ class QrRenderState extends State<QrRender> {
       // Propose Presentation
       var idField = InputDescriptorField(
           path: [JsonPath(r'$.id'), JsonPath(r'$.credentialSubject.id')],
-          filter: JsonSchema.createSchema({
+          filter: JsonSchema.create({
             'type': 'string',
             'pattern': widget.credential.id ??
                 widget.credential.credentialSubject['id']
@@ -132,7 +132,7 @@ class QrRenderState extends State<QrRender> {
           orElse: () => '');
       var typeField = InputDescriptorField(
           path: [JsonPath(r'$.type')],
-          filter: JsonSchema.createSchema({
+          filter: JsonSchema.create({
             'type': 'array',
             'contains': {'type': 'string', 'pattern': type}
           }));

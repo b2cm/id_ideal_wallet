@@ -12,11 +12,11 @@ import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:json_schema2/json_schema2.dart';
+import 'package:json_schema2/json_schema.dart';
 import 'package:json_schema_form/json_schema_form.dart';
 import 'package:provider/provider.dart';
 
-final emailSchema = JsonSchema.createSchema({
+final emailSchema = JsonSchema.create({
   'type': 'object',
   'properties': {
     'email': {
@@ -27,7 +27,7 @@ final emailSchema = JsonSchema.createSchema({
   }
 });
 
-final socialMediaSchema = JsonSchema.createSchema({
+final socialMediaSchema = JsonSchema.create({
   'type': 'object',
   'properties': {
     'network': {
@@ -77,7 +77,7 @@ class SelfIssueList extends StatelessWidget {
                   if (Platform.isAndroid) {
                     var info = await deviceInfo.androidInfo;
                     var androidAidPlugin = const AndroidId();
-                    deviceInfoSchema = JsonSchema.createSchema({
+                    deviceInfoSchema = JsonSchema.create({
                       'type': 'object',
                       'properties': {
                         'deviceId': {
@@ -93,7 +93,7 @@ class SelfIssueList extends StatelessWidget {
                     });
                   } else if (Platform.isIOS) {
                     var info = await deviceInfo.iosInfo;
-                    deviceInfoSchema = JsonSchema.createSchema({
+                    deviceInfoSchema = JsonSchema.create({
                       'type': 'object',
                       'properties': {
                         'deviceId': {
@@ -222,7 +222,7 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
               .isNotEmpty) {
             var givenSchema = field.filter?.toJson();
             if (givenSchema != null) {
-              schema = JsonSchema.createSchema(jsonDecode(givenSchema));
+              schema = JsonSchema.create(jsonDecode(givenSchema));
               logger.d(schema);
               controller = SchemaFormController(schema);
             }
