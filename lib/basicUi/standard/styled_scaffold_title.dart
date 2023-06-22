@@ -73,8 +73,11 @@ class StyledScaffoldTitle extends StatelessWidget {
               break;
             case 1:
               if (currentlyActive != 1) {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const QrScanner()));
+                currentlyActive == 0
+                    ? Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const QrScanner()))
+                    : Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const QrScanner()));
               }
               break;
             case 2:
