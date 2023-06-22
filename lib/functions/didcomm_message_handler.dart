@@ -256,7 +256,7 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }).timeout(const Duration(seconds: 20), onTimeout: () {
+        }).timeout(const Duration(seconds: 300), onTimeout: () {
       return Response('Timeout', 400);
     });
 

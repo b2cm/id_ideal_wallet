@@ -60,10 +60,15 @@ class StyledScaffoldTitle extends StatelessWidget {
           switch (index) {
             case 0:
               if (currentlyActive != 0) {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const CredentialPage(
-                          initialSelection: 'all',
-                        )));
+                currentlyActive == 1
+                    ? Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const CredentialPage(
+                              initialSelection: 'all',
+                            )))
+                    : Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const CredentialPage(
+                              initialSelection: 'all',
+                            )));
               }
               break;
             case 1:
