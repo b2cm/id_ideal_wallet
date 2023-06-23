@@ -105,5 +105,14 @@
   "sendFailed": "Senden Fehlgeschlagen",
   "sendFailedNote": "Das Senden einer Nachricht ist fehlgeschlagen oder die Nachricht konnte von der Gegenseite nicht verarbeitet werden.",
   "wrongCredential": "Fehlerhafter Nachweis",
-  "wrongCredentialNote": "Dein Gegenüber hat einen Nachweis ausgestellt, der eine fehlerhafte Signatur trägt. \nTeilen Sie dies ihm mit."
+  "wrongCredentialNote": "Dein Gegenüber hat einen Nachweis ausgestellt, der eine fehlerhafte Signatur trägt. \nTeilen Sie dies ihm mit.",
+  "familyName": "Nachname",
+  "givenName": "Vorname",
+  "birthDate": "Geburtsdatum",
+  "countryName": "Staat",
+  "stateOrProvinceName": "(Bundes)land",
+  "localityName": "Stadt",
+  "organizationName": "Organisation",
+  "commonName": "Allgemeiner Name",
+  "loadIssuerData": "Lade Informationen"
 }

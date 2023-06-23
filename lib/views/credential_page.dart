@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
@@ -133,8 +134,9 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
         children.addAll(subs);
       } else if (value is List) {
       } else {
+        var subtitle = '${before != null ? '$before.' : ''}$key';
         children.add(ListTile(
-          subtitle: Text('${before != null ? '$before.' : ''}$key'),
+          subtitle: Text(propertyNames[subtitle] ?? subtitle),
           title: (value is String && value.startsWith('data:'))
               ? InkWell(
                   child: Text(
@@ -153,7 +155,10 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
                     }
                   },
                 )
-              : Text(value),
+              : Text(value
+                  .replaceAll('ae', 'ä')
+                  .replaceAll('ue', 'ü')
+                  .replaceAll('oe', 'ö')),
         ));
       }
     }

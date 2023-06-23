@@ -31,7 +31,9 @@ class RequesterInfo extends StatefulWidget {
 }
 
 class RequesterInfoState extends State<RequesterInfo> {
-  String info = AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
+  String info =
+      AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
+  bool isLoading = true;
   bool isVerified = false;
 
   @override
@@ -51,8 +53,10 @@ class RequesterInfoState extends State<RequesterInfo> {
       }
       setState(() {});
     } catch (e) {
+      AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
       logger.d('Problem bei Zertifikatsabfrage: $e');
     }
+    isLoading = false;
   }
 
   @override
@@ -79,11 +83,17 @@ class RequesterInfoState extends State<RequesterInfo> {
                   bottom: 5,
                 ),
                 child: Icon(
-                  isVerified ? Icons.check_circle : Icons.close,
+                  isLoading
+                      ? Icons.refresh
+                      : isVerified
+                          ? Icons.check_circle
+                          : Icons.close,
                   size: 14,
-                  color: isVerified
-                      ? Colors.greenAccent.shade700
-                      : Colors.redAccent.shade700,
+                  color: isLoading
+                      ? Colors.grey
+                      : isVerified
+                          ? Colors.greenAccent.shade700
+                          : Colors.redAccent.shade700,
                 ),
               ),
             ),
@@ -479,7 +489,16 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     // Navigator.of(context).pop();
   }
 
-  void reject() {
+  void reject() async {
+    logger.d('user declined presentation');
+    if (widget.otherEndpoint
+        .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
+      logger.d('LNDW: send info');
+      var res = await get(Uri.parse(
+          'https://lndw84b9dcfb0e65.id-ideal.de/capi/iscanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
+      logger.d(res.statusCode);
+      logger.d(res.body);
+    }
     Navigator.of(context).pop();
     //TODO: send Problem Report, if user rejects
   }

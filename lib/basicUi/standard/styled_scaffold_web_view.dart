@@ -34,23 +34,23 @@ class StyledScaffoldWebView extends StatelessWidget {
           color: Colors.black, //change your color here
         ),
         title: Text(title, style: const TextStyle(color: Colors.black)),
-        actions: [
-          InkWell(
-              onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),
-          const SizedBox(
-            width: 5,
-          ),
-          InkWell(
-              onTap: () =>
-                  Navigator.of(context).popUntil((route) => route.isFirst),
-              child: const Icon(
-                Icons.close,
-                size: 40,
-              )),
-          const SizedBox(
-            width: 5,
-          ),
-        ],
+        // actions: [
+        //   InkWell(
+        //       onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),
+        //   const SizedBox(
+        //     width: 5,
+        //   ),
+        //   InkWell(
+        //       onTap: () =>
+        //           Navigator.of(context).popUntil((route) => route.isFirst),
+        //       child: const Icon(
+        //         Icons.close,
+        //         size: 40,
+        //       )),
+        //   const SizedBox(
+        //     width: 5,
+        //   ),
+        // ],
       ),
       body: child,
       bottomNavigationBar: BottomNavigationBar(

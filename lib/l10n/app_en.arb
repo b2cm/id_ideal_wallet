@@ -15,7 +15,7 @@
   "deletionNote": "Are you sure you want to delete this credential? This operation cannot be undone.",
   "issuer": "Issuer",
   "otherData": "Other data",
-  "personnelData": "Personnel data",
+  "personnelData": "Personal data",
   "invoice": "Invoice",
   "invoiceNumber": "invoice number",
   "selfIssued": "self-issued",
@@ -105,5 +105,14 @@
   "sendFailed": "Sending failed",
   "sendFailedNote": "Sending a message failed or the message could not be processed by the other side",
   "wrongCredential": "Incorrect Credential",
-  "wrongCredentialNote": "Your counterpart has issued a credential that bears an incorrect signature.\nInform him about this."
+  "wrongCredentialNote": "Your counterpart has issued a credential that bears an incorrect signature.\nInform him about this.",
+  "familyName": "surname",
+  "givenName": "given name",
+  "birthDate": "birth date",
+  "countryName": "country",
+  "stateOrProvinceName": "state/province",
+  "localityName": "locality",
+  "organizationName": "organization",
+  "commonName": "common name",
+  "loadIssuerData": "Load information"
 }

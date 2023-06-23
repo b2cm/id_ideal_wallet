@@ -4,6 +4,7 @@ import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
@@ -199,6 +200,14 @@ Future<bool> handleOfferCredential(
       }
     } else {
       logger.d('user declined credential');
+      var reply = determineReplyUrl(message.replyUrl, message.replyTo);
+      if (reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
+        logger.d('LNDW: send info');
+        var res = await get(Uri.parse(
+            'https://lndw84b9dcfb0e65.id-ideal.de/capi/iscanceled?thid=${message.threadId ?? message.id}'));
+        logger.d(res.statusCode);
+        logger.d(res.body);
+      }
       // TODO: send problem report
       return false;
     }

@@ -20,7 +20,7 @@ class IssuerInfoText extends StatefulWidget {
 
 class IssuerInfoTextState extends State<IssuerInfoText> {
   String issuerName =
-      AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+      AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
 
   @override
   void initState() {
@@ -76,6 +76,9 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName =
             '${widget.issuer['name']}\n(${AppLocalizations.of(context)!.notVerified})';
         setState(() {});
+      } else {
+        issuerName =
+            AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
       }
     }
   }
@@ -105,8 +108,8 @@ class IssuerInfoIcon extends StatefulWidget {
 }
 
 class IssuerInfoIconState extends State<IssuerInfoIcon> {
-  IconData marker = Icons.close;
-  Color iconColor = Colors.red;
+  IconData marker = Icons.refresh;
+  Color iconColor = Colors.grey;
 
   @override
   void initState() {
@@ -151,6 +154,8 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
             iconColor = Colors.green;
           }
         } catch (e) {
+          iconColor = Colors.red;
+          marker = Icons.close;
           logger.d('cant verify certificate');
         }
         setState(() {});
@@ -165,6 +170,9 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
         marker = Icons.verified_outlined;
         iconColor = Colors.green;
       }
+    } else {
+      iconColor = Colors.red;
+      marker = Icons.close;
     }
   }
 
