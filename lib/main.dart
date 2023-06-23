@@ -332,6 +332,13 @@ class MainPage extends StatelessWidget {
               ]);
             },
           ));
+        } else if (wallet.openError) {
+          return SafeArea(
+              child: Center(
+                  child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Text(AppLocalizations.of(context)!.errorOpen),
+          )));
         } else {
           wallet.openWallet();
           return const SafeArea(

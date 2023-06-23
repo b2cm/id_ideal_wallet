@@ -204,7 +204,7 @@ Future<bool> handleOfferCredential(
       if (reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
         logger.d('LNDW: send info');
         var res = await get(Uri.parse(
-            'https://lndw84b9dcfb0e65.id-ideal.de/capi/iscanceled?thid=${message.threadId ?? message.id}'));
+            'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${message.threadId ?? message.id}'));
         logger.d(res.statusCode);
         logger.d(res.body);
       }

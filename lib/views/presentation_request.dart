@@ -495,7 +495,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
       logger.d('LNDW: send info');
       var res = await get(Uri.parse(
-          'https://lndw84b9dcfb0e65.id-ideal.de/capi/iscanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
+          'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
       logger.d(res.statusCode);
       logger.d(res.body);
     }

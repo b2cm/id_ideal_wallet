@@ -23,6 +23,8 @@ class WalletProvider extends ChangeNotifier {
   bool _authRunning = false;
   bool _hasMemberCardContext = false;
 
+  bool openError = false;
+
   String qrData = '';
   String? lndwId;
 
@@ -48,7 +50,11 @@ class WalletProvider extends ChangeNotifier {
   void openWallet() async {
     if (!_authRunning) {
       _authRunning = true;
-      await my_util.openWallet(_wallet);
+      var isOpen = await my_util.openWallet(_wallet);
+      if (!isOpen) {
+        openError = true;
+        return;
+      }
 
       if (!_wallet.isInitialized()) {
         await _wallet.initialize();

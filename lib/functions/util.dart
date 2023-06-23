@@ -9,43 +9,49 @@ import 'package:random_password_generator/random_password_generator.dart';
 import 'package:x509b/x509.dart' as x509;
 
 Future<bool> openWallet(WalletStore wallet) async {
-  if (!wallet.isWalletOpen()) {
-    var messages = AndroidAuthMessages(
-        signInTitle:
-            AppLocalizations.of(navigatorKey.currentContext!)!.openWallet,
-        cancelButton: AppLocalizations.of(navigatorKey.currentContext!)!.cancel,
-        biometricHint:
-            AppLocalizations.of(navigatorKey.currentContext!)!.verifyIdentity);
-    var auth = LocalAuthentication();
-    if (!await auth.isDeviceSupported()) return false;
-    logger.d('device supported');
-    var didAuthWork = false;
+  try {
+    if (!wallet.isWalletOpen()) {
+      var messages = AndroidAuthMessages(
+          signInTitle:
+              AppLocalizations.of(navigatorKey.currentContext!)!.openWallet,
+          cancelButton:
+              AppLocalizations.of(navigatorKey.currentContext!)!.cancel,
+          biometricHint: AppLocalizations.of(navigatorKey.currentContext!)!
+              .verifyIdentity);
+      var auth = LocalAuthentication();
+      if (!await auth.isDeviceSupported()) return false;
+      logger.d('device supported');
+      var didAuthWork = false;
 
-    didAuthWork = await auth.authenticate(
-        localizedReason:
-            AppLocalizations.of(navigatorKey.currentContext!)!.localizedReason,
-        authMessages: [messages]);
+      didAuthWork = await auth.authenticate(
+          localizedReason: AppLocalizations.of(navigatorKey.currentContext!)!
+              .localizedReason,
+          authMessages: [messages]);
 
-    if (didAuthWork) {
-      const storage = FlutterSecureStorage();
-      String? pw = await storage.read(key: 'password');
-      if (pw == null) {
-        pw = RandomPasswordGenerator().randomPassword(
-            letters: true,
-            uppercase: true,
-            numbers: true,
-            specialChar: true,
-            passwordLength: 20);
-        await storage.write(key: 'password', value: pw);
+      if (didAuthWork) {
+        const storage = FlutterSecureStorage();
+        String? pw = await storage.read(key: 'password');
+        if (pw == null) {
+          pw = RandomPasswordGenerator().randomPassword(
+              letters: true,
+              uppercase: true,
+              numbers: true,
+              specialChar: true,
+              passwordLength: 20);
+          await storage.write(key: 'password', value: pw);
+        }
+        await wallet.openBoxes(pw);
+      } else {
+        return false;
       }
-      await wallet.openBoxes(pw);
     } else {
-      return false;
+      return true;
     }
-  } else {
     return true;
+  } catch (e) {
+    logger.d(e);
+    return false;
   }
-  return true;
 }
 
 Future<bool> verifyIssuerCert(x509.X509Certificate issuerCert) async {
