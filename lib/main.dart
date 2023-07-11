@@ -147,7 +147,7 @@ class MainPage extends StatelessWidget {
               loop: false,
               viewportFraction: 0.87,
               scale: 0.875,
-              itemCount: wallet.contextCredentials.length,
+              itemCount: wallet.contextCredentials.length + 1,
               onTap: (indexOut) {
                 if (indexOut == wallet.contextCredentials.length) {
                   Navigator.of(context).push(MaterialPageRoute(
@@ -168,7 +168,9 @@ class MainPage extends StatelessWidget {
                   var contextCred = wallet.contextCredentials[indexOut];
 
                   // Normal context credential -> only list of Buttons
-                  List b = contextCred.credentialSubject['buttons'] ?? [];
+                  List b = contextCred.credentialSubject['buttons'] ??
+                      contextCred.credentialSubject['services'] ??
+                      [];
                   for (var btn in b) {
                     buttons.add(
                       ElevatedButton(
@@ -177,13 +179,16 @@ class MainPage extends StatelessWidget {
                                 builder: (context) => WebViewWindow(
                                     initialUrl:
                                         '${btn['url']!}?wid=${wallet.lndwId}',
-                                    title: btn['webViewTitle'] ?? ''))),
+                                    title: btn['webViewTitle'] ??
+                                        btn['name'] ??
+                                        ''))),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              HexColor.fromHex(btn['backgroundColor']),
+                          backgroundColor: btn['backgroundColor'] != null
+                              ? HexColor.fromHex(btn['backgroundColor'])
+                              : null,
                           minimumSize: const Size.fromHeight(50), // NEW
                         ),
-                        child: Text(btn['buttonText']),
+                        child: Text(btn['buttonText'] ?? btn['name']),
                       ),
                     );
 
@@ -268,8 +273,11 @@ class MainPage extends StatelessWidget {
                   }
                 }
 
-                String? overallBackground = wallet.contextCredentials[indexOut]
-                    .credentialSubject['backgroundImage'];
+                String? overallBackground =
+                    indexOut != wallet.contextCredentials.length
+                        ? wallet.contextCredentials[indexOut]
+                            .credentialSubject['backgroundImage']
+                        : null;
 
                 return Column(children: [
                   ConstrainedBox(

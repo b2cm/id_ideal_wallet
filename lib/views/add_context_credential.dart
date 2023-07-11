@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
@@ -17,34 +20,48 @@ class AddContextCredential extends StatefulWidget {
 }
 
 class AddContextCredentialState extends State<AddContextCredential> {
-  List<String> availableCredentials = [
-    'Lange Nacht der Wissenschaften - Dresden',
-    // 'Lange Nacht der Wissenschaften - Mittweida',
-    // 'Lightning Testnetz Wallet',
-    // 'Spielgeld Wallet',
-    // 'SSI Test Services'
-  ];
+  bool initialised = false;
+  String errorMessage = '';
+  Map<String, String> availableCredentials = {};
 
   List<int> checkedItems = [];
 
-  void store() async {
+  @override
+  initState() {
+    super.initState();
+    getAvailableContexts();
+  }
+
+  getAvailableContexts() async {
+    var contextRequest = await get(Uri.parse(contextEndpoint));
+    var contextList = jsonDecode(contextRequest.body);
+    if (contextList is! List) {
+      errorMessage = 'No List';
+      return;
+    }
+
+    for (var entry in contextList) {
+      availableCredentials[entry['id'].toString()] = entry['name'];
+    }
+
+    setState(() {
+      initialised = true;
+    });
+  }
+
+  void store(String id) async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
-    // for (var i = 0; i < availableCredentials.length; i++) {
-    //   if (i == 0 && checkedItems.contains(i)) {
-    // LNDW DD
-    issueLNDWContextDresden(wallet);
-    //   } else if (i == 1 && checkedItems.contains(i)) {
-    //     // LNDW MW
-    //     issueLNDWContextMittweida(wallet);
-    //   } else if (i == 2 && checkedItems.contains(i)) {
-    //     issueLNTestNetContext(wallet);
-    //   } else if (i == 3 && checkedItems.contains(i)) {
-    //     issueSimulatePaymentContext(wallet);
-    //   } else if (i == 4 && checkedItems.contains(i)) {
-    //     issueSSITestServiceContext(wallet);
-    //   }
-    // }
+
+    if (id == '2') {
+      issueLNTestNetContext(wallet);
+    } else {
+      var infoRequest = await get(Uri.parse('$contextEndpoint?contextid=$id'));
+      var contextInfo = jsonDecode(infoRequest.body);
+      logger.d(contextInfo);
+      issueContext(wallet, contextInfo);
+    }
+
     Navigator.pop(navigatorKey.currentContext!);
   }
 
@@ -57,17 +74,45 @@ class AddContextCredentialState extends State<AddContextCredential> {
         //       child: Text(AppLocalizations.of(context)!.create))
         // ],
         title: AppLocalizations.of(context)!.contextCredentialTitle,
-        child: ListView.builder(
-            itemCount: availableCredentials.length,
-            itemBuilder: (context, index) {
-              return ElevatedButton(
-                  onPressed: store,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50), // NEW
-                  ),
-                  child: Text(availableCredentials[index]));
-            }));
+        child: initialised
+            ? ListView.builder(
+                itemCount: availableCredentials.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      child: ElevatedButton(
+                          onPressed: () =>
+                              store(availableCredentials.keys.toList()[index]),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50), // NEW
+                          ),
+                          child: Text(
+                              availableCredentials.values.toList()[index])));
+                })
+            : const Center(
+                child: CircularProgressIndicator(),
+              ));
   }
+}
+
+Future<void> issueContext(
+    WalletProvider wallet, Map<String, dynamic> content) async {
+  var did = await wallet.newCredentialDid();
+
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential'],
+      issuer: did,
+      id: did,
+      credentialSubject: {'id': did, ...content},
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }
 
 Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
