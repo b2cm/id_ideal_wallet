@@ -17,6 +17,17 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+Future<bool> handleOobUrl(String url) async {
+  var asUri = Uri.parse(url);
+  var oobUrl = asUri.queryParameters['_ooburl'];
+  if (oobUrl != null) {
+    var messageGot = await get(Uri.parse(oobUrl));
+    logger.d(messageGot.body);
+    return handleDidcommMessage(messageGot.body);
+  }
+  return false;
+}
+
 Future<bool> handleDidcommMessage(String message) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
@@ -216,7 +227,16 @@ Future<bool> handleInvitation(
         propose,
         invitation.from!);
   } else {
-    throw UnimplementedError('more goalcodes are not known yet');
+    try {
+      dynamic jsonData = invitation.attachments!.first.data.json!;
+      var plain = DidcommPlaintextMessage.fromJson(
+          jsonData is List ? jsonData.first : jsonData);
+      plain.from ??= invitation.from;
+      return handleDidcommMessage(plain.toString());
+    } catch (e) {
+      logger.e(e);
+      throw Exception('OOB Message with no proper attachment: $e');
+    }
   }
   return true;
 }

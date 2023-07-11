@@ -139,254 +139,259 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Consumer<WalletProvider>(builder: (context, wallet, child) {
-        if (wallet.isOpen()) {
-          return SafeArea(
-              child: Swiper(
-            loop: false,
-            viewportFraction: 0.87,
-            scale: 0.875,
-            itemCount: wallet.contextCredentials.length,
-            onTap: (indexOut) {
-              if (indexOut == wallet.contextCredentials.length) {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const AddContextCredential()));
-              }
-            },
-            itemBuilder: (context, indexOut) {
-              var count = indexOut == wallet.contextCredentials.length
-                  ? -1
-                  : wallet
-                          .getCredentialsForContext(
-                              wallet.contextCredentials[indexOut].id!)
-                          .length +
-                      1;
-
-              var buttons = <Widget>[];
-              if (indexOut != wallet.contextCredentials.length) {
-                var contextCred = wallet.contextCredentials[indexOut];
-
-                // Normal context credential -> only list of Buttons
-                List b = contextCred.credentialSubject['buttons'] ?? [];
-                for (var btn in b) {
-                  buttons.add(
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => WebViewWindow(
-                                  initialUrl:
-                                      '${btn['url']!}?wid=${wallet.lndwId}',
-                                  title: btn['webViewTitle'] ?? ''))),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            HexColor.fromHex(btn['backgroundColor']),
-                        minimumSize: const Size.fromHeight(50), // NEW
-                      ),
-                      child: Text(btn['buttonText']),
-                    ),
-                  );
-
-                  buttons.add(const SizedBox(
-                    height: 15,
-                  ));
+    return Consumer<WalletProvider>(builder: (context, wallet, child) {
+      if (wallet.isOpen()) {
+        return Scaffold(
+          body: SafeArea(
+            child: Swiper(
+              loop: false,
+              viewportFraction: 0.87,
+              scale: 0.875,
+              itemCount: wallet.contextCredentials.length,
+              onTap: (indexOut) {
+                if (indexOut == wallet.contextCredentials.length) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const AddContextCredential()));
                 }
+              },
+              itemBuilder: (context, indexOut) {
+                var count = indexOut == wallet.contextCredentials.length
+                    ? -1
+                    : wallet
+                            .getCredentialsForContext(
+                                wallet.contextCredentials[indexOut].id!)
+                            .length +
+                        1;
 
-                // Payment Credential
-                if (contextCred.type.contains('PaymentContext')) {
-                  // List of last three payments
-                  buttons.add(Heading(
-                      text: AppLocalizations.of(context)!.lastPayments));
-                  var lastPaymentData =
-                      wallet.lastPayments[contextCred.id!] ?? [];
-                  if (lastPaymentData.isNotEmpty) {
-                    var lastPayments = ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount:
-                            wallet.lastPayments[contextCred.id!]?.length ?? 0,
-                        itemBuilder: (context, index) {
-                          return InkWell(
-                            child: TransactionPreview(
-                                title: wallet
-                                    .lastPayments[contextCred.id!]![index]
-                                    .otherParty,
-                                amount: CurrencyDisplay(
-                                    amount: wallet
-                                        .lastPayments[contextCred.id!]![index]
-                                        .action,
-                                    symbol: '€')),
-                            onTap: () {
-                              if (wallet.lastPayments[contextCred.id!]![index]
-                                  .shownAttributes.isNotEmpty) {
-                                var cred = wallet.getCredential(wallet
-                                    .lastPayments[contextCred.id!]![index]
-                                    .shownAttributes
-                                    .first);
-                                if (cred != null &&
-                                    cred.w3cCredential.isNotEmpty) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          CredentialDetailView(
-                                        credential:
-                                            VerifiableCredential.fromJson(
-                                                cred.w3cCredential),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          );
-                        });
-                    buttons.add(lastPayments);
-                    if (wallet.getAllPayments(contextCred.id!).length > 3) {
-                      var additional = TextButton(
-                          onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => PaymentOverview(
-                                      paymentContext: contextCred))),
-                          child: Text(AppLocalizations.of(context)!.showMore,
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              )));
-                      buttons.add(additional);
-                    }
-                  } else {
-                    var empty = TransactionPreview(
-                      title: AppLocalizations.of(context)!.noPayments,
-                      amount: const CurrencyDisplay(
-                        symbol: '',
-                        amount: '',
+                var buttons = <Widget>[];
+                if (indexOut != wallet.contextCredentials.length) {
+                  var contextCred = wallet.contextCredentials[indexOut];
+
+                  // Normal context credential -> only list of Buttons
+                  List b = contextCred.credentialSubject['buttons'] ?? [];
+                  for (var btn in b) {
+                    buttons.add(
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => WebViewWindow(
+                                    initialUrl:
+                                        '${btn['url']!}?wid=${wallet.lndwId}',
+                                    title: btn['webViewTitle'] ?? ''))),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              HexColor.fromHex(btn['backgroundColor']),
+                          minimumSize: const Size.fromHeight(50), // NEW
+                        ),
+                        child: Text(btn['buttonText']),
                       ),
                     );
-                    buttons.add(empty);
+
+                    buttons.add(const SizedBox(
+                      height: 15,
+                    ));
+                  }
+
+                  // Payment Credential
+                  if (contextCred.type.contains('PaymentContext')) {
+                    // List of last three payments
+                    buttons.add(Heading(
+                        text: AppLocalizations.of(context)!.lastPayments));
+                    var lastPaymentData =
+                        wallet.lastPayments[contextCred.id!] ?? [];
+                    if (lastPaymentData.isNotEmpty) {
+                      var lastPayments = ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount:
+                              wallet.lastPayments[contextCred.id!]?.length ?? 0,
+                          itemBuilder: (context, index) {
+                            return InkWell(
+                              child: TransactionPreview(
+                                  title: wallet
+                                      .lastPayments[contextCred.id!]![index]
+                                      .otherParty,
+                                  amount: CurrencyDisplay(
+                                      amount: wallet
+                                          .lastPayments[contextCred.id!]![index]
+                                          .action,
+                                      symbol: '€')),
+                              onTap: () {
+                                if (wallet.lastPayments[contextCred.id!]![index]
+                                    .shownAttributes.isNotEmpty) {
+                                  var cred = wallet.getCredential(wallet
+                                      .lastPayments[contextCred.id!]![index]
+                                      .shownAttributes
+                                      .first);
+                                  if (cred != null &&
+                                      cred.w3cCredential.isNotEmpty) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CredentialDetailView(
+                                          credential:
+                                              VerifiableCredential.fromJson(
+                                                  cred.w3cCredential),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            );
+                          });
+                      buttons.add(lastPayments);
+                      if (wallet.getAllPayments(contextCred.id!).length > 3) {
+                        var additional = TextButton(
+                            onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => PaymentOverview(
+                                        paymentContext: contextCred))),
+                            child: Text(AppLocalizations.of(context)!.showMore,
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                )));
+                        buttons.add(additional);
+                      }
+                    } else {
+                      var empty = TransactionPreview(
+                        title: AppLocalizations.of(context)!.noPayments,
+                        amount: const CurrencyDisplay(
+                          symbol: '',
+                          amount: '',
+                        ),
+                      );
+                      buttons.add(empty);
+                    }
                   }
                 }
+
+                String? overallBackground = wallet.contextCredentials[indexOut]
+                    .credentialSubject['backgroundImage'];
+
+                return Column(children: [
+                  ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.3),
+                      child: indexOut == wallet.contextCredentials.length
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 140),
+                              child: Icon(
+                                Icons.add,
+                                color: Colors.grey,
+                                size: 90,
+                              ))
+                          : count == 1
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: CredentialCard(
+                                      background: overallBackground,
+                                      credential:
+                                          wallet.contextCredentials[indexOut]))
+                              : Swiper(
+                                  loop: true,
+                                  allowImplicitScrolling: false,
+                                  itemCount: count,
+                                  scrollDirection: Axis.vertical,
+                                  axisDirection: AxisDirection.left,
+                                  curve: Curves.fastOutSlowIn,
+                                  viewportFraction: 0.8,
+                                  scale: 0.95,
+                                  itemBuilder: (context, index) =>
+                                      CredentialCard(
+                                          background: overallBackground,
+                                          credential: index == 0
+                                              ? wallet
+                                                  .contextCredentials[indexOut]
+                                              : wallet.credentials[index - 1]),
+                                  layout: SwiperLayout.TINDER,
+                                  customLayoutOption: CustomLayoutOption(
+                                      startIndex: -1, stateCount: 5)
+                                    ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                                    ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+                                    ..addScale(
+                                        [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
+                                        Alignment.bottomLeft)
+                                    ..addTranslate([
+                                      const Offset(-5, -5),
+                                      const Offset(0, 0),
+                                      const Offset(5, 5),
+                                      const Offset(20, 50),
+                                      const Offset(30, 100),
+                                      const Offset(40, 50),
+                                    ]),
+                                  containerHeight:
+                                      MediaQuery.of(context).size.width * 0.6,
+                                  itemHeight:
+                                      MediaQuery.of(context).size.width * 0.54,
+                                  itemWidth:
+                                      MediaQuery.of(context).size.width * 0.95,
+                                )),
+                  ...buttons
+                ]);
+              },
+            ),
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            selectedItemColor: Colors.black,
+            unselectedItemColor: Colors.black,
+            items: [
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.co_present), label: 'Credentials'),
+              BottomNavigationBarItem(
+                  icon: const Icon(
+                    Icons.qr_code_scanner_sharp,
+                    size: 30,
+                  ),
+                  label: AppLocalizations.of(context)!.scan),
+              BottomNavigationBarItem(
+                  icon: const Icon(Icons.settings),
+                  label: AppLocalizations.of(context)!.settings),
+            ],
+            currentIndex: 1,
+            onTap: (index) {
+              switch (index) {
+                case 0:
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const CredentialPage(
+                            initialSelection: 'all',
+                          )));
+                  break;
+                case 1:
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const QrScanner()));
+                  break;
+                case 2:
+                  var locale = AppLocalizations.of(context)!.localeName;
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => WebViewWindow(
+                          initialUrl: 'https://hidy.eu/$locale/app',
+                          title: 'About')));
+                  break;
               }
-
-              String? overallBackground = wallet.contextCredentials[indexOut]
-                  .credentialSubject['backgroundImage'];
-
-              return Column(children: [
-                ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.3),
-                    child: indexOut == wallet.contextCredentials.length
-                        ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 140),
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.grey,
-                              size: 90,
-                            ))
-                        : count == 1
-                            ? Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                child: CredentialCard(
-                                    background: overallBackground,
-                                    credential:
-                                        wallet.contextCredentials[indexOut]))
-                            : Swiper(
-                                loop: true,
-                                allowImplicitScrolling: false,
-                                itemCount: count,
-                                scrollDirection: Axis.vertical,
-                                axisDirection: AxisDirection.left,
-                                curve: Curves.fastOutSlowIn,
-                                viewportFraction: 0.8,
-                                scale: 0.95,
-                                itemBuilder: (context, index) => CredentialCard(
-                                    background: overallBackground,
-                                    credential: index == 0
-                                        ? wallet.contextCredentials[indexOut]
-                                        : wallet.credentials[index - 1]),
-                                layout: SwiperLayout.TINDER,
-                                customLayoutOption: CustomLayoutOption(
-                                    startIndex: -1, stateCount: 5)
-                                  ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-                                  ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-                                  ..addScale(
-                                      [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
-                                      Alignment.bottomLeft)
-                                  ..addTranslate([
-                                    const Offset(-5, -5),
-                                    const Offset(0, 0),
-                                    const Offset(5, 5),
-                                    const Offset(20, 50),
-                                    const Offset(30, 100),
-                                    const Offset(40, 50),
-                                  ]),
-                                containerHeight:
-                                    MediaQuery.of(context).size.width * 0.6,
-                                itemHeight:
-                                    MediaQuery.of(context).size.width * 0.54,
-                                itemWidth:
-                                    MediaQuery.of(context).size.width * 0.95,
-                              )),
-                ...buttons
-              ]);
             },
-          ));
-        } else if (wallet.openError) {
-          return SafeArea(
-              child: Center(
-                  child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: Text(AppLocalizations.of(context)!.errorOpen),
-          )));
-        } else {
-          wallet.openWallet();
-          return const SafeArea(
-              child: Center(
-            child: CircularProgressIndicator(),
-          ));
-        }
-      }),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.co_present), label: 'Credentials'),
-          BottomNavigationBarItem(
-              icon: const Icon(
-                Icons.qr_code_scanner_sharp,
-                size: 30,
-              ),
-              label: AppLocalizations.of(context)!.scan),
-          BottomNavigationBarItem(
-              icon: const Icon(Icons.settings),
-              label: AppLocalizations.of(context)!.settings),
-        ],
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const CredentialPage(
-                        initialSelection: 'all',
-                      )));
-              break;
-            case 1:
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const QrScanner()));
-              break;
-            case 2:
-              var locale = AppLocalizations.of(context)!.localeName;
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => WebViewWindow(
-                      initialUrl: 'https://hidy.eu/$locale/app',
-                      title: 'About')));
-              break;
-          }
-        },
-      ),
-    );
+          ),
+        );
+      } else if (wallet.openError) {
+        return Scaffold(
+            body: SafeArea(
+                child: Center(
+                    child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Text(AppLocalizations.of(context)!.errorOpen),
+        ))));
+      } else {
+        wallet.openWallet();
+        return const Scaffold(
+            body: SafeArea(
+                child: Center(
+          child: CircularProgressIndicator(),
+        )));
+      }
+    });
   }
 }
 

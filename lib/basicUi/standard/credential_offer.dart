@@ -61,49 +61,54 @@ class CredentialOfferDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SecuredWidget(
-        child: SafeArea(
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-            ),
-            child: Padding(
-              // padding only left and right
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    AppLocalizations.of(context)!.credentialOffer,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  Column(
-                    children: buildContent(),
-                  ),
-                  const SizedBox(height: 20),
-                  toPay != null
-                      ? Receipt(
-                          title: AppLocalizations.of(context)!.invoice,
-                          items: [
-                            ReceiptItem(
-                              label: "Credential",
-                              amount: CurrencyDisplay(
-                                amount: toPay!,
-                                symbol: "€",
+      body: SingleChildScrollView(
+        child: SecuredWidget(
+          child: SafeArea(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+              ),
+              child: Padding(
+                // padding only left and right
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    Text(
+                      AppLocalizations.of(context)!.credentialOffer,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    SingleChildScrollView(
+                      child: Column(
+                        children: buildContent(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    toPay != null
+                        ? Receipt(
+                            title: AppLocalizations.of(context)!.invoice,
+                            items: [
+                              ReceiptItem(
+                                label: "Credential",
+                                amount: CurrencyDisplay(
+                                  amount: toPay!,
+                                  symbol: "€",
+                                ),
                               ),
+                            ],
+                            total: ReceiptItem(
+                              label: AppLocalizations.of(context)!.total,
+                              amount:
+                                  CurrencyDisplay(amount: toPay, symbol: "€"),
                             ),
-                          ],
-                          total: ReceiptItem(
-                            label: AppLocalizations.of(context)!.total,
-                            amount: CurrencyDisplay(amount: toPay, symbol: "€"),
+                          )
+                        : const SizedBox(
+                            height: 0,
                           ),
-                        )
-                      : const SizedBox(
-                          height: 0,
-                        ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

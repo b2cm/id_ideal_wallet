@@ -117,8 +117,10 @@ class CredentialPageState extends State<CredentialPage> {
                     }));
       } else {
         wallet.openWallet();
-        return Center(
-          child: Text(AppLocalizations.of(context)!.openWallet),
+        return Scaffold(
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.openWallet),
+          ),
         );
       }
     });
