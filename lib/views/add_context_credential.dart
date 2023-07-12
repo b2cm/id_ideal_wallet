@@ -22,7 +22,8 @@ class AddContextCredential extends StatefulWidget {
 class AddContextCredentialState extends State<AddContextCredential> {
   bool initialised = false;
   String errorMessage = '';
-  Map<String, String> availableCredentials = {};
+  Map<String, Map<String, String>> availableCredentials = {};
+  Map<String, bool> checked = {};
 
   List<int> checkedItems = [];
 
@@ -40,8 +41,20 @@ class AddContextCredentialState extends State<AddContextCredential> {
       return;
     }
 
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+
+    var existingContexts = wallet.getExistingContextIds();
+
     for (var entry in contextList) {
-      availableCredentials[entry['id'].toString()] = entry['name'];
+      if (!existingContexts.contains(entry['id'].toString())) {
+        availableCredentials[entry['id'].toString()] = {
+          'name': entry['name'],
+          'description': entry['description']
+        };
+
+        checked[entry['id'].toString()] = false;
+      }
     }
 
     setState(() {
@@ -49,17 +62,23 @@ class AddContextCredentialState extends State<AddContextCredential> {
     });
   }
 
-  void store(String id) async {
+  void store() async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
 
-    if (id == '2') {
-      issueLNTestNetContext(wallet);
-    } else {
-      var infoRequest = await get(Uri.parse('$contextEndpoint?contextid=$id'));
-      var contextInfo = jsonDecode(infoRequest.body);
-      logger.d(contextInfo);
-      issueContext(wallet, contextInfo);
+    for (var key in checked.keys) {
+      var value = checked[key]!;
+      if (value) {
+        if (key == '2') {
+          issueLNTestNetContext(wallet);
+        } else {
+          var infoRequest =
+              await get(Uri.parse('$contextEndpoint?contextid=$key'));
+          var contextInfo = jsonDecode(infoRequest.body);
+          logger.d(contextInfo);
+          issueContext(wallet, contextInfo, key);
+        }
+      }
     }
 
     Navigator.pop(navigatorKey.currentContext!);
@@ -68,26 +87,28 @@ class AddContextCredentialState extends State<AddContextCredential> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        // footerButtons: [
-        //   TextButton(
-        //       onPressed: store,
-        //       child: Text(AppLocalizations.of(context)!.create))
-        // ],
+        footerButtons: [
+          TextButton(
+              onPressed: store,
+              child: Text(AppLocalizations.of(context)!.create))
+        ],
         title: AppLocalizations.of(context)!.contextCredentialTitle,
         child: initialised
             ? ListView.builder(
                 itemCount: availableCredentials.length,
                 itemBuilder: (context, index) {
-                  return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5),
-                      child: ElevatedButton(
-                          onPressed: () =>
-                              store(availableCredentials.keys.toList()[index]),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50), // NEW
-                          ),
-                          child: Text(
-                              availableCredentials.values.toList()[index])));
+                  var id = availableCredentials.keys.toList()[index];
+                  return CheckboxListTile(
+                      title: Text(availableCredentials[id]!['name']!),
+                      subtitle:
+                          Text(availableCredentials[id]!['description'] ?? ''),
+                      value: checked[id],
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          checked[id] = newValue;
+                          setState(() {});
+                        }
+                      });
                 })
             : const Center(
                 child: CircularProgressIndicator(),
@@ -96,7 +117,7 @@ class AddContextCredentialState extends State<AddContextCredential> {
 }
 
 Future<void> issueContext(
-    WalletProvider wallet, Map<String, dynamic> content) async {
+    WalletProvider wallet, Map<String, dynamic> content, String id) async {
   var did = await wallet.newCredentialDid();
 
   var contextCred = VerifiableCredential(
@@ -104,7 +125,7 @@ Future<void> issueContext(
       type: ['VerifiableCredential', 'ContextCredential'],
       issuer: did,
       id: did,
-      credentialSubject: {'id': did, ...content},
+      credentialSubject: {'id': did, 'contextId': id, ...content},
       issuanceDate: DateTime.now());
 
   var signed = await signCredential(wallet.wallet, contextCred.toJson());
@@ -113,6 +134,7 @@ Future<void> issueContext(
 
   wallet.storeCredential(signed, storageCred!.hdPath);
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+  wallet.addContextIds([id]);
 }
 
 Future<void> issueLNDWContextDresden(WalletProvider wallet) async {

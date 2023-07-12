@@ -23,7 +23,7 @@ class CurrencyDisplay extends StatelessWidget {
         amount is String
             ? Container(
                 padding: const EdgeInsets.symmetric(vertical: 2),
-                width: 350,
+                //width: 200,
                 child: Text(
                   amount,
                   maxLines: 6,

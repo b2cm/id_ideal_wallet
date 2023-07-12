@@ -1,5 +1,6 @@
-import 'currency_display.dart';
 import 'package:flutter/material.dart';
+
+import 'currency_display.dart';
 
 class TransactionPreview extends StatelessWidget {
   const TransactionPreview(
@@ -17,18 +18,18 @@ class TransactionPreview extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // title
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-              child: Text(
-                title,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-              ),
+
+          Container(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
             ),
           ),
+
           // amount
           Container(
             padding: const EdgeInsets.fromLTRB(0, 0, 15, 0),

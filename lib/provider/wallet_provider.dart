@@ -492,6 +492,19 @@ class WalletProvider extends ChangeNotifier {
             await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
             await _wallet.storeConfigEntry('${id}_context', vcs.id!);
           }
+        } else if (vcs.credentialSubject.containsKey('contexttype')) {
+          if (vcParsed.type
+              .contains(vcs.credentialSubject.containsKey('contexttype'))) {
+            var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
+            var id = vcParsed.id ?? getHolderDidFromCredential(vc);
+            if (id == '') {
+              id = '${vcParsed.issuanceDate.toIso8601String()}$type';
+            }
+            old.add(id);
+            logger.d(old);
+            await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
+            await _wallet.storeConfigEntry('${id}_context', vcs.id!);
+          }
         }
       }
     }
@@ -525,6 +538,18 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void deleteCredential(String credDid) async {
+    var cred = getCredential(credDid);
+    if (cred != null) {
+      var vc = VerifiableCredential.fromJson(cred.w3cCredential);
+      if (vc.type.contains('ContextCredential')) {
+        var contextId = vc.credentialSubject['contextId'];
+        if (contextId != null) {
+          var existing = getExistingContextIds();
+          existing.remove(contextId);
+          _wallet.storeConfigEntry('existingContexts', jsonEncode(existing));
+        }
+      }
+    }
     await _wallet.deleteCredential(credDid);
     await _wallet.deleteExchangeHistory(credDid);
     await _wallet.deleteConfigEntry(credDid);
@@ -565,6 +590,26 @@ class WalletProvider extends ChangeNotifier {
           }
         }
       }
+    }
+  }
+
+  Future<void> addContextIds(List<String> id) async {
+    var existing = _wallet.getConfigEntry('existingContexts');
+    var existingList = [];
+    if (existing != null) {
+      existingList = jsonDecode(existing).cast<String>();
+    }
+
+    existingList.addAll(id);
+    _wallet.storeConfigEntry('existingContexts', jsonEncode(existingList));
+  }
+
+  List<String> getExistingContextIds() {
+    var entry = _wallet.getConfigEntry('existingContexts');
+    if (entry != null) {
+      return jsonDecode(entry).cast<String>();
+    } else {
+      return [];
     }
   }
 

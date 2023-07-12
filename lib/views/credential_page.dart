@@ -360,6 +360,11 @@ class CredentialCardState extends State<CredentialCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+        onLongPress: () => widget.credential.type.contains('ContextCredential')
+            ? Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) =>
+                    CredentialDetailView(credential: widget.credential)))
+            : null,
         onTap: () => widget.credential.type.contains('ContextCredential')
             ? Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) =>
