@@ -357,6 +357,8 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
             .presentationFailed);
       }
 
+      logger.d(res.statusCode);
+      logger.d(res.body);
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
@@ -382,6 +384,7 @@ void showErrorMessage(String headline, [String? subtext]) {
             headline: headline,
             success: false,
             amount: CurrencyDisplay(
+                width: 350,
                 amount: subtext ?? '',
                 symbol: '',
                 mainFontSize: 18,

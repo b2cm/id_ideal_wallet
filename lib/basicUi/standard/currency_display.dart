@@ -6,12 +6,14 @@ class CurrencyDisplay extends StatelessWidget {
       required this.amount,
       required this.symbol,
       this.mainFontSize = 20,
-      this.centered = false});
+      this.centered = false,
+      this.width});
 
   final String symbol;
   final dynamic amount;
   final double mainFontSize;
   final bool centered;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class CurrencyDisplay extends StatelessWidget {
         amount is String
             ? Container(
                 padding: const EdgeInsets.symmetric(vertical: 2),
-                //width: 200,
+                width: width,
                 child: Text(
                   amount,
                   maxLines: 6,
