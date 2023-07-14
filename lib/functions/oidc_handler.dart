@@ -10,6 +10,7 @@ import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
@@ -214,8 +215,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
-      var type =
-          vc.type.firstWhere((element) => element != 'VerifiableCredential');
+      var type = getTypeToShow(vc.type);
       if (type != 'PaymentReceipt') {
         creds.add(vc);
       }

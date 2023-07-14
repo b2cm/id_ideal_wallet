@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -71,8 +72,7 @@ Future<bool> handleRequestPresentation(
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
-      var type =
-          vc.type.firstWhere((element) => element != 'VerifiableCredential');
+      var type = getTypeToShow(vc.type);
       if (type != 'PaymentReceipt') {
         var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
         var status = wallet.revocationState[id];

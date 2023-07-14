@@ -10,6 +10,7 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -153,7 +154,7 @@ Future<bool> handleOfferCredential(
           paymentDetails['paymentId'] = paymentId;
           paymentDetails['value'] = '-$toPay';
           paymentDetails['note'] =
-              '${message.detail!.first.credential.type.firstWhere((element) => element != 'VerifiableCredential')} empfangen';
+              '${getTypeToShow(message.detail!.first.credential.type)} empfangen';
 
           showModalBottomSheet(
               shape: RoundedRectangleBorder(
@@ -372,8 +373,7 @@ Future<bool> handleIssueCredential(
           }
         }
 
-        var type = cred.type
-            .firstWhere((element) => element != 'VerifiableCredential');
+        var type = getTypeToShow(cred.type);
         if (credDid == '') {
           credDid = '${cred.issuanceDate.toIso8601String()}$type';
         }

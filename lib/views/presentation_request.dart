@@ -11,6 +11,7 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
@@ -280,8 +281,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         logger.d(key);
         if (selectedCredsPerResult[key]!) {
           credCount++;
-          selectedCredNames.add(v.type
-              .firstWhere((element) => element != 'VerifiableCredential'));
+          selectedCredNames.add(getTypeToShow(v.type));
         }
         outerTileChildList.add(
           ExpansionTile(
@@ -295,8 +295,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   });
                 },
                 value: selectedCredsPerResult[key]),
-            title: Text(v.type
-                .firstWhere((element) => element != 'VerifiableCredential')),
+            title: Text(getTypeToShow(v.type)),
             children: buildCredSubject(v.credentialSubject),
           ),
         );
@@ -423,8 +422,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
         String type = '';
         for (var c in casted.verifiableCredential!) {
-          type +=
-              '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')}, \n''';
+          type += '''${getTypeToShow(c.type)}, \n''';
         }
         type = type.substring(0, type.length - 3);
 

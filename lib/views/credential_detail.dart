@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -21,8 +22,7 @@ class HistoryEntries extends StatelessWidget {
       var credId =
           credential.id ?? getHolderDidFromCredential(credential.toJson());
       if (credId == '') {
-        var type = credential.type
-            .firstWhere((element) => element != 'VerifiableCredential');
+        var type = getTypeToShow(credential.type);
         credId = '${credential.issuanceDate.toIso8601String()}$type';
       }
       var historyEntries = wallet.historyEntriesForCredential(credId);
@@ -78,8 +78,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 var credId = widget.credential.id ??
                     getHolderDidFromCredential(widget.credential.toJson());
                 if (credId == '') {
-                  var type = widget.credential.type.firstWhere(
-                      (element) => element != 'VerifiableCredential');
+                  var type = getTypeToShow(widget.credential.type);
                   credId =
                       '${widget.credential.issuanceDate.toIso8601String()}$type';
                 }
@@ -257,8 +256,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-      title: widget.credential.type
-          .firstWhere((element) => element != 'VerifiableCredential'),
+      title: getTypeToShow(widget.credential.type),
       footerButtons: [
         TextButton(
             onPressed: getHolderDidFromCredential(widget.credential.toJson()) ==
@@ -299,9 +297,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
 
 Card buildCredentialCard(VerifiableCredential credential) {
   List<Widget> content = [
-    Text(
-        credential.type
-            .firstWhere((element) => element != 'VerifiableCredential'),
+    Text(getTypeToShow(credential.type),
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
     const SizedBox(
       height: 10,

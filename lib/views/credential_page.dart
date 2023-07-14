@@ -9,6 +9,7 @@ import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -48,9 +49,7 @@ class CredentialPageState extends State<CredentialPage> {
           ...wallet.contextCredentials.map((e) => DropdownMenuItem(
                 value: e.id,
                 child: Text(
-                  e.credentialSubject['name'] ??
-                      e.type.firstWhere(
-                          (element) => element != 'VerifiableCredential'),
+                  e.credentialSubject['name'] ?? getTypeToShow(e.type),
                   maxLines: 2,
                 ),
               ))
@@ -89,8 +88,7 @@ class CredentialPageState extends State<CredentialPage> {
                     itemCount: credentialList.length,
                     itemBuilder: (context, index) {
                       var cred = credentialList[index];
-                      var type = cred.type.firstWhere(
-                          (element) => element != 'VerifiableCredential');
+                      var type = getTypeToShow(cred.type);
                       var id =
                           cred.id ?? getHolderDidFromCredential(cred.toJson());
                       if (id == '') {
@@ -297,11 +295,12 @@ class CredentialCardState extends State<CredentialCard> {
               )
             : ContextCredentialCard(
                 cardTitle: '',
-                backgroundImage:
-                    widget.credential.credentialSubject['backgroundImage'] != null
-                        ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
-                            .image
-                        : null,
+                backgroundImage: widget
+                            .credential.credentialSubject['backgroundImage'] !=
+                        null
+                    ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
+                        .image
+                    : null,
                 subjectName: widget.credential.credentialSubject['name'],
                 bottomLeftText: const SizedBox(
                   width: 0,
@@ -333,8 +332,7 @@ class CredentialCardState extends State<CredentialCard> {
                             .image
                         : null,
                     subjectName: widget.credential.credentialSubject['stand'] ??
-                        widget.credential.type.firstWhere(
-                            (element) => element != 'VerifiableCredential'),
+                        getTypeToShow(widget.credential.type),
                     bottomLeftText: const SizedBox(
                       width: 0,
                     ),
@@ -347,10 +345,12 @@ class CredentialCardState extends State<CredentialCard> {
                         ? Image.memory(base64Decode(widget.background!.split(',').last))
                             .image
                         : null,
-                    cardTitle: widget.credential.type.firstWhere(
-                        (element) => element != 'VerifiableCredential'),
-                    subjectName: '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-                    bottomLeftText: IssuerInfoText(issuer: widget.credential.issuer, selfIssued: widget.credential.isSelfIssued()),
+                    cardTitle: getTypeToShow(widget.credential.type),
+                    subjectName:
+                        '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
+                    bottomLeftText: IssuerInfoText(
+                        issuer: widget.credential.issuer,
+                        selfIssued: widget.credential.isSelfIssued()),
                     bottomRightText: IssuerInfoIcon(
                       issuer: widget.credential.issuer,
                       selfIssued: widget.credential.isSelfIssued(),

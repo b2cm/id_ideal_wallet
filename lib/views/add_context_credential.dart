@@ -63,6 +63,8 @@ class AddContextCredentialState extends State<AddContextCredential> {
   }
 
   void store() async {
+    Navigator.pop(navigatorKey.currentContext!);
+
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
 
@@ -70,18 +72,16 @@ class AddContextCredentialState extends State<AddContextCredential> {
       var value = checked[key]!;
       if (value) {
         if (key == '2') {
-          issueLNTestNetContext(wallet);
+          await issueLNTestNetContext(wallet);
         } else {
           var infoRequest =
               await get(Uri.parse('$contextEndpoint?contextid=$key'));
           var contextInfo = jsonDecode(infoRequest.body);
           logger.d(contextInfo);
-          issueContext(wallet, contextInfo, key);
+          await issueContext(wallet, contextInfo, key);
         }
       }
     }
-
-    Navigator.pop(navigatorKey.currentContext!);
   }
 
   @override
@@ -119,6 +119,8 @@ class AddContextCredentialState extends State<AddContextCredential> {
 Future<void> issueContext(
     WalletProvider wallet, Map<String, dynamic> content, String id) async {
   var did = await wallet.newCredentialDid();
+
+  logger.d(did);
 
   var contextCred = VerifiableCredential(
       context: [credentialsV1Iri, schemaOrgIri],
@@ -217,6 +219,7 @@ Future<void> issueLNDWContextMittweida(WalletProvider wallet) async {
 
 Future<void> issueLNTestNetContext(WalletProvider wallet) async {
   var did = await wallet.newCredentialDid();
+  logger.d(did);
   var contextCred = VerifiableCredential(
       context: [credentialsV1Iri, schemaOrgIri],
       type: ['VerifiableCredential', 'ContextCredential', 'PaymentContext'],

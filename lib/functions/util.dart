@@ -59,3 +59,10 @@ Future<bool> verifyIssuerCert(x509.X509Certificate issuerCert) async {
   var verify = await x509.verifyCertificateChain(certChain);
   return verify;
 }
+
+String getTypeToShow(List<String> types) {
+  return types.firstWhere(
+      (element) =>
+          element != 'VerifiableCredential' && (!element.contains('Context')),
+      orElse: () => '');
+}

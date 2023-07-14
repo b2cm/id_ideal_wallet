@@ -11,6 +11,7 @@ final propertyNames = {
       AppLocalizations.of(navigatorKey.currentContext!)!.localityName,
   'emailAddress':
       AppLocalizations.of(navigatorKey.currentContext!)!.mailAddress,
+  'email': AppLocalizations.of(navigatorKey.currentContext!)!.mailAddress,
   'mailAddress': AppLocalizations.of(navigatorKey.currentContext!)!.mailAddress,
   'countryName': AppLocalizations.of(navigatorKey.currentContext!)!.countryName,
   'stateOrProvinceName':

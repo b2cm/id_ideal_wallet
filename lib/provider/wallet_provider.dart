@@ -65,10 +65,10 @@ class WalletProvider extends ChangeNotifier {
 
       _buildCredentialList();
 
-      if (contextCredentials.isEmpty) {
-        //await issueLNDWContextMittweida(this);
-        await issueLNDWContextDresden(this);
-      }
+      // if (contextCredentials.isEmpty) {
+      //   //await issueLNDWContextMittweida(this);
+      //   await issueLNDWContextDresden(this);
+      // }
 
       lndwId = _wallet.getConfigEntry('lndwId');
       if (lndwId == null) {
@@ -383,6 +383,8 @@ class WalletProvider extends ChangeNotifier {
       }
     }
 
+    logger.d(contextCredentials.length);
+
     if (sortingType == SortingType.dateDown ||
         sortingType == SortingType.dateUp) {
       credentials.sort(
@@ -399,10 +401,8 @@ class WalletProvider extends ChangeNotifier {
     } else {
       credentials.sort(
         (a, b) {
-          var typeA =
-              a.type.firstWhere((element) => element != 'VerifiableCredential');
-          var typeB =
-              b.type.firstWhere((element) => element != 'VerifiableCredential');
+          var typeA = my_util.getTypeToShow(a.type);
+          var typeB = my_util.getTypeToShow(b.type);
           return typeA.compareTo(typeB);
         },
       );

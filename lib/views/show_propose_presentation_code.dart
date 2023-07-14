@@ -11,6 +11,7 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_path/json_path.dart';
 import 'package:json_schema2/json_schema.dart';
@@ -127,9 +128,7 @@ class QrRenderState extends State<QrRender> {
             'pattern': widget.credential.id ??
                 widget.credential.credentialSubject['id']
           }));
-      var type = widget.credential.type.firstWhere(
-          (element) => element != 'VerifiableCredential',
-          orElse: () => '');
+      var type = getTypeToShow(widget.credential.type);
       var typeField = InputDescriptorField(
           path: [JsonPath(r'$.type')],
           filter: JsonSchema.create({

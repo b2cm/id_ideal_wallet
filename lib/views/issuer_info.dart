@@ -78,8 +78,11 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         setState(() {});
       } else {
         issuerName =
-            AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
       }
+    } else {
+      issuerName =
+          AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
     }
   }
 

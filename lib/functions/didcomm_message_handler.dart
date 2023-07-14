@@ -13,6 +13,7 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -288,8 +289,7 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         for (var p in message.verifiablePresentation) {
           if (p.verifiableCredential != null) {
             for (var c in p.verifiableCredential!) {
-              type +=
-                  '''${c.type.firstWhere((element) => element != 'VerifiableCredential', orElse: () => '')}, \n''';
+              type += '''${getTypeToShow(c.type)}, \n''';
             }
           }
         }
