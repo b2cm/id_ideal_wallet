@@ -27,6 +27,7 @@ Future<void> handleOfferOidc(String offerUri) async {
 
   if (res) {
     print(offer.credentialIssuer);
+    logger.d(offer.credentials);
     var issuerMetaReq = await get(
         Uri.parse(
             '${offer.credentialIssuer}/.well-known/openid-credential-issuer'),
@@ -44,7 +45,6 @@ Future<void> handleOfferOidc(String offerUri) async {
     logger.d(issuerMetaReq.body);
 
     var metaData = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
-    logger.d(metaData.credentialsSupported.first.format);
 
     var authMetaReq = await get(
         Uri.parse(

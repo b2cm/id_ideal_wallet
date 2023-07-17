@@ -135,30 +135,41 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
       } else if (value is List) {
       } else {
         var subtitle = '${before != null ? '$before.' : ''}$key';
+        var title = (value is String && value.startsWith('data:'))
+            ? InkWell(
+                child: Text(
+                    AppLocalizations.of(navigatorKey.currentContext!)!.show),
+                onTap: () {
+                  if (value.contains('image')) {
+                    Navigator.of(navigatorKey.currentContext!).push(
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                Base64ImagePreview(imageDataUri: value)));
+                  } else if (value.contains('application/pdf')) {
+                    Navigator.of(navigatorKey.currentContext!).push(
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                Base64PdfPreview(pdfDataUri: value)));
+                  }
+                },
+              )
+            : Text(value
+                .replaceAll('ae', 'ä')
+                .replaceAll('ue', 'ü')
+                .replaceAll('oe', 'ö'));
+
         children.add(ListTile(
-          subtitle: Text(propertyNames[subtitle] ?? subtitle),
-          title: (value is String && value.startsWith('data:'))
-              ? InkWell(
-                  child: Text(
-                      AppLocalizations.of(navigatorKey.currentContext!)!.show),
-                  onTap: () {
-                    if (value.contains('image')) {
-                      Navigator.of(navigatorKey.currentContext!).push(
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  Base64ImagePreview(imageDataUri: value)));
-                    } else if (value.contains('application/pdf')) {
-                      Navigator.of(navigatorKey.currentContext!).push(
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  Base64PdfPreview(pdfDataUri: value)));
-                    }
-                  },
-                )
-              : Text(value
-                  .replaceAll('ae', 'ä')
-                  .replaceAll('ue', 'ü')
-                  .replaceAll('oe', 'ö')),
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+          leading: Container(
+            constraints: const BoxConstraints(minWidth: 100, maxWidth: 100),
+            child: Text(
+              propertyNames[subtitle] ?? subtitle,
+            ),
+          ),
+          minLeadingWidth: 100,
+          titleAlignment: ListTileTitleAlignment.center,
+          leadingAndTrailingTextStyle: const TextStyle(color: Colors.black38),
+          title: title,
         ));
       }
     }

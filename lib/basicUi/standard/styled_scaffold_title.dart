@@ -32,10 +32,11 @@ class StyledScaffoldTitle extends StatelessWidget {
             ? Text(title, style: const TextStyle(color: Colors.black))
             : title,
         actions: appBarActions,
+        elevation: 0,
       ),
       // padding with red background
       body: Container(
-          margin: const EdgeInsets.only(left: 10, right: 10, top: 10),
+          margin: const EdgeInsets.only(left: 10, right: 10, top: 0),
           child: child),
       // padding only left and right
       persistentFooterButtons: footerButtons,

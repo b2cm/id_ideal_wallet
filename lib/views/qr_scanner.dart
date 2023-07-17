@@ -38,8 +38,8 @@ class QrScanner extends StatelessWidget {
                   payInvoiceInteraction(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('openid-credential-offer')) {
-                  handleOfferOidc(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
+                  handleOfferOidc(code);
                 } else if (code.startsWith('openid-presentation-request')) {
                   handlePresentationRequestOidc(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);

@@ -30,7 +30,7 @@
   "unknown": "unknown",
   "issuanceDate": "issuance date",
   "expirationDate": "expiration date",
-  "history": "History",
+  "history": "Activity",
   "issued": "issued",
   "presented": "presented",
   "presentedError": "presentation failed",
@@ -115,5 +115,6 @@
   "organizationName": "organization",
   "commonName": "common name",
   "loadIssuerData": "Load information",
-  "errorOpen": "The wallet cannot be opened.\nIs a security mechanism (pin, password, pattern, fingerprint,...) stored on your device?\nIf not, secure your device via your device settings."
+  "errorOpen": "The wallet cannot be opened.\nIs a security mechanism (pin, password, pattern, fingerprint,...) stored on your device?\nIf not, secure your device via your device settings.",
+  "credential": "Credential"
 }
