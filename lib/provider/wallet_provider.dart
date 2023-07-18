@@ -493,8 +493,7 @@ class WalletProvider extends ChangeNotifier {
             await _wallet.storeConfigEntry('${id}_context', vcs.id!);
           }
         } else if (vcs.credentialSubject.containsKey('contexttype')) {
-          if (vcParsed.type
-              .contains(vcs.credentialSubject.containsKey('contexttype'))) {
+          if (vcParsed.type.contains(vcs.credentialSubject['contexttype'])) {
             var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
             var id = vcParsed.id ?? getHolderDidFromCredential(vc);
             if (id == '') {

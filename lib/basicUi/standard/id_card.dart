@@ -1,9 +1,13 @@
 import 'dart:convert';
 
 import 'package:barcode_widget/barcode_widget.dart';
+import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/issuer_info.dart';
 
 import 'currency_display.dart';
 
@@ -21,6 +25,90 @@ class IdCard extends StatelessWidget {
       this.backgroundImage,
       this.issuerIcon,
       this.borderColor = const Color.fromARGB(255, 122, 122, 122)});
+
+  factory IdCard.fromCredential(
+      {required VerifiableCredential credential,
+      WalletProvider? wallet,
+      String? background}) {
+    if (credential.type.contains('ContextCredential')) {
+      if (credential.type.contains('PaymentContext')) {
+        return PaymentCard(
+          receiveOnTap: () {},
+          sendOnTap: () {},
+          balance: wallet?.balance[credential.id]?.toStringAsFixed(2) ?? '0.0',
+          cardTitle: credential.credentialSubject['name'],
+          subjectName: '',
+          bottomLeftText: const SizedBox(
+            width: 0,
+          ),
+          bottomRightText: const SizedBox(
+            width: 0,
+          ),
+        );
+      } else {
+        return ContextCredentialCard(
+            cardTitle: '',
+            backgroundImage:
+                credential.credentialSubject['backgroundImage'] != null
+                    ? Image.memory(base64Decode(credential
+                            .credentialSubject['backgroundImage']
+                            .split(',')
+                            .last))
+                        .image
+                    : null,
+            subjectName: credential.credentialSubject['name'],
+            bottomLeftText: const SizedBox(
+              width: 0,
+            ),
+            bottomRightText: const SizedBox(
+              width: 0,
+            ));
+      }
+    } else if (credential.type.contains('MemberCard')) {
+      return MemberCard(
+          barcodeType: credential.credentialSubject['barcodeType'],
+          memberNumber: credential.credentialSubject['number'],
+          cardTitle: credential.credentialSubject['name'],
+          subjectName: '',
+          bottomLeftText: IssuerInfoText(
+              issuer: credential.issuer, selfIssued: credential.isSelfIssued()),
+          bottomRightText: IssuerInfoIcon(
+            issuer: credential.issuer,
+            selfIssued: credential.isSelfIssued(),
+          ));
+    } else if (credential.type.contains('ChallengeSolvedCredential') ||
+        credential.type.contains('Losticket') ||
+        credential.type.contains('JuniorDiplom')) {
+      return LNDWCard(
+          cardTitle: credential.credentialSubject['icon'] ?? '',
+          backgroundImage: background != null
+              ? Image.memory(base64Decode(background.split(',').last)).image
+              : null,
+          subjectName: credential.credentialSubject['stand'] ??
+              getTypeToShow(credential.type),
+          bottomLeftText: const SizedBox(
+            width: 0,
+          ),
+          bottomRightText: const SizedBox(
+            width: 0,
+          ));
+    } else {
+      return IdCard(
+          //subjectImage: image?.image,
+          backgroundImage: background != null
+              ? Image.memory(base64Decode(background.split(',').last)).image
+              : null,
+          cardTitle: getTypeToShow(credential.type),
+          subjectName:
+              '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+          bottomLeftText: IssuerInfoText(
+              issuer: credential.issuer, selfIssued: credential.isSelfIssued()),
+          bottomRightText: IssuerInfoIcon(
+            issuer: credential.issuer,
+            selfIssued: credential.isSelfIssued(),
+          ));
+    }
+  }
 
   final Color cardColor;
   final String cardTitle;

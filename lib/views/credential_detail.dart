@@ -96,10 +96,15 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 wallet.deleteCredential(credId);
                 Navigator.of(context).pop();
                 //Navigator.of(context).pop();
-                Navigator.of(context).pushReplacement(MaterialPageRoute(
-                    builder: (context) => const CredentialPage(
-                          initialSelection: 'all',
-                        )));
+                if (widget.credential.type.contains('ContextCredential')) {
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                } else {
+                  Navigator.of(context).pop();
+                  // Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  //     builder: (context) => const CredentialPage(
+                  //           initialSelection: 'all',
+                  //         )));
+                }
               },
               child: Text(AppLocalizations.of(context)!.delete))
         ],
@@ -310,7 +315,10 @@ class CredentialDetailState extends State<CredentialDetailView> {
     return SingleChildScrollView(
         child: Column(
       children: [
-        CredentialCard(credential: widget.credential),
+        CredentialCard(
+          credential: widget.credential,
+          clickable: false,
+        ),
         const SizedBox(
           height: 10,
         ),

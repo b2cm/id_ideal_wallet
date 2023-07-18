@@ -12,7 +12,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
-import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -232,8 +231,13 @@ class IsPicture implements Fun1<bool, Maybe> {
 class CredentialCard extends StatefulWidget {
   final VerifiableCredential credential;
   final String? background;
+  final bool clickable;
 
-  const CredentialCard({Key? key, required this.credential, this.background})
+  const CredentialCard(
+      {Key? key,
+      required this.credential,
+      this.background,
+      this.clickable = true})
       : super(key: key);
 
   @override
@@ -286,88 +290,6 @@ class CredentialCardState extends State<CredentialCard> {
     }
   }
 
-  Widget buildCard(WalletProvider wallet) {
-    return widget.credential.type.contains('ContextCredential')
-        ? widget.credential.type.contains('PaymentContext')
-            ? PaymentCard(
-                receiveOnTap: () {},
-                sendOnTap: () {},
-                balance:
-                    wallet.balance[widget.credential.id]?.toStringAsFixed(2) ??
-                        '0.0',
-                cardTitle: widget.credential.credentialSubject['name'],
-                subjectName: '',
-                bottomLeftText: const SizedBox(
-                  width: 0,
-                ),
-                bottomRightText: const SizedBox(
-                  width: 0,
-                ),
-              )
-            : ContextCredentialCard(
-                cardTitle: '',
-                backgroundImage: widget
-                            .credential.credentialSubject['backgroundImage'] !=
-                        null
-                    ? Image.memory(base64Decode(widget.credential.credentialSubject['backgroundImage'].split(',').last))
-                        .image
-                    : null,
-                subjectName: widget.credential.credentialSubject['name'],
-                bottomLeftText: const SizedBox(
-                  width: 0,
-                ),
-                bottomRightText: const SizedBox(
-                  width: 0,
-                ))
-        : widget.credential.type.contains('MemberCard')
-            ? MemberCard(
-                barcodeType: widget.credential.credentialSubject['barcodeType'],
-                memberNumber: widget.credential.credentialSubject['number'],
-                cardTitle: widget.credential.credentialSubject['name'],
-                subjectName: '',
-                bottomLeftText: IssuerInfoText(
-                    issuer: widget.credential.issuer,
-                    selfIssued: widget.credential.isSelfIssued()),
-                bottomRightText: IssuerInfoIcon(
-                  issuer: widget.credential.issuer,
-                  selfIssued: widget.credential.isSelfIssued(),
-                ))
-            : widget.credential.type.contains('ChallengeSolvedCredential') ||
-                    widget.credential.type.contains('Losticket') ||
-                    widget.credential.type.contains('JuniorDiplom')
-                ? LNDWCard(
-                    cardTitle:
-                        widget.credential.credentialSubject['icon'] ?? '',
-                    backgroundImage: widget.background != null
-                        ? Image.memory(base64Decode(widget.background!.split(',').last))
-                            .image
-                        : null,
-                    subjectName: widget.credential.credentialSubject['stand'] ??
-                        getTypeToShow(widget.credential.type),
-                    bottomLeftText: const SizedBox(
-                      width: 0,
-                    ),
-                    bottomRightText: const SizedBox(
-                      width: 0,
-                    ))
-                : IdCard(
-                    subjectImage: image?.image,
-                    backgroundImage: widget.background != null
-                        ? Image.memory(base64Decode(widget.background!.split(',').last))
-                            .image
-                        : null,
-                    cardTitle: getTypeToShow(widget.credential.type),
-                    subjectName:
-                        '${widget.credential.credentialSubject['givenName'] ?? widget.credential.credentialSubject['name'] ?? ''} ${widget.credential.credentialSubject['familyName'] ?? ''}',
-                    bottomLeftText: IssuerInfoText(
-                        issuer: widget.credential.issuer,
-                        selfIssued: widget.credential.isSelfIssued()),
-                    bottomRightText: IssuerInfoIcon(
-                      issuer: widget.credential.issuer,
-                      selfIssued: widget.credential.isSelfIssued(),
-                    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -376,13 +298,15 @@ class CredentialCardState extends State<CredentialCard> {
                 builder: (context) =>
                     CredentialDetailView(credential: widget.credential)))
             : null,
-        onTap: () => widget.credential.type.contains('ContextCredential')
-            ? Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    CredentialPage(initialSelection: widget.credential.id!)))
-            : Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    CredentialDetailView(credential: widget.credential))),
+        onTap: () => widget.clickable
+            ? widget.credential.type.contains('ContextCredential')
+                ? Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => CredentialPage(
+                        initialSelection: widget.credential.id!)))
+                : Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        CredentialDetailView(credential: widget.credential)))
+            : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           var id = widget.credential.id ??
               getHolderDidFromCredential(widget.credential.toJson());
@@ -393,10 +317,18 @@ class CredentialCardState extends State<CredentialCard> {
             return Container(
               foregroundDecoration: const BoxDecoration(
                   color: Color.fromARGB(125, 255, 255, 255)),
-              child: buildCard(wallet),
+              child: IdCard.fromCredential(
+                credential: widget.credential,
+                wallet: wallet,
+                background: widget.background,
+              ),
             );
           } else {
-            return buildCard(wallet);
+            return IdCard.fromCredential(
+              credential: widget.credential,
+              wallet: wallet,
+              background: widget.background,
+            );
           }
         }));
   }

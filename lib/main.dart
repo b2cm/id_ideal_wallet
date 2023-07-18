@@ -155,13 +155,13 @@ class MainPage extends StatelessWidget {
                 }
               },
               itemBuilder: (context, indexOut) {
-                var count = indexOut == wallet.contextCredentials.length
-                    ? -1
-                    : wallet
-                            .getCredentialsForContext(
-                                wallet.contextCredentials[indexOut].id!)
-                            .length +
-                        1;
+                // var count = indexOut == wallet.contextCredentials.length
+                //     ? -1
+                //     : wallet
+                //             .getCredentialsForContext(
+                //                 wallet.contextCredentials[indexOut].id!)
+                //             .length +
+                //         1;
 
                 var buttons = <Widget>[];
                 if (indexOut != wallet.contextCredentials.length) {
@@ -291,53 +291,53 @@ class MainPage extends StatelessWidget {
                                 color: Colors.grey,
                                 size: 90,
                               ))
-                          : count == 1
-                              ? Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: CredentialCard(
-                                      background: overallBackground,
-                                      credential:
-                                          wallet.contextCredentials[indexOut]))
-                              : Swiper(
-                                  loop: true,
-                                  allowImplicitScrolling: false,
-                                  itemCount: count,
-                                  scrollDirection: Axis.vertical,
-                                  axisDirection: AxisDirection.left,
-                                  curve: Curves.fastOutSlowIn,
-                                  viewportFraction: 0.8,
-                                  scale: 0.95,
-                                  itemBuilder: (context, index) =>
-                                      CredentialCard(
-                                          background: overallBackground,
-                                          credential: index == 0
-                                              ? wallet
-                                                  .contextCredentials[indexOut]
-                                              : wallet.credentials[index - 1]),
-                                  layout: SwiperLayout.TINDER,
-                                  customLayoutOption: CustomLayoutOption(
-                                      startIndex: -1, stateCount: 5)
-                                    ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-                                    ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-                                    ..addScale(
-                                        [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
-                                        Alignment.bottomLeft)
-                                    ..addTranslate([
-                                      const Offset(-5, -5),
-                                      const Offset(0, 0),
-                                      const Offset(5, 5),
-                                      const Offset(20, 50),
-                                      const Offset(30, 100),
-                                      const Offset(40, 50),
-                                    ]),
-                                  containerHeight:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  itemHeight:
-                                      MediaQuery.of(context).size.width * 0.54,
-                                  itemWidth:
-                                      MediaQuery.of(context).size.width * 0.95,
-                                )),
+                          : //count == 1
+                          //?
+                          Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: CredentialCard(
+                                  background: overallBackground,
+                                  credential:
+                                      wallet.contextCredentials[indexOut]))),
+                  // : Swiper(
+                  //     loop: true,
+                  //     allowImplicitScrolling: false,
+                  //     itemCount: count,
+                  //     scrollDirection: Axis.vertical,
+                  //     axisDirection: AxisDirection.left,
+                  //     curve: Curves.fastOutSlowIn,
+                  //     viewportFraction: 0.8,
+                  //     scale: 0.95,
+                  //     itemBuilder: (context, index) =>
+                  //         CredentialCard(
+                  //             background: overallBackground,
+                  //             credential: index == 0
+                  //                 ? wallet
+                  //                     .contextCredentials[indexOut]
+                  //                 : wallet.credentials[index - 1]),
+                  //     layout: SwiperLayout.TINDER,
+                  //     customLayoutOption: CustomLayoutOption(
+                  //         startIndex: -1, stateCount: 5)
+                  //       ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                  //       ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+                  //       ..addScale(
+                  //           [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
+                  //           Alignment.bottomLeft)
+                  //       ..addTranslate([
+                  //         const Offset(-5, -5),
+                  //         const Offset(0, 0),
+                  //         const Offset(5, 5),
+                  //         const Offset(20, 50),
+                  //         const Offset(30, 100),
+                  //         const Offset(40, 50),
+                  //       ]),
+                  //     containerHeight:
+                  //         MediaQuery.of(context).size.width * 0.6,
+                  //     itemHeight:
+                  //         MediaQuery.of(context).size.width * 0.54,
+                  //     itemWidth:
+                  //         MediaQuery.of(context).size.width * 0.95,
+                  //   )),
                   ...buttons
                 ]);
               },
