@@ -26,9 +26,10 @@ class PaymentOverview extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return InkWell(
                     child: TransactionPreview(
+                        wide: true,
                         title: allPayments[index].otherParty,
                         amount: CurrencyDisplay(
-                            amount: allPayments[index].action, symbol: '€')),
+                            amount: allPayments[index].action, symbol: 'sat')),
                     onTap: () {
                       if (allPayments[index].shownAttributes.isNotEmpty) {
                         var cred = wallet.getCredential(

@@ -7,18 +7,21 @@ class TransactionPreview extends StatelessWidget {
       {super.key,
       required this.title,
       required this.amount,
-      this.hasReceipt = false});
+      this.hasReceipt = false,
+      this.wide = false});
 
   final String title;
   final CurrencyDisplay amount;
   final bool hasReceipt;
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment:
+            wide ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
         children: [
           // title
 

@@ -198,10 +198,10 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: dfa925c08be9aac7b284dd17e4897ba7d48522a3
+      resolved-ref: d980ab40d6dc984f4a5e268e15e293efbe896fe1
       url: "https://github.com/b2cm/dart_ssi"
     source: git
-    version: "3.0.0"
+    version: "3.0.1"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -466,10 +466,10 @@ packages:
     dependency: "direct main"
     description:
       name: json_path
-      sha256: "28e1e2e7204c0645d73285a1b1765273e3fc5826122a47b0fd61221ceb385e02"
+      sha256: "59d92c9bb660ec98bec51286248009123f8aae2f025b189b13d7ea04a87a4f27"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.6.1"
   json_rpc_2:
     dependency: transitive
     description:
@@ -478,8 +478,16 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  json_schema2:
+  json_schema:
     dependency: "direct main"
+    description:
+      name: json_schema
+      sha256: "0fa8e7bacc5b690eeaa03d98ac38d676deb95ed645880b7504fcf34be8bdd17b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.2"
+  json_schema2:
+    dependency: transitive
     description:
       name: json_schema2
       sha256: d5434c96573089e58986f7e32348ecb7e44b7a72b16fe5fce334abe15bab7a70

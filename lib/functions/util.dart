@@ -63,6 +63,7 @@ Future<bool> verifyIssuerCert(x509.X509Certificate issuerCert) async {
 String getTypeToShow(List<String> types) {
   return types.firstWhere(
       (element) =>
-          element != 'VerifiableCredential' && (!element.contains('Context')),
+          element != 'VerifiableCredential' &&
+          (!element.contains('HidyContext')),
       orElse: () => '');
 }

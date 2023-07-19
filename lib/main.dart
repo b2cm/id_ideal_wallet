@@ -97,53 +97,29 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
-  // void onTopUpSats(SatoshiAmount amount, String memo) async {
-  //   var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-  //       listen: false);
-  //   var invoiceMap = await createInvoice(wallet.lnInKey!, amount, memo: memo);
-  //   var index = invoiceMap['checking_id'];
-  //   wallet.newPayment(index, memo, amount);
-  //   showModalBottomSheet<dynamic>(
-  //       isScrollControlled: true,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(10.0),
-  //       ),
-  //       context: navigatorKey.currentContext!,
-  //       builder: (context) {
-  //         return Consumer<WalletProvider>(builder: (context, wallet, child) {
-  //           if (wallet.paymentTimer != null) {
-  //             return InvoiceDisplay(
-  //               invoice: invoiceMap['payment_request'] ?? '',
-  //               amount: CurrencyDisplay(
-  //                   amount: amount.toEuro().toStringAsFixed(2),
-  //                   symbol: '€',
-  //                   mainFontSize: 35,
-  //                   centered: true),
-  //               memo: memo,
-  //             );
-  //           } else {
-  //             Future.delayed(
-  //                 const Duration(seconds: 1),
-  //                 () => Navigator.of(context).pushAndRemoveUntil(
-  //                     MaterialPageRoute(builder: (context) => const MainPage()),
-  //                     (route) => false));
-  //             return const SizedBox(
-  //               height: 10,
-  //             );
-  //           }
-  //         });
-  //       });
-  // }
-
-  void onTopUpFiat(int amount) {}
-
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
       if (wallet.isOpen()) {
         return Scaffold(
           body: SafeArea(
-            child: Swiper(
+              child: Stack(children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.only(left: 10, right: 10, bottom: 5),
+                  child: Image(
+                    image: const AssetImage('assets/images/stempel.png'),
+                    width: MediaQuery.of(context).size.width,
+                    fit: BoxFit.fill,
+                  ),
+                )
+              ],
+            ),
+            Swiper(
               loop: false,
               viewportFraction: 0.87,
               scale: 0.875,
@@ -213,6 +189,7 @@ class MainPage extends StatelessWidget {
                           itemBuilder: (context, index) {
                             return InkWell(
                               child: TransactionPreview(
+                                  wide: true,
                                   title: wallet
                                       .lastPayments[contextCred.id!]![index]
                                       .otherParty,
@@ -220,7 +197,7 @@ class MainPage extends StatelessWidget {
                                       amount: wallet
                                           .lastPayments[contextCred.id!]![index]
                                           .action,
-                                      symbol: '€')),
+                                      symbol: 'sat')),
                               onTap: () {
                                 if (wallet.lastPayments[contextCred.id!]![index]
                                     .shownAttributes.isNotEmpty) {
@@ -279,26 +256,33 @@ class MainPage extends StatelessWidget {
                             .credentialSubject['backgroundImage']
                         : null;
 
-                return Column(children: [
-                  ConstrainedBox(
-                      constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.3),
-                      child: indexOut == wallet.contextCredentials.length
-                          ? const Padding(
+                return SingleChildScrollView(
+                    child: Column(children: [
+                  // ConstrainedBox(
+                  // constraints: BoxConstraints(
+                  //     maxHeight: MediaQuery.of(context).size.height * 0.3),
+                  // child:
+                  indexOut == wallet.contextCredentials.length
+                      ? ConstrainedBox(
+                          constraints: BoxConstraints(
+                              maxHeight:
+                                  MediaQuery.of(context).size.height * 0.3),
+                          child: const Padding(
                               padding: EdgeInsets.symmetric(vertical: 140),
                               child: Icon(
                                 Icons.add,
                                 color: Colors.grey,
                                 size: 90,
-                              ))
-                          : //count == 1
-                          //?
-                          Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: CredentialCard(
-                                  background: overallBackground,
-                                  credential:
-                                      wallet.contextCredentials[indexOut]))),
+                              )))
+                      : //count == 1
+                      //?
+                      Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: ContextCard(
+                              background: overallBackground,
+                              context: wallet.contextCredentials[indexOut])
+                          //)
+                          ),
                   // : Swiper(
                   //     loop: true,
                   //     allowImplicitScrolling: false,
@@ -339,10 +323,10 @@ class MainPage extends StatelessWidget {
                   //         MediaQuery.of(context).size.width * 0.95,
                   //   )),
                   ...buttons
-                ]);
+                ]));
               },
             ),
-          ),
+          ])),
           bottomNavigationBar: BottomNavigationBar(
             selectedItemColor: Colors.black,
             unselectedItemColor: Colors.black,

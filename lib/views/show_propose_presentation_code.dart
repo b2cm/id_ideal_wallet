@@ -14,7 +14,7 @@ import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_path/json_path.dart';
-import 'package:json_schema2/json_schema.dart';
+import 'package:json_schema/json_schema.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';

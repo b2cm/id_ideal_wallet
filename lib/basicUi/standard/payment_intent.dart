@@ -57,6 +57,7 @@ class PaymentIntent extends StatelessWidget {
             backgroundColor: Colors.white,
             toggleColor: const Color.fromARGB(255, 35, 216, 108),
             action: (controller) {
+              Navigator.of(context).pop();
               onPaymentAccepted();
             },
             child: Text(AppLocalizations.of(context)!.pay),

@@ -7,6 +7,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
 
 import 'currency_display.dart';
@@ -24,7 +25,8 @@ class IdCard extends StatelessWidget {
       this.subjectImage,
       this.backgroundImage,
       this.issuerIcon,
-      this.borderColor = const Color.fromARGB(255, 122, 122, 122)});
+      this.borderColor = const Color.fromARGB(255, 122, 122, 122),
+      this.noAspectRatio = false});
 
   factory IdCard.fromCredential(
       {required VerifiableCredential credential,
@@ -121,6 +123,7 @@ class IdCard extends StatelessWidget {
   final ImageProvider? issuerIcon;
   final Color backgroundColor;
   final Color borderColor;
+  final bool noAspectRatio;
 
   Widget buildHeader() {
     return Container(
@@ -225,67 +228,180 @@ class IdCard extends StatelessWidget {
     );
   }
 
+  Widget _buildContent() {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 2),
+        image: backgroundImage != null
+            ? DecorationImage(
+                image: backgroundImage!,
+                fit: BoxFit.cover,
+                //opacity: 0.7,
+              )
+            : null,
+      ),
+      child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            buildHeader(),
+            buildCenterOverlay(),
+            buildFooter(),
+          ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-        aspectRatio: 335 / 195,
-        child: Container(
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 2),
-            image: backgroundImage != null
-                ? DecorationImage(
-                    image: backgroundImage!,
-                    fit: BoxFit.cover,
-                    //opacity: 0.7,
-                  )
-                : null,
-          ),
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                buildHeader(),
-                buildCenterOverlay(),
-                buildFooter(),
-              ]),
-        ));
+    return noAspectRatio
+        ? _buildContent()
+        : AspectRatio(aspectRatio: 335 / 195, child: _buildContent());
   }
 }
 
 class ContextCredentialCard extends IdCard {
+  final void Function()? onReturnTap;
+
   const ContextCredentialCard(
       {super.key,
       required super.cardTitle,
       required super.subjectName,
       required super.bottomLeftText,
       required super.bottomRightText,
-      super.backgroundImage});
+      super.backgroundImage,
+      this.onReturnTap});
 
   @override
   Widget buildCenterOverlay() {
-    return Center(
-        child: Text(subjectName,
-            overflow: TextOverflow.clip,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            )));
+    return backgroundImage == null
+        ? Center(
+            child: Text(subjectName,
+                overflow: TextOverflow.clip,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                )))
+        : const SizedBox(
+            height: 0,
+          );
   }
 
   @override
   Widget buildFooter() {
     return const SizedBox(
-      height: 0,
+      height: 30,
     );
   }
 
   @override
   Widget buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10, top: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          SizedBox(
+            height: 45,
+            width: 45,
+            child: InkWell(
+              onTap: onReturnTap,
+              child: const Icon(
+                Icons.change_circle_outlined,
+                color: Colors.white,
+                size: 35,
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class ContextCredentialCardBack extends IdCard {
+  final void Function()? onReturnTap;
+  final void Function()? deleteOnTap;
+  final VerifiableCredential credential;
+
+  const ContextCredentialCardBack(
+      {super.key,
+      required super.cardTitle,
+      required super.subjectName,
+      required super.bottomLeftText,
+      required super.bottomRightText,
+      super.backgroundImage,
+      this.onReturnTap,
+      this.deleteOnTap,
+      required this.credential,
+      super.noAspectRatio = true});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Padding(
+        padding: const EdgeInsets.only(top: 9, right: 5, left: 5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CredentialInfo(credential: credential),
+            const SizedBox(height: 10),
+            HistoryEntries(credential: credential)
+          ],
+        ));
+  }
+
+  @override
+  Widget buildFooter() {
     return const SizedBox(
-      height: 0,
+      height: 10,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10, top: 5, left: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SizedBox(
+            height: 45,
+            width: 45,
+            child: InkWell(
+              onTap: deleteOnTap,
+              child: const Icon(
+                Icons.delete_outline_sharp,
+                size: 35,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              maxLines: 3,
+              subjectName,
+              overflow: TextOverflow.clip,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 45,
+            width: 45,
+            child: InkWell(
+              onTap: onReturnTap,
+              child: const Icon(
+                Icons.change_circle_outlined,
+                size: 35,
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
@@ -390,6 +506,7 @@ class MemberCard extends IdCard {
 class PaymentCard extends IdCard {
   final String balance;
   final void Function() sendOnTap, receiveOnTap;
+  final void Function()? onReturnTap;
 
   const PaymentCard(
       {super.key,
@@ -399,15 +516,55 @@ class PaymentCard extends IdCard {
       required super.cardTitle,
       required super.subjectName,
       required super.bottomLeftText,
-      required super.bottomRightText});
+      required super.bottomRightText,
+      this.onReturnTap});
 
   @override
   Widget buildCenterOverlay() {
     return CurrencyDisplay(
       amount: balance,
-      symbol: '€',
+      symbol: 'sat',
       centered: true,
       mainFontSize: 30,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return Container(
+      height: 45,
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+        ),
+      ),
+      child: Row(children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: Text(
+            cardTitle,
+            style: TextStyle(
+              color: cardTitleColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Spacer(),
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: InkWell(
+            onTap: onReturnTap,
+            child: const Icon(
+              Icons.change_circle_outlined,
+              color: Colors.white,
+              size: 35,
+            ),
+          ),
+        )
+      ]),
     );
   }
 

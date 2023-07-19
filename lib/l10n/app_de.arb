@@ -116,5 +116,6 @@
   "commonName": "Allgemeiner Name",
   "loadIssuerData": "Lade Informationen",
   "errorOpen": "Das Wallet kann nicht geöffnet werden.\nIst auf Ihrem Gerät ein Sicherheitsmechanismus (Pin, Passwort, Muster, Fingerabdruck,...) hinterlegt?\nWenn nicht, sichern Sie Ihr Gerät über Ihre Geräteeinstellungen.",
-  "credential": "Nachweis"
+  "credential": "Nachweis",
+  "add": "Hinzugefügt"
 }

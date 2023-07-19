@@ -113,7 +113,7 @@ class WalletProvider extends ChangeNotifier {
   }
 
   String? getLnAdminKey(String paymentId) {
-    return _wallet.getConfigEntry('lnInKey$paymentId');
+    return _wallet.getConfigEntry('lnAdminKey$paymentId');
   }
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
@@ -222,7 +222,7 @@ class WalletProvider extends ChangeNotifier {
 
   void getLnBalance(String paymentId) async {
     var a = await getBalance(getLnInKey(paymentId)!);
-    balance[paymentId] = a.toEuro();
+    balance[paymentId] = a.toSat();
     notifyListeners();
   }
 
@@ -284,7 +284,7 @@ class WalletProvider extends ChangeNotifier {
       logger.d(paymentHash);
       if (paid) {
         timer.cancel();
-        storePayment(paymentId, '+${amount.toEuro().toStringAsFixed(2)}',
+        storePayment(paymentId, '+${amount.toSat()}',
             memo == '' ? 'Lightning Invoice' : memo);
         paymentTimer = null;
         showModalBottomSheet(
@@ -298,8 +298,8 @@ class WalletProvider extends ChangeNotifier {
                   headline: "Zahlung eingegangen",
                   success: true,
                   amount: CurrencyDisplay(
-                      amount: "+${amount.toEuro().toStringAsFixed(2)}",
-                      symbol: '€',
+                      amount: "+${amount.toSat()}",
+                      symbol: 'sat',
                       mainFontSize: 35,
                       centered: true),
                 ),
@@ -491,6 +491,8 @@ class WalletProvider extends ChangeNotifier {
             logger.d(old);
             await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
             await _wallet.storeConfigEntry('${id}_context', vcs.id!);
+            storeExchangeHistoryEntry(vcs.id!, DateTime.now(), 'add',
+                my_util.getTypeToShow(vcParsed.type));
           }
         } else if (vcs.credentialSubject.containsKey('contexttype')) {
           if (vcParsed.type.contains(vcs.credentialSubject['contexttype'])) {
@@ -503,6 +505,8 @@ class WalletProvider extends ChangeNotifier {
             logger.d(old);
             await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
             await _wallet.storeConfigEntry('${id}_context', vcs.id!);
+            storeExchangeHistoryEntry(vcs.id!, DateTime.now(), 'add',
+                my_util.getTypeToShow(vcParsed.type));
           }
         }
       }
@@ -515,7 +519,9 @@ class WalletProvider extends ChangeNotifier {
     var contextId = _wallet.getConfigEntry('${credentialId}_context');
     if (contextId != null) {
       var contextCred = getCredential(contextId);
-      return VerifiableCredential.fromJson(contextCred!.w3cCredential);
+      if (contextCred != null) {
+        return VerifiableCredential.fromJson(contextCred.w3cCredential);
+      }
     }
     return null;
   }

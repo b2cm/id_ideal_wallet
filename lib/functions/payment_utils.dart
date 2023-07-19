@@ -148,6 +148,9 @@ void payInvoiceInteraction(String invoice) async {
   var decoded = await decodeInvoice(lnInKey, invoice);
   SatoshiAmount toPay = decoded.amount;
   logger.d(toPay.toMSat());
+  logger.d(lnAdminKey);
+  logger.d(lnInKey);
+  logger.d(invoice);
   var description = decoded.description;
 
   Future.delayed(const Duration(seconds: 0), () {
@@ -160,8 +163,8 @@ void payInvoiceInteraction(String invoice) async {
           return ModalDismissWrapper(
             child: PaymentIntent(
               amount: CurrencyDisplay(
-                  amount: toPay.toEuro().toString(),
-                  symbol: '€',
+                  amount: toPay.toSat().toString(),
+                  symbol: 'sat',
                   mainFontSize: 35,
                   centered: true),
               memo: description,
@@ -176,6 +179,7 @@ void payInvoiceInteraction(String invoice) async {
                 }
 
                 bool success = false;
+                logger.d(paid);
                 if (paid) {
                   while (!success) {
                     int x = await Future.delayed(const Duration(seconds: 1),
@@ -187,15 +191,18 @@ void payInvoiceInteraction(String invoice) async {
                         return -1;
                       }
                     });
+                    logger.d(x);
                     if (x == -1) {
                       success = false;
-                      break;
+                      // break;
+                    } else {
+                      success = true;
                     }
                   }
                 }
 
                 if (success) {
-                  wallet.storePayment('paymentId', '-${toPay.toEuro()}',
+                  wallet.storePayment(paymentId, '-${toPay.toSat()}',
                       description == '' ? 'Lightning Invoice' : description);
                 }
 
@@ -212,8 +219,8 @@ void payInvoiceInteraction(String invoice) async {
                               : AppLocalizations.of(context)!.paymentFailed,
                           success: success,
                           amount: CurrencyDisplay(
-                              amount: toPay.toEuro().toString(),
-                              symbol: '€',
+                              amount: toPay.toSat().toString(),
+                              symbol: 'sat',
                               mainFontSize: 35,
                               centered: true),
                         ),

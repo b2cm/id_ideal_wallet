@@ -116,5 +116,6 @@
   "commonName": "common name",
   "loadIssuerData": "Load information",
   "errorOpen": "The wallet cannot be opened.\nIs a security mechanism (pin, password, pattern, fingerprint,...) stored on your device?\nIf not, secure your device via your device settings.",
-  "credential": "Credential"
+  "credential": "Credential",
+  "add": "Added"
 }
