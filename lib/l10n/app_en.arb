@@ -81,6 +81,8 @@
   "back": "back",
   "receive": "receive",
   "orderWithPayment": "Order with obligation to pay",
+  "noPaymentNote": "No suitable payment method found",
+  "selectPaymentMethod": "Select Lightning Account",
   "credentialOffer": "Credential Offer",
   "balance": "Balance",
   "noteGetInformation": "like to have the following information",

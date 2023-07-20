@@ -72,6 +72,8 @@
   "paymentFailedNote": "Zahlung konnte nicht durchgeführt werden",
   "noPaymentMethod": "Zahlung nicht möglich",
   "requestPayment": "Zahlung anfordern",
+  "noPaymentNote": "Keine passende Zahlungsmethode gefunden",
+  "selectPaymentMethod": "Lightning Account auswählen",
   "chargeMoney": "Aufladen",
   "noPaymentMethodNote": "Sie besitzen kein Wallet. \nBitte legen Sie sich eines an und sorgen für ausreichend Deckung",
   "credentialReceived": "Nachweis empfangen",

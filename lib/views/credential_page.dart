@@ -251,9 +251,11 @@ class ContextCardState extends State<ContextCard> {
       VerifiableCredential? paymentCredential) async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
+    var payType = wallet.getLnPaymentType(paymentCredential!.id!);
+    logger.d(payType);
     var invoiceMap = await createInvoice(
-        wallet.getLnInKey(paymentCredential!.id!)!, amount,
-        memo: memo);
+        wallet.getLnInKey(paymentCredential.id!)!, amount,
+        memo: memo, isMainnet: payType == 'mainnet');
     var index = invoiceMap['checking_id'];
     wallet.newPayment(paymentCredential.id!, index, memo, amount);
     showModalBottomSheet<dynamic>(

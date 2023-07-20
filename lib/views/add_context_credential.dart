@@ -71,8 +71,10 @@ class AddContextCredentialState extends State<AddContextCredential> {
     for (var key in checked.keys) {
       var value = checked[key]!;
       if (value) {
-        if (key == '2') {
+        if (key == '3') {
           await issueLNTestNetContext(wallet);
+        } else if (key == '2') {
+          await issueLNTestNetContext(wallet, isMainnet: true);
         } else {
           var infoRequest =
               await get(Uri.parse('$contextEndpoint?contextid=$key'));
@@ -217,7 +219,8 @@ Future<void> issueLNDWContextMittweida(WalletProvider wallet) async {
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }
 
-Future<void> issueLNTestNetContext(WalletProvider wallet) async {
+Future<void> issueLNTestNetContext(WalletProvider wallet,
+    {bool isMainnet = false}) async {
   var did = await wallet.newCredentialDid();
   logger.d(did);
   var contextCred = VerifiableCredential(
@@ -227,14 +230,15 @@ Future<void> issueLNTestNetContext(WalletProvider wallet) async {
       id: did,
       credentialSubject: {
         'id': did,
-        'name': 'Lightning Testnet Account',
-        'paymentType': 'LightningTestnetPayment'
+        'name': isMainnet ? 'Lightning Account' : 'Lightning Testnet Account',
+        'paymentType':
+            isMainnet ? 'LightningMainnetPayment' : 'LightningTestnetPayment'
       },
       issuanceDate: DateTime.now());
 
   var signed = await signCredential(wallet.wallet, contextCred.toJson());
 
-  await createLNWallet(did);
+  await createLNWallet(did, isMainnet: isMainnet);
 
   var storageCred = wallet.getCredential(did);
 

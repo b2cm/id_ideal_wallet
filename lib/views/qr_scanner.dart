@@ -31,11 +31,13 @@ class QrScanner extends StatelessWidget {
                 final String code = barcode.rawValue!;
                 logger.d(
                     'Barcode found! $code, type: ${barcode.type.name}, format: ${barcode.format.name}');
-                if (code.startsWith('lnbc') ||
-                    code.startsWith('LNBC') ||
-                    code.startsWith('lntb')) {
-                  logger.d('LN-Invoice found');
+                if (code.startsWith('lntb')) {
+                  logger.d('LN-Invoice (testnet) found');
                   payInvoiceInteraction(code);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                } else if (code.startsWith('lnbc') || code.startsWith('LNBC')) {
+                  logger.d('LN-Invoice found');
+                  payInvoiceInteraction(code, isMainnet: true);
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('openid-credential-offer')) {
                   Navigator.of(context).popUntil((route) => route.isFirst);

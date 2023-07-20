@@ -116,6 +116,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConfigEntry('lnAdminKey$paymentId');
   }
 
+  String? getLnPaymentType(String paymentId) {
+    return _wallet.getConfigEntry('lnPaymentType$paymentId');
+  }
+
   Future<void> checkValiditySingle(VerifiableCredential vc,
       [bool notify = false]) async {
     var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
@@ -221,7 +225,9 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void getLnBalance(String paymentId) async {
-    var a = await getBalance(getLnInKey(paymentId)!);
+    var payType = getLnPaymentType(paymentId);
+    var a = await getBalance(getLnInKey(paymentId)!,
+        isMainnet: payType == 'mainnet');
     balance[paymentId] = a.toSat();
     notifyListeners();
   }
@@ -248,8 +254,8 @@ class WalletProvider extends ChangeNotifier {
         double.parse(_wallet.getConfigEntry('balance$paymentId') ?? '0.0');
   }
 
-  void storeLnAccount(
-      String paymentId, Map<String, dynamic> accountData) async {
+  void storeLnAccount(String paymentId, Map<String, dynamic> accountData,
+      {bool isMainnet = false}) async {
     var wallets = accountData['wallets'] as List;
     var w = wallets.first;
     var lnAdminKey = w['adminkey'];
@@ -262,6 +268,8 @@ class WalletProvider extends ChangeNotifier {
 
     await _wallet.storeConfigEntry('lnAdminKey$paymentId', lnAdminKey!);
     await _wallet.storeConfigEntry('lnInKey$paymentId', lnInKey!);
+    await _wallet.storeConfigEntry(
+        'lnPaymentType$paymentId', isMainnet ? 'mainnet' : 'testnet');
     await _wallet.storeConfigEntry(
         'lnDetails$paymentId', jsonEncode(accountData));
 
@@ -280,7 +288,9 @@ class WalletProvider extends ChangeNotifier {
   void newPayment(
       String paymentId, String paymentHash, String memo, SatoshiAmount amount) {
     paymentTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      var paid = await isInvoicePaid(getLnInKey(paymentId)!, paymentHash);
+      var payType = getLnPaymentType(paymentId);
+      var paid = await isInvoicePaid(getLnInKey(paymentId)!, paymentHash,
+          isMainnet: payType == 'mainnet');
       logger.d(paymentHash);
       if (paid) {
         timer.cancel();
@@ -334,7 +344,7 @@ class WalletProvider extends ChangeNotifier {
 
     String paymentType = '';
     if (invoice.startsWith('lnbc') || invoice.startsWith('LNBC')) {
-      paymentType = 'LightningPayment';
+      paymentType = 'LightningMainnetPayment';
     } else if (invoice.startsWith('lntb')) {
       paymentType = 'LightningTestnetPayment';
     } else {

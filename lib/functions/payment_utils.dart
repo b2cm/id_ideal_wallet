@@ -9,13 +9,17 @@ import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_intent.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-Future<void> createLNWallet(String paymentId) async {
+Future<void> createLNWallet(String paymentId, {bool isMainnet = false}) async {
   var id = const Uuid().v4();
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/create_user'),
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/create_user'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"username": id, 'wallet_name': id}));
 
@@ -24,7 +28,7 @@ Future<void> createLNWallet(String paymentId) async {
     // everything ok = store to wallet
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
-    wallet.storeLnAccount(paymentId, answer);
+    wallet.storeLnAccount(paymentId, answer, isMainnet: isMainnet);
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
@@ -33,8 +37,10 @@ Future<void> createLNWallet(String paymentId) async {
   }
 }
 
-Future<SatoshiAmount> getBalance(String inKey) async {
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/wallet_details'),
+Future<SatoshiAmount> getBalance(String inKey, {bool isMainnet = false}) async {
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/wallet_details'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'inkey': inKey}));
 
@@ -53,8 +59,10 @@ Future<SatoshiAmount> getBalance(String inKey) async {
 }
 
 Future<Map<String, dynamic>> createInvoice(String inKey, SatoshiAmount amount,
-    {String? memo}) async {
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/create_invoice'),
+    {String? memo, bool isMainnet = false}) async {
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/create_invoice'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'inkey': inKey,
@@ -76,8 +84,11 @@ Future<Map<String, dynamic>> createInvoice(String inKey, SatoshiAmount amount,
   }
 }
 
-Future<String> payInvoice(String adminKey, String invoice) async {
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/pay_invoice'),
+Future<String> payInvoice(String adminKey, String invoice,
+    {bool isMainnet = false}) async {
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/pay_invoice'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'adminkey': adminKey, 'invoice': invoice}));
 
@@ -94,8 +105,11 @@ Future<String> payInvoice(String adminKey, String invoice) async {
   }
 }
 
-Future<Invoice> decodeInvoice(String inKey, String invoice) async {
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/decode_invoice'),
+Future<Invoice> decodeInvoice(String inKey, String invoice,
+    {bool isMainnet = false}) async {
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/decode_invoice'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'inkey': inKey, 'invoice': invoice}));
 
@@ -112,8 +126,11 @@ Future<Invoice> decodeInvoice(String inKey, String invoice) async {
   }
 }
 
-Future<bool> isInvoicePaid(String inKey, String paymentHash) async {
-  var res = await post(Uri.parse('https://payments.pixeldev.eu/get_payment'),
+Future<bool> isInvoicePaid(String inKey, String paymentHash,
+    {bool isMainnet = false}) async {
+  var res = await post(
+      Uri.parse(
+          '${isMainnet ? lnMainnetEndpoint : lnTestNetEndpoint}/get_payment'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'inkey': inKey, 'payment_hash': paymentHash}));
 
@@ -131,13 +148,41 @@ Future<bool> isInvoicePaid(String inKey, String paymentHash) async {
   }
 }
 
-void payInvoiceInteraction(String invoice) async {
+void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
   // TODO: Select paymentMethod (user)
   var paymentMethods = wallet.getSuitablePaymentCredentials(invoice);
-  String paymentId = paymentMethods.first.id!;
+  if (paymentMethods.isEmpty) {
+    Future.delayed(const Duration(seconds: 1), () {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod,
+          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentNote);
+    });
+    return;
+  }
+
+  String paymentId;
+  if (paymentMethods.length > 1) {
+    int? selectedIndex =
+        await Future.delayed(const Duration(seconds: 1), () async {
+      return await Navigator.push(
+          navigatorKey.currentContext!,
+          MaterialPageRoute(
+              builder: (context) =>
+                  PaymentMethodSelector(paymentMethods: paymentMethods)));
+    });
+    logger.d(selectedIndex);
+    if (selectedIndex == null) {
+      return;
+    } else {
+      paymentId = paymentMethods[selectedIndex].id!;
+    }
+  } else {
+    paymentId = paymentMethods.first.id!;
+  }
+
   var lnInKey = wallet.getLnInKey(paymentId);
   var lnAdminKey = wallet.getLnAdminKey(paymentId);
   if (lnInKey == null || lnAdminKey == null) {
@@ -145,7 +190,7 @@ void payInvoiceInteraction(String invoice) async {
     //TODO: show to user
   }
 
-  var decoded = await decodeInvoice(lnInKey, invoice);
+  var decoded = await decodeInvoice(lnInKey, invoice, isMainnet: isMainnet);
   SatoshiAmount toPay = decoded.amount;
   logger.d(toPay.toMSat());
   logger.d(lnAdminKey);
@@ -172,7 +217,8 @@ void payInvoiceInteraction(String invoice) async {
                 bool paid = false;
                 var paymentHash = '';
                 try {
-                  paymentHash = await payInvoice(lnAdminKey, invoice);
+                  paymentHash = await payInvoice(lnAdminKey, invoice,
+                      isMainnet: isMainnet);
                   paid = true;
                 } catch (_) {
                   paid = false;
@@ -185,7 +231,8 @@ void payInvoiceInteraction(String invoice) async {
                     int x = await Future.delayed(const Duration(seconds: 1),
                         () async {
                       try {
-                        success = await isInvoicePaid(lnInKey, paymentHash);
+                        success = await isInvoicePaid(lnInKey, paymentHash,
+                            isMainnet: isMainnet);
                         return 0;
                       } catch (_) {
                         return -1;
