@@ -7,10 +7,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
+import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
+import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
@@ -97,6 +100,51 @@ class App extends StatelessWidget {
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
 
+  void onTopUpSats(SatoshiAmount amount, String memo,
+      VerifiableCredential? paymentCredential) async {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var payType = wallet.getLnPaymentType(paymentCredential!.id!);
+    logger.d(payType);
+    var invoiceMap = await createInvoice(
+        wallet.getLnInKey(paymentCredential.id!)!, amount,
+        memo: memo, isMainnet: payType == 'mainnet');
+    var index = invoiceMap['checking_id'];
+    wallet.newPayment(paymentCredential.id!, index, memo, amount);
+    showModalBottomSheet<dynamic>(
+        useRootNavigator: true,
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        context: navigatorKey.currentContext!,
+        builder: (context) {
+          return Consumer<WalletProvider>(builder: (context, wallet, child) {
+            if (wallet.paymentTimer != null) {
+              return InvoiceDisplay(
+                invoice: invoiceMap['payment_request'] ?? '',
+                amount: CurrencyDisplay(
+                    amount: amount.toSat().toStringAsFixed(2),
+                    symbol: 'sat',
+                    mainFontSize: 35,
+                    centered: true),
+                memo: memo,
+              );
+            } else {
+              Future.delayed(
+                  const Duration(seconds: 1),
+                  () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst));
+              return const SizedBox(
+                height: 10,
+              );
+            }
+          });
+        });
+  }
+
+  void onTopUpFiat(int amount) {}
+
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
@@ -175,6 +223,36 @@ class MainPage extends StatelessWidget {
 
                   // Payment Credential
                   if (contextCred.type.contains('PaymentContext')) {
+                    //Send and Receive
+                    buttons.add(Row(
+                      children: [
+                        Expanded(
+                            child: SizedBox(
+                                height: 45,
+                                child: ElevatedButton(
+                                    onPressed: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) => TopUp(
+                                                paymentMethods: [contextCred],
+                                                onTopUpSats: onTopUpSats,
+                                                onTopUpFiat: onTopUpFiat))),
+                                    child: Text(AppLocalizations.of(context)!
+                                        .receive)))),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Expanded(
+                            child: SizedBox(
+                                height: 45,
+                                child: ElevatedButton(
+                                    onPressed: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const QrScanner())),
+                                    child: Text(
+                                        AppLocalizations.of(context)!.send)))),
+                      ],
+                    ));
                     // List of last three payments
                     buttons.add(Heading(
                         text: AppLocalizations.of(context)!.lastPayments));

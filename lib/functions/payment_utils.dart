@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:bech32/bech32.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -11,6 +13,7 @@ import 'package:id_ideal_wallet/basicUi/standard/payment_intent.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/lnurl_amount_selector.dart';
 import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -148,11 +151,11 @@ Future<bool> isInvoicePaid(String inKey, String paymentHash,
   }
 }
 
-void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
+void payInvoiceInteraction(String invoice,
+    {bool isMainnet = false, String? descriptionHash, int? mSatAmount}) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
-  // TODO: Select paymentMethod (user)
   var paymentMethods = wallet.getSuitablePaymentCredentials(invoice);
   if (paymentMethods.isEmpty) {
     Future.delayed(const Duration(seconds: 1), () {
@@ -198,6 +201,24 @@ void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
   logger.d(invoice);
   var description = decoded.description;
 
+  if (descriptionHash != null) {
+    if (descriptionHash != decoded.descriptionHash) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.hashNotMatch,
+          AppLocalizations.of(navigatorKey.currentContext!)!.hashNotMatchNote);
+      return;
+    }
+  }
+
+  if (mSatAmount != null) {
+    if (mSatAmount != decoded.amount.milliSatoshi) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.otherValue,
+          AppLocalizations.of(navigatorKey.currentContext!)!.otherValueNote);
+      return;
+    }
+  }
+
   Future.delayed(const Duration(seconds: 0), () {
     showModalBottomSheet(
         shape: RoundedRectangleBorder(
@@ -212,7 +233,7 @@ void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
                   symbol: 'sat',
                   mainFontSize: 35,
                   centered: true),
-              memo: description,
+              memo: description ?? '',
               onPaymentAccepted: () async {
                 bool paid = false;
                 var paymentHash = '';
@@ -249,8 +270,12 @@ void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
                 }
 
                 if (success) {
-                  wallet.storePayment(paymentId, '-${toPay.toSat()}',
-                      description == '' ? 'Lightning Invoice' : description);
+                  wallet.storePayment(
+                      paymentId,
+                      '-${toPay.toSat()}',
+                      description == '' || description == null
+                          ? 'Lightning Invoice'
+                          : description);
                 }
 
                 showModalBottomSheet(
@@ -280,25 +305,85 @@ void payInvoiceInteraction(String invoice, {bool isMainnet = false}) async {
   });
 }
 
+Future<void> handleLnurl(String lnurl) async {
+  var decoded = const Bech32Codec().decode(lnurl, lnurl.length);
+  var url = utf8.decode(fromWords(decoded.data));
+
+  var dataResponse = await get(Uri.parse(url));
+  var parsed = jsonDecode(dataResponse.body);
+
+  if (parsed['status'] == 'ERROR') {
+    showErrorMessage('Keine lnurl', parsed['reason']);
+    return;
+  }
+
+  if (parsed['tag'] == 'payRequest') {
+    var callback = parsed['callback'];
+    int minAmount = parsed['minSendable'];
+    int maxAmount = parsed['maxSendable'];
+    List metadata = jsonDecode(parsed['metadata']);
+    logger.d(sha256.convert(utf8.encode(parsed['metadata'])));
+    List descriptionEntry = metadata.firstWhere(
+        (element) => element is List && element.first == 'text/plain',
+        orElse: () => ['', '']);
+    String description = descriptionEntry.last;
+    logger.d(maxAmount);
+    logger.d(minAmount);
+    var amountToSend = minAmount;
+    if (maxAmount != minAmount) {
+      var a = await Navigator.of(navigatorKey.currentContext!)
+          .push(MaterialPageRoute(
+              builder: (context) => AmountSelection(
+                    minAmount: minAmount,
+                    maxAmount: maxAmount,
+                    description: description,
+                  )));
+      if (a == null) {
+        return;
+      } else {
+        amountToSend = a;
+      }
+    }
+
+    var invoiceResponse =
+        await get(Uri.parse('$callback?amount=$amountToSend'));
+    var invoiceParsed = jsonDecode(invoiceResponse.body);
+    logger.d(invoiceParsed);
+
+    if (invoiceParsed['status'] == 'ERROR') {
+      showErrorMessage('Keine Invoice', invoiceParsed['reason']);
+      return;
+    }
+
+    var invoice = invoiceParsed['pr'];
+    payInvoiceInteraction(invoice,
+        isMainnet: invoice.toString().startsWith('lnbc'));
+  }
+}
+
 class Invoice {
   String paymentHash;
+  String? descriptionHash;
   SatoshiAmount amount;
-  String description;
+  String? description;
   DateTime date;
   int expirySeconds;
 
   Invoice(this.amount, this.description, this.date, this.expirySeconds,
-      this.paymentHash);
+      this.paymentHash,
+      [this.descriptionHash]);
 
   factory Invoice.fromJson(dynamic jsonData) {
     var data = credentialToMap(jsonData);
+    logger.d(data);
 
     return Invoice(
         SatoshiAmount.fromUnitAndValue(data['amount_msat'], SatoshiUnit.msat),
         data['description'],
         DateTime.fromMillisecondsSinceEpoch(data['date'] * 1000),
         data['expiry'],
-        data['payment_hash']);
+        data['payment_hash'],
+        data['description_hash']);
   }
 }
 
@@ -323,3 +408,45 @@ class SatoshiAmount {
 }
 
 enum SatoshiUnit { sat, msat }
+
+// Source: https://github.com/bottlepay/dart_lnurl/blob/master/lib/src/bech32.dart
+/// Converts a list of character positions in the bech32 alphabet ("words")
+/// to binary data.
+List<int> fromWords(List<int> words) {
+  final res = convert(words, 5, 8, false);
+  return res;
+}
+
+/// Taken from bech32 (bitcoinjs): https://github.com/bitcoinjs/bech32
+List<int> convert(List<int> data, int inBits, int outBits, bool pad) {
+  var value = 0;
+  var bits = 0;
+  var maxV = (1 << outBits) - 1;
+
+  var result = <int>[];
+  for (var i = 0; i < data.length; ++i) {
+    value = (value << inBits) | data[i];
+    bits += inBits;
+
+    while (bits >= outBits) {
+      bits -= outBits;
+      result.add((value >> bits) & maxV);
+    }
+  }
+
+  if (pad) {
+    if (bits > 0) {
+      result.add((value << (outBits - bits)) & maxV);
+    }
+  } else {
+    if (bits >= inBits) {
+      throw Exception('Excess padding');
+    }
+
+    if ((value << (outBits - bits)) & maxV > 0) {
+      throw Exception('Non-zero padding');
+    }
+  }
+
+  return result;
+}

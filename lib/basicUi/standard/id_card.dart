@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
@@ -35,8 +33,7 @@ class IdCard extends StatelessWidget {
     if (credential.type.contains('ContextCredential')) {
       if (credential.type.contains('PaymentContext')) {
         return PaymentCard(
-          receiveOnTap: () {},
-          sendOnTap: () {},
+          deleteOnTap: () {},
           balance: wallet?.balance[credential.id]?.toStringAsFixed(2) ?? '0.0',
           cardTitle: credential.credentialSubject['name'],
           subjectName: '',
@@ -505,14 +502,12 @@ class MemberCard extends IdCard {
 
 class PaymentCard extends IdCard {
   final String balance;
-  final void Function() sendOnTap, receiveOnTap;
-  final void Function()? onReturnTap;
+  final void Function()? onReturnTap, deleteOnTap;
 
   const PaymentCard(
       {super.key,
       required this.balance,
-      required this.sendOnTap,
-      required this.receiveOnTap,
+      this.deleteOnTap,
       required super.cardTitle,
       required super.subjectName,
       required super.bottomLeftText,
@@ -532,7 +527,6 @@ class PaymentCard extends IdCard {
   @override
   Widget buildHeader() {
     return Container(
-      height: 45,
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: const BorderRadius.only(
@@ -540,109 +534,55 @@ class PaymentCard extends IdCard {
           topRight: Radius.circular(18),
         ),
       ),
-      child: Row(children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: Text(
-            cardTitle,
-            style: TextStyle(
-              color: cardTitleColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 10, top: 5, left: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SizedBox(
+              height: 45,
+              width: 45,
+              child: InkWell(
+                onTap: deleteOnTap,
+                child: const Icon(
+                  Icons.delete_outline_sharp,
+                  size: 35,
+                ),
+              ),
             ),
-          ),
+            Expanded(
+              child: Text(
+                maxLines: 3,
+                cardTitle,
+                overflow: TextOverflow.clip,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 45,
+              width: 45,
+              child: InkWell(
+                onTap: onReturnTap,
+                child: const Icon(
+                  Icons.change_circle_outlined,
+                  size: 35,
+                ),
+              ),
+            )
+          ],
         ),
-        const Spacer(),
-        Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: InkWell(
-            onTap: onReturnTap,
-            child: const Icon(
-              Icons.change_circle_outlined,
-              color: Colors.white,
-              size: 35,
-            ),
-          ),
-        )
-      ]),
+      ),
     );
   }
 
   @override
   Widget buildFooter() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // button without outline, black font
-        // receive button
-        Flexible(
-            child: FractionallySizedBox(
-          widthFactor: 1,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: borderColor,
-                  width: 2,
-                ),
-                right: BorderSide(
-                  color: borderColor,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: InkWell(
-              onTap: receiveOnTap,
-              child: SizedBox(
-                  height: 50,
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(navigatorKey.currentContext!)!
-                          .receive,
-                      style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  )),
-            ),
-          ),
-        )),
-        Flexible(
-          child: FractionallySizedBox(
-            widthFactor: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: borderColor,
-                    width: 2,
-                  ),
-                  left: BorderSide(
-                    color: borderColor,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: InkWell(
-                onTap: sendOnTap,
-                child: SizedBox(
-                  height: 50,
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(navigatorKey.currentContext!)!.send,
-                      style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+    return SizedBox(
+      height: 0,
     );
   }
 }

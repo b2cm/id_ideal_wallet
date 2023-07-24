@@ -6,18 +6,13 @@ import 'dart:typed_data';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
-import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
-import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -247,50 +242,6 @@ class ContextCard extends StatefulWidget {
 class ContextCardState extends State<ContextCard> {
   bool back = false;
 
-  void onTopUpSats(SatoshiAmount amount, String memo,
-      VerifiableCredential? paymentCredential) async {
-    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-        listen: false);
-    var payType = wallet.getLnPaymentType(paymentCredential!.id!);
-    logger.d(payType);
-    var invoiceMap = await createInvoice(
-        wallet.getLnInKey(paymentCredential.id!)!, amount,
-        memo: memo, isMainnet: payType == 'mainnet');
-    var index = invoiceMap['checking_id'];
-    wallet.newPayment(paymentCredential.id!, index, memo, amount);
-    showModalBottomSheet<dynamic>(
-        isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        context: navigatorKey.currentContext!,
-        builder: (context) {
-          return Consumer<WalletProvider>(builder: (context, wallet, child) {
-            if (wallet.paymentTimer != null) {
-              return InvoiceDisplay(
-                invoice: invoiceMap['payment_request'] ?? '',
-                amount: CurrencyDisplay(
-                    amount: amount.toSat().toStringAsFixed(2),
-                    symbol: 'sat',
-                    mainFontSize: 35,
-                    centered: true),
-                memo: memo,
-              );
-            } else {
-              Future.delayed(
-                  const Duration(seconds: 1),
-                  () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst));
-              return const SizedBox(
-                height: 10,
-              );
-            }
-          });
-        });
-  }
-
-  void onTopUpFiat(int amount) {}
-
   void _deleteCredential() {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     showDialog(
@@ -355,36 +306,13 @@ class ContextCardState extends State<ContextCard> {
             layoutBuilder: (widget, list) =>
                 Stack(children: [widget!, ...list]),
             child: back
-                ? ContextCredentialCardBack(
-                    credential: widget.context,
-                    key: const ValueKey(false),
-                    deleteOnTap: _deleteCredential,
-                    onReturnTap: () => setState(() {
-                          back = !back;
-                        }),
-                    cardTitle: '',
-                    subjectName: widget.context.credentialSubject['name'],
-                    bottomLeftText: const SizedBox(
-                      width: 0,
-                    ),
-                    bottomRightText: const SizedBox(
-                      width: 0,
-                    ))
-                : widget.context.type.contains('PaymentContext')
+                ? widget.context.type.contains('PaymentContext')
                     ? PaymentCard(
-                        key: const ValueKey(true),
+                        key: const ValueKey(false),
+                        deleteOnTap: _deleteCredential,
                         onReturnTap: () => setState(() {
                           back = !back;
                         }),
-                        receiveOnTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => TopUp(
-                                    paymentMethods: [widget.context],
-                                    onTopUpSats: onTopUpSats,
-                                    onTopUpFiat: onTopUpFiat))),
-                        sendOnTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => const QrScanner())),
                         balance:
                             Provider.of<WalletProvider>(context, listen: false)
                                     .balance[widget.context.id]
@@ -399,33 +327,47 @@ class ContextCardState extends State<ContextCard> {
                           width: 0,
                         ),
                       )
-                    : ContextCredentialCard(
-                        key: const ValueKey(true),
+                    : ContextCredentialCardBack(
+                        credential: widget.context,
+                        key: const ValueKey(false),
+                        deleteOnTap: _deleteCredential,
                         onReturnTap: () => setState(() {
                               back = !back;
                             }),
                         cardTitle: '',
-                        backgroundImage: widget.context
-                                    .credentialSubject['backgroundImage'] !=
-                                null
-                            ? Image.memory(base64Decode(widget.context
-                                    .credentialSubject['backgroundImage']
-                                    .split(',')
-                                    .last))
-                                .image
-                            : widget.context.credentialSubject['mainbgimg'] !=
-                                    null
-                                ? Image.network(widget
-                                        .context.credentialSubject['mainbgimg'])
-                                    .image
-                                : null,
                         subjectName: widget.context.credentialSubject['name'],
                         bottomLeftText: const SizedBox(
                           width: 0,
                         ),
                         bottomRightText: const SizedBox(
                           width: 0,
-                        ))));
+                        ))
+                : ContextCredentialCard(
+                    key: const ValueKey(true),
+                    onReturnTap: () => setState(() {
+                          back = !back;
+                        }),
+                    cardTitle: '',
+                    backgroundImage: widget
+                                .context.credentialSubject['backgroundImage'] !=
+                            null
+                        ? Image.memory(base64Decode(widget
+                                .context.credentialSubject['backgroundImage']
+                                .split(',')
+                                .last))
+                            .image
+                        : widget.context.credentialSubject['mainbgimg'] != null
+                            ? Image.network(widget
+                                    .context.credentialSubject['mainbgimg'])
+                                .image
+                            : null,
+                    subjectName: widget.context.credentialSubject['name'],
+                    bottomLeftText: const SizedBox(
+                      width: 0,
+                    ),
+                    bottomRightText: const SizedBox(
+                      width: 0,
+                    ))));
   }
 }
 

@@ -31,7 +31,10 @@ class QrScanner extends StatelessWidget {
                 final String code = barcode.rawValue!;
                 logger.d(
                     'Barcode found! $code, type: ${barcode.type.name}, format: ${barcode.format.name}');
-                if (code.startsWith('lntb')) {
+                if (code.startsWith('LNURL') || code.startsWith('lnurl')) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  handleLnurl(code);
+                } else if (code.startsWith('lntb')) {
                   logger.d('LN-Invoice (testnet) found');
                   payInvoiceInteraction(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
@@ -59,8 +62,9 @@ class QrScanner extends StatelessWidget {
                   // logger.d(newUriToCall);
                   Navigator.of(context).pushReplacement(MaterialPageRoute(
                       builder: (context) => WebViewWindow(
-                          initialUrl:
-                              '$uriToCall${uriToCall.toString().contains('?') ? '&' : '?'}wid=${wallet.lndwId}',
+                          initialUrl: uriToCall
+                              .toString()
+                              .replaceAll('wid=', 'wid=${wallet.lndwId}'),
                           title: asUri.queryParameters['title'] ?? '')));
                 } else if (code.contains('ooburl')) {
                   handleOobUrl(code);

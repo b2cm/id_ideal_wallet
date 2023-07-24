@@ -119,5 +119,13 @@
   "loadIssuerData": "Lade Informationen",
   "errorOpen": "Das Wallet kann nicht geöffnet werden.\nIst auf Ihrem Gerät ein Sicherheitsmechanismus (Pin, Passwort, Muster, Fingerabdruck,...) hinterlegt?\nWenn nicht, sichern Sie Ihr Gerät über Ihre Geräteeinstellungen.",
   "credential": "Nachweis",
-  "add": "Hinzugefügt"
+  "add": "Hinzugefügt",
+  "hashNotMatch": "Hash stimmt nicht überein",
+  "hashNotMatchNote": "Dies kann ein Betrugsversuch sein,\n daher wird die Zahlung abgebrochen.",
+  "otherValue": "Anderer Betrag",
+  "otherValueNote": "Der Betrag stimmt nicht mit dem von Ihnen angeforderten überein.\n Die Zahlung wird abgebrochen.",
+  "copy": "Kopieren",
+  "copyNote": "Invoice wurde in die Zwischenablage kopiert.",
+  "enterAmount": "Betrag eingeben",
+  "description": "Beschreibung"
 }

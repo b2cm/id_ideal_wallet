@@ -119,5 +119,13 @@
   "loadIssuerData": "Load information",
   "errorOpen": "The wallet cannot be opened.\nIs a security mechanism (pin, password, pattern, fingerprint,...) stored on your device?\nIf not, secure your device via your device settings.",
   "credential": "Credential",
-  "add": "Added"
+  "add": "Added",
+  "hashNotMatch": "Hash does not match",
+  "hashNotMatchNote": "This may be an attempt to scam you,\ntherefore the payment will be canceled",
+  "otherValue": "Other Amount",
+  "otherValueNote": "The amount does not match the one you requested.\nThe payment is canceled.",
+  "copy": "Copy",
+  "copyNote": "Invoice copied to clipboard",
+  "enterAmount": "Enter Amount",
+  "description": "Description"
 }
