@@ -71,14 +71,14 @@ class AddContextCredentialState extends State<AddContextCredential> {
     for (var key in checked.keys) {
       var value = checked[key]!;
       if (value) {
+        var infoRequest =
+            await get(Uri.parse('$contextEndpoint?contextid=$key'));
+        var contextInfo = jsonDecode(infoRequest.body);
         if (key == '3') {
-          await issueLNTestNetContext(wallet);
+          await issueLNTestNetContext(wallet, contextInfo);
         } else if (key == '2') {
-          await issueLNTestNetContext(wallet, isMainnet: true);
+          await issueLNTestNetContext(wallet, contextInfo, isMainnet: true);
         } else {
-          var infoRequest =
-              await get(Uri.parse('$contextEndpoint?contextid=$key'));
-          var contextInfo = jsonDecode(infoRequest.body);
           logger.d(contextInfo);
           await issueContext(wallet, contextInfo, key);
         }
@@ -219,7 +219,8 @@ Future<void> issueLNDWContextMittweida(WalletProvider wallet) async {
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }
 
-Future<void> issueLNTestNetContext(WalletProvider wallet,
+Future<void> issueLNTestNetContext(
+    WalletProvider wallet, Map<String, dynamic> content,
     {bool isMainnet = false}) async {
   var did = await wallet.newCredentialDid();
   logger.d(did);
@@ -230,9 +231,9 @@ Future<void> issueLNTestNetContext(WalletProvider wallet,
       id: did,
       credentialSubject: {
         'id': did,
-        'name': isMainnet ? 'Lightning Account' : 'Lightning Testnet Account',
         'paymentType':
-            isMainnet ? 'LightningMainnetPayment' : 'LightningTestnetPayment'
+            isMainnet ? 'LightningMainnetPayment' : 'LightningTestnetPayment',
+        ...content
       },
       issuanceDate: DateTime.now());
 

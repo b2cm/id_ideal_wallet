@@ -127,5 +127,7 @@
   "copy": "Copy",
   "copyNote": "Invoice copied to clipboard",
   "enterAmount": "Enter Amount",
-  "description": "Description"
+  "description": "Description",
+  "favorites": "Favorites",
+  "amount": "Amount"
 }

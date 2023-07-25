@@ -127,5 +127,7 @@
   "copy": "Kopieren",
   "copyNote": "Invoice wurde in die Zwischenablage kopiert.",
   "enterAmount": "Betrag eingeben",
-  "description": "Beschreibung"
+  "description": "Beschreibung",
+  "favorites": "Favoriten",
+  "amount": "Betrag"
 }

@@ -4,6 +4,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -46,6 +47,9 @@ class IdCard extends StatelessWidget {
         );
       } else {
         return ContextCredentialCard(
+            cardTitleColor: credential.credentialSubject['overlaycolor'] != null
+                ? HexColor.fromHex(credential.credentialSubject['overlaycolor'])
+                : const Color.fromARGB(255, 255, 255, 255),
             cardTitle: '',
             backgroundImage:
                 credential.credentialSubject['backgroundImage'] != null
@@ -259,7 +263,8 @@ class IdCard extends StatelessWidget {
 }
 
 class ContextCredentialCard extends IdCard {
-  final void Function()? onReturnTap;
+  final void Function()? onReturnTap, addToFavorites;
+  final bool isFavorite;
 
   const ContextCredentialCard(
       {super.key,
@@ -267,8 +272,11 @@ class ContextCredentialCard extends IdCard {
       required super.subjectName,
       required super.bottomLeftText,
       required super.bottomRightText,
+      super.cardTitleColor,
       super.backgroundImage,
-      this.onReturnTap});
+      this.onReturnTap,
+      this.addToFavorites,
+      this.isFavorite = false});
 
   @override
   Widget buildCenterOverlay() {
@@ -276,8 +284,8 @@ class ContextCredentialCard extends IdCard {
         ? Center(
             child: Text(subjectName,
                 overflow: TextOverflow.clip,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: cardTitleColor,
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                 )))
@@ -298,20 +306,40 @@ class ContextCredentialCard extends IdCard {
     return Padding(
       padding: const EdgeInsets.only(right: 10, top: 5),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(
-            height: 45,
-            width: 45,
-            child: InkWell(
-              onTap: onReturnTap,
-              child: const Icon(
-                Icons.change_circle_outlined,
-                color: Colors.white,
-                size: 35,
-              ),
-            ),
-          )
+          addToFavorites != null
+              ? SizedBox(
+                  height: 45,
+                  width: 45,
+                  child: InkWell(
+                    onTap: addToFavorites,
+                    child: Icon(
+                      isFavorite ? Icons.star : Icons.star_border_sharp,
+                      color: cardTitleColor,
+                      size: 35,
+                    ),
+                  ),
+                )
+              : const SizedBox(
+                  width: 0,
+                ),
+          addToFavorites != null
+              ? SizedBox(
+                  height: 45,
+                  width: 45,
+                  child: InkWell(
+                    onTap: onReturnTap,
+                    child: Icon(
+                      Icons.change_circle_outlined,
+                      color: cardTitleColor,
+                      size: 35,
+                    ),
+                  ),
+                )
+              : const SizedBox(
+                  width: 0,
+                ),
         ],
       ),
     );

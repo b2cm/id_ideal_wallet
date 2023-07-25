@@ -52,6 +52,13 @@ class AmountSelectionState extends State<AmountSelection> {
               const SizedBox(
                 height: 20,
               ),
+              Text(
+                '${AppLocalizations.of(context)!.amount}: ${widget.minAmount} - ${widget.maxAmount} mSat',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const SizedBox(
                   width: 10,

@@ -11,6 +11,7 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:json_path/fun_sdk.dart';
@@ -265,6 +266,7 @@ class ContextCardState extends State<ContextCard> {
                       '${widget.context.issuanceDate.toIso8601String()}$type';
                 }
                 wallet.deleteCredential(credId);
+                wallet.removeFromFavorites(credId);
                 Navigator.popUntil(context, (route) => route.isFirst);
               },
               child: Text(AppLocalizations.of(context)!.delete))
@@ -298,76 +300,90 @@ class ContextCardState extends State<ContextCard> {
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
             builder: (context) =>
                 CredentialPage(initialSelection: widget.context.id!))),
-        child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 800),
-            transitionBuilder: transitionBuilder,
-            switchInCurve: Curves.easeInBack,
-            switchOutCurve: Curves.easeInBack.flipped,
-            layoutBuilder: (widget, list) =>
-                Stack(children: [widget!, ...list]),
-            child: back
-                ? widget.context.type.contains('PaymentContext')
-                    ? PaymentCard(
-                        key: const ValueKey(false),
-                        deleteOnTap: _deleteCredential,
-                        onReturnTap: () => setState(() {
-                          back = !back;
-                        }),
-                        balance:
-                            Provider.of<WalletProvider>(context, listen: false)
-                                    .balance[widget.context.id]
-                                    ?.toStringAsFixed(2) ??
-                                '0.0',
-                        cardTitle: widget.context.credentialSubject['name'],
-                        subjectName: '',
-                        bottomLeftText: const SizedBox(
-                          width: 0,
-                        ),
-                        bottomRightText: const SizedBox(
-                          width: 0,
-                        ),
-                      )
-                    : ContextCredentialCardBack(
-                        credential: widget.context,
-                        key: const ValueKey(false),
-                        deleteOnTap: _deleteCredential,
-                        onReturnTap: () => setState(() {
-                              back = !back;
-                            }),
-                        cardTitle: '',
-                        subjectName: widget.context.credentialSubject['name'],
-                        bottomLeftText: const SizedBox(
-                          width: 0,
-                        ),
-                        bottomRightText: const SizedBox(
-                          width: 0,
-                        ))
-                : ContextCredentialCard(
-                    key: const ValueKey(true),
-                    onReturnTap: () => setState(() {
-                          back = !back;
-                        }),
-                    cardTitle: '',
-                    backgroundImage: widget
-                                .context.credentialSubject['backgroundImage'] !=
-                            null
-                        ? Image.memory(base64Decode(widget
-                                .context.credentialSubject['backgroundImage']
-                                .split(',')
-                                .last))
-                            .image
-                        : widget.context.credentialSubject['mainbgimg'] != null
-                            ? Image.network(widget
-                                    .context.credentialSubject['mainbgimg'])
-                                .image
-                            : null,
-                    subjectName: widget.context.credentialSubject['name'],
-                    bottomLeftText: const SizedBox(
-                      width: 0,
-                    ),
-                    bottomRightText: const SizedBox(
-                      width: 0,
-                    ))));
+        child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+          return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 800),
+              transitionBuilder: transitionBuilder,
+              switchInCurve: Curves.easeInBack,
+              switchOutCurve: Curves.easeInBack.flipped,
+              layoutBuilder: (widget, list) =>
+                  Stack(children: [widget!, ...list]),
+              child: back
+                  ? widget.context.type.contains('PaymentContext')
+                      ? PaymentCard(
+                          key: const ValueKey(false),
+                          deleteOnTap: _deleteCredential,
+                          onReturnTap: () => setState(() {
+                            back = !back;
+                          }),
+                          balance: Provider.of<WalletProvider>(context,
+                                      listen: false)
+                                  .balance[widget.context.id]
+                                  ?.toStringAsFixed(2) ??
+                              '0.0',
+                          cardTitle: widget.context.credentialSubject['name'],
+                          subjectName: '',
+                          bottomLeftText: const SizedBox(
+                            width: 0,
+                          ),
+                          bottomRightText: const SizedBox(
+                            width: 0,
+                          ),
+                        )
+                      : ContextCredentialCardBack(
+                          credential: widget.context,
+                          key: const ValueKey(false),
+                          deleteOnTap: _deleteCredential,
+                          onReturnTap: () => setState(() {
+                                back = !back;
+                              }),
+                          cardTitle: '',
+                          subjectName: widget.context.credentialSubject['name'],
+                          bottomLeftText: const SizedBox(
+                            width: 0,
+                          ),
+                          bottomRightText: const SizedBox(
+                            width: 0,
+                          ))
+                  : ContextCredentialCard(
+                      key: const ValueKey(true),
+                      isFavorite: wallet.isFavorite(widget.context.id!),
+                      addToFavorites: () {
+                        wallet.isFavorite(widget.context.id!)
+                            ? wallet.removeFromFavorites(widget.context.id!)
+                            : wallet.addToFavorites(widget.context.id!);
+                      },
+                      onReturnTap: () => setState(() {
+                            back = !back;
+                          }),
+                      cardTitle: '',
+                      cardTitleColor: widget
+                                  .context.credentialSubject['overlaycolor'] !=
+                              null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['overlaycolor'])
+                          : const Color.fromARGB(255, 255, 255, 255),
+                      backgroundImage: widget.context
+                                  .credentialSubject['backgroundImage'] !=
+                              null
+                          ? Image.memory(base64Decode(widget
+                                  .context.credentialSubject['backgroundImage']
+                                  .split(',')
+                                  .last))
+                              .image
+                          : widget.context.credentialSubject['mainbgimg'] !=
+                                  null
+                              ? Image.network(widget.context.credentialSubject['mainbgimg'])
+                                  .image
+                              : null,
+                      subjectName: widget.context.credentialSubject['name'],
+                      bottomLeftText: const SizedBox(
+                        width: 0,
+                      ),
+                      bottomRightText: const SizedBox(
+                        width: 0,
+                      )));
+        }));
   }
 }
 

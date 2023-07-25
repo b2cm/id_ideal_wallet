@@ -7,6 +7,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
+import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
 import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
@@ -54,7 +55,7 @@ class App extends StatelessWidget {
         Locale('en'),
       ],
       navigatorKey: navigatorKey,
-      home: const MainPage(),
+      home: MainPage(),
       onGenerateRoute: (args) {
         logger.d(args.name);
         if (args.name != null && args.name!.contains('oob')) {
@@ -78,8 +79,9 @@ class App extends StatelessWidget {
                     if (wallet.isOpen()) {
                       logger.d(uriToCall);
                       return WebViewWindow(
-                          initialUrl:
-                              '$uriToCall${uriToCall.toString().contains('?') ? '&' : '?'}wid=${wallet.lndwId}',
+                          initialUrl: uriToCall
+                              .toString()
+                              .replaceAll('wid=', 'wid=${wallet.lndwId}'),
                           title: asUri.queryParameters['title'] ?? '');
                     } else {
                       return const Scaffold(
@@ -98,7 +100,9 @@ class App extends StatelessWidget {
 }
 
 class MainPage extends StatelessWidget {
-  const MainPage({Key? key}) : super(key: key);
+  final SwiperController controller = SwiperController();
+
+  MainPage({Key? key}) : super(key: key);
 
   void onTopUpSats(SatoshiAmount amount, String memo,
       VerifiableCredential? paymentCredential) async {
@@ -168,12 +172,15 @@ class MainPage extends StatelessWidget {
               ],
             ),
             Swiper(
+              controller: controller,
+              pagination:
+                  SwiperPagination(builder: CustomSwiperPaginationBuilder()),
               loop: false,
               viewportFraction: 0.87,
               scale: 0.875,
-              itemCount: wallet.contextCredentials.length + 1,
+              itemCount: wallet.contextCredentials.length + 2,
               onTap: (indexOut) {
-                if (indexOut == wallet.contextCredentials.length) {
+                if (indexOut == wallet.contextCredentials.length + 1) {
                   Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) => const AddContextCredential()));
                 }
@@ -188,8 +195,9 @@ class MainPage extends StatelessWidget {
                 //         1;
 
                 var buttons = <Widget>[];
-                if (indexOut != wallet.contextCredentials.length) {
-                  var contextCred = wallet.contextCredentials[indexOut];
+                if (indexOut != wallet.contextCredentials.length + 1 &&
+                    indexOut != 0) {
+                  var contextCred = wallet.contextCredentials[indexOut - 1];
 
                   // Normal context credential -> only list of Buttons
                   List b = contextCred.credentialSubject['buttons'] ??
@@ -201,8 +209,10 @@ class MainPage extends StatelessWidget {
                         onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (context) => WebViewWindow(
-                                    initialUrl:
-                                        '${btn['url']!}?wid=${wallet.lndwId}',
+                                    initialUrl: btn['url']
+                                        .toString()
+                                        .replaceAll(
+                                            'wid=', 'wid=${wallet.lndwId}'),
                                     title: btn['webViewTitle'] ??
                                         btn['name'] ??
                                         ''))),
@@ -329,79 +339,143 @@ class MainPage extends StatelessWidget {
                 }
 
                 String? overallBackground =
-                    indexOut != wallet.contextCredentials.length
-                        ? wallet.contextCredentials[indexOut]
+                    indexOut != wallet.contextCredentials.length + 1 &&
+                            indexOut != 0
+                        ? wallet.contextCredentials[indexOut - 1]
                             .credentialSubject['backgroundImage']
                         : null;
 
-                return SingleChildScrollView(
-                    child: Column(children: [
-                  // ConstrainedBox(
-                  // constraints: BoxConstraints(
-                  //     maxHeight: MediaQuery.of(context).size.height * 0.3),
-                  // child:
-                  indexOut == wallet.contextCredentials.length
-                      ? ConstrainedBox(
-                          constraints: BoxConstraints(
-                              maxHeight:
-                                  MediaQuery.of(context).size.height * 0.3),
-                          child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 140),
-                              child: Icon(
-                                Icons.add,
-                                color: Colors.grey,
-                                size: 90,
-                              )))
-                      : //count == 1
-                      //?
-                      Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: ContextCard(
-                              background: overallBackground,
-                              context: wallet.contextCredentials[indexOut])
-                          //)
-                          ),
-                  // : Swiper(
-                  //     loop: true,
-                  //     allowImplicitScrolling: false,
-                  //     itemCount: count,
-                  //     scrollDirection: Axis.vertical,
-                  //     axisDirection: AxisDirection.left,
-                  //     curve: Curves.fastOutSlowIn,
-                  //     viewportFraction: 0.8,
-                  //     scale: 0.95,
-                  //     itemBuilder: (context, index) =>
-                  //         CredentialCard(
-                  //             background: overallBackground,
-                  //             credential: index == 0
-                  //                 ? wallet
-                  //                     .contextCredentials[indexOut]
-                  //                 : wallet.credentials[index - 1]),
-                  //     layout: SwiperLayout.TINDER,
-                  //     customLayoutOption: CustomLayoutOption(
-                  //         startIndex: -1, stateCount: 5)
-                  //       ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-                  //       ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-                  //       ..addScale(
-                  //           [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
-                  //           Alignment.bottomLeft)
-                  //       ..addTranslate([
-                  //         const Offset(-5, -5),
-                  //         const Offset(0, 0),
-                  //         const Offset(5, 5),
-                  //         const Offset(20, 50),
-                  //         const Offset(30, 100),
-                  //         const Offset(40, 50),
-                  //       ]),
-                  //     containerHeight:
-                  //         MediaQuery.of(context).size.width * 0.6,
-                  //     itemHeight:
-                  //         MediaQuery.of(context).size.width * 0.54,
-                  //     itemWidth:
-                  //         MediaQuery.of(context).size.width * 0.95,
-                  //   )),
-                  ...buttons
-                ]));
+                return SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    child: SingleChildScrollView(
+                        child: Column(children: [
+                      // ConstrainedBox(
+                      // constraints: BoxConstraints(
+                      //     maxHeight: MediaQuery.of(context).size.height * 0.3),
+                      // child:
+                      indexOut == 0
+                          ? Wrap(children: [
+                              Padding(
+                                  padding: const EdgeInsets.all(7),
+                                  child: SizedBox(
+                                      width: MediaQuery.of(context).size.width,
+                                      child: Text(
+                                        textAlign: TextAlign.center,
+                                        AppLocalizations.of(context)!.favorites,
+                                        style: const TextStyle(
+                                            fontSize: 25,
+                                            fontWeight: FontWeight.bold),
+                                      ))),
+                              for (int i = 0;
+                                  i < wallet.contextCredentials.length;
+                                  i++)
+                                wallet.isFavorite(
+                                        wallet.contextCredentials[i].id!)
+                                    ? InkWell(
+                                        onTap: () {
+                                          logger.d('tap : $i');
+                                          controller.move(i + 1);
+                                        },
+                                        child: Padding(
+                                            padding: const EdgeInsets.all(5),
+                                            child: SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.4,
+                                                child: ContextCredentialCard(
+                                                    cardTitle: '',
+                                                    cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] !=
+                                                            null
+                                                        ? HexColor.fromHex(
+                                                            wallet.contextCredentials[i].credentialSubject[
+                                                                'overlaycolor'])
+                                                        : const Color.fromARGB(
+                                                            255, 255, 255, 255),
+                                                    backgroundImage:
+                                                        wallet.contextCredentials[i].credentialSubject['mainbgimg'] !=
+                                                                null
+                                                            ? Image.network(wallet.contextCredentials[i].credentialSubject['mainbgimg'])
+                                                                .image
+                                                            : null,
+                                                    subjectName: wallet
+                                                        .contextCredentials[i]
+                                                        .credentialSubject['name'],
+                                                    bottomLeftText: const SizedBox(
+                                                      width: 0,
+                                                    ),
+                                                    bottomRightText: const SizedBox(
+                                                      width: 0,
+                                                    )))),
+                                      )
+                                    : const SizedBox(height: 0)
+                            ])
+                          : indexOut == wallet.contextCredentials.length + 1
+                              ? ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                      maxHeight:
+                                          MediaQuery.of(context).size.height *
+                                              0.3),
+                                  child: const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 140),
+                                      child: Icon(
+                                        Icons.add,
+                                        color: Colors.grey,
+                                        size: 90,
+                                      )))
+                              : //count == 1
+                              //?
+                              Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: ContextCard(
+                                      background: overallBackground,
+                                      context: wallet
+                                          .contextCredentials[indexOut - 1])
+                                  //)
+                                  ),
+                      // : Swiper(
+                      //     loop: true,
+                      //     allowImplicitScrolling: false,
+                      //     itemCount: count,
+                      //     scrollDirection: Axis.vertical,
+                      //     axisDirection: AxisDirection.left,
+                      //     curve: Curves.fastOutSlowIn,
+                      //     viewportFraction: 0.8,
+                      //     scale: 0.95,
+                      //     itemBuilder: (context, index) =>
+                      //         CredentialCard(
+                      //             background: overallBackground,
+                      //             credential: index == 0
+                      //                 ? wallet
+                      //                     .contextCredentials[indexOut]
+                      //                 : wallet.credentials[index - 1]),
+                      //     layout: SwiperLayout.TINDER,
+                      //     customLayoutOption: CustomLayoutOption(
+                      //         startIndex: -1, stateCount: 5)
+                      //       ..addRotate([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                      //       ..addOpacity([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+                      //       ..addScale(
+                      //           [0.95, 0.95, 0.95, 0.9, 0.9, 0.8, 0.8],
+                      //           Alignment.bottomLeft)
+                      //       ..addTranslate([
+                      //         const Offset(-5, -5),
+                      //         const Offset(0, 0),
+                      //         const Offset(5, 5),
+                      //         const Offset(20, 50),
+                      //         const Offset(30, 100),
+                      //         const Offset(40, 50),
+                      //       ]),
+                      //     containerHeight:
+                      //         MediaQuery.of(context).size.width * 0.6,
+                      //     itemHeight:
+                      //         MediaQuery.of(context).size.width * 0.54,
+                      //     itemWidth:
+                      //         MediaQuery.of(context).size.width * 0.95,
+                      //   )),
+                      ...buttons
+                    ])));
               },
             ),
           ])),
@@ -481,4 +555,69 @@ extension HexColor on Color {
       '${red.toRadixString(16).padLeft(2, '0')}'
       '${green.toRadixString(16).padLeft(2, '0')}'
       '${blue.toRadixString(16).padLeft(2, '0')}';
+}
+
+class CustomSwiperPaginationBuilder extends SwiperPlugin {
+  final double space = 2.0;
+  final Color activeColor = Colors.black26;
+  final Color color = Colors.black12;
+  final double activeSize = 12.0;
+  final double size = 10.0;
+
+  @override
+  Widget build(BuildContext context, SwiperPluginConfig config) {
+    final list = <Widget>[];
+
+    final itemCount = config.itemCount - 2;
+    final activeIndex = config.activeIndex;
+
+    for (var i = 0; i < itemCount; ++i) {
+      final active = i == activeIndex - 1;
+      list.add(Container(
+        key: Key('pagination_$i'),
+        margin: EdgeInsets.all(space),
+        child: ClipOval(
+          child: Container(
+            color: active ? activeColor : color,
+            width: active ? activeSize : size,
+            height: active ? activeSize : size,
+          ),
+        ),
+      ));
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () {
+            config.controller.move(0);
+          },
+          child: Icon(
+            Icons.star,
+            color: config.activeIndex == 0 ? Colors.black26 : Colors.black12,
+          ),
+        ),
+        SizedBox(
+          width: MediaQuery.of(context).size.width * 0.6,
+          child: Wrap(
+            runAlignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.center,
+            children: list,
+          ),
+        ),
+        InkWell(
+          onTap: () {
+            config.controller.move(config.itemCount - 1);
+          },
+          child: Icon(
+            Icons.add_circle,
+            color: config.activeIndex == config.itemCount - 1
+                ? Colors.black26
+                : Colors.black12,
+          ),
+        )
+      ],
+    );
+  }
 }

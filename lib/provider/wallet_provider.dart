@@ -22,6 +22,7 @@ class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   bool _authRunning = false;
   bool _hasMemberCardContext = false;
+  Set<int> favoriteIndex = {};
 
   bool openError = false;
 
@@ -92,6 +93,11 @@ class WalletProvider extends ChangeNotifier {
         }
       }
 
+      var favorites = _wallet.getConfigEntry('favorites');
+      if (favorites == null) {
+        _wallet.storeConfigEntry('favorites', jsonEncode([]));
+      }
+
       var memberContext = _wallet.getConfigEntry('hasMemberCardContext');
       if (memberContext != null) {
         _hasMemberCardContext = true;
@@ -106,6 +112,25 @@ class WalletProvider extends ChangeNotifier {
 
       notifyListeners();
     }
+  }
+
+  Future<void> addToFavorites(String id) async {
+    var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
+    f.add(id);
+    await _wallet.storeConfigEntry('favorites', jsonEncode(f));
+    notifyListeners();
+  }
+
+  Future<void> removeFromFavorites(String id) async {
+    var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
+    f.remove(id);
+    await _wallet.storeConfigEntry('favorites', jsonEncode(f));
+    notifyListeners();
+  }
+
+  bool isFavorite(String id) {
+    var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
+    return f.contains(id);
   }
 
   String? getLnInKey(String paymentId) {
@@ -483,7 +508,9 @@ class WalletProvider extends ChangeNotifier {
         .firstWhere((element) => element != 'VerifiableCredential');
     logger.d(type);
     if (type == 'ContextCredential') {
-      await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
+      await restoreCredentialsOfContext(
+          vcParsed.id!, vcParsed.credentialSubject['contextId']);
+      // await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
     } else {
       // search if the credential maybe belongs to a context
       for (var vcs in contextCredentials) {
@@ -523,6 +550,23 @@ class WalletProvider extends ChangeNotifier {
     }
     await checkValiditySingle(vcParsed);
     notifyListeners();
+  }
+
+  Future<void> restoreCredentialsOfContext(
+      String newContextDid, String contextId) async {
+    var oldContextDid = _wallet.getConfigEntry('contextId_$contextId');
+    logger.d(oldContextDid);
+    logger.d(newContextDid);
+    if (oldContextDid != null) {
+      var oldCredList =
+          jsonDecode(_wallet.getConfigEntry(oldContextDid) ?? '[]');
+      logger.d(oldCredList);
+      for (var entry in oldCredList) {
+        await _wallet.storeConfigEntry('${entry}_context', newContextDid);
+      }
+      await _wallet.storeConfigEntry(newContextDid, jsonEncode(oldCredList));
+    }
+    await _wallet.storeConfigEntry('contextId_$contextId', newContextDid);
   }
 
   VerifiableCredential? getContextForCredential(String credentialId) {
@@ -567,7 +611,7 @@ class WalletProvider extends ChangeNotifier {
     }
     await _wallet.deleteCredential(credDid);
     await _wallet.deleteExchangeHistory(credDid);
-    await _wallet.deleteConfigEntry(credDid);
+    // await _wallet.deleteConfigEntry(credDid);
     _buildCredentialList();
     notifyListeners();
   }
