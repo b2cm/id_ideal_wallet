@@ -427,8 +427,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         type = type.substring(0, type.length - 3);
 
         await showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {

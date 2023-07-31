@@ -25,7 +25,9 @@ class IdCard extends StatelessWidget {
       this.backgroundImage,
       this.issuerIcon,
       this.borderColor = const Color.fromARGB(255, 122, 122, 122),
-      this.noAspectRatio = false});
+      this.noAspectRatio = false,
+      this.borderWidth = 2,
+      this.edgeRadius = 20});
 
   factory IdCard.fromCredential(
       {required VerifiableCredential credential,
@@ -125,6 +127,8 @@ class IdCard extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
   final bool noAspectRatio;
+  final double borderWidth;
+  final double edgeRadius;
 
   Widget buildHeader() {
     return Container(
@@ -233,8 +237,8 @@ class IdCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 2),
+        borderRadius: BorderRadius.circular(edgeRadius),
+        border: Border.all(color: borderColor, width: borderWidth),
         image: backgroundImage != null
             ? DecorationImage(
                 image: backgroundImage!,
@@ -276,7 +280,9 @@ class ContextCredentialCard extends IdCard {
       super.backgroundImage,
       this.onReturnTap,
       this.addToFavorites,
-      this.isFavorite = false});
+      this.isFavorite = false,
+      super.borderWidth = 2,
+      super.edgeRadius = 20});
 
   @override
   Widget buildCenterOverlay() {
@@ -349,6 +355,7 @@ class ContextCredentialCard extends IdCard {
 class ContextCredentialCardBack extends IdCard {
   final void Function()? onReturnTap;
   final void Function()? deleteOnTap;
+  final void Function()? onUpdateTap;
   final VerifiableCredential credential;
 
   const ContextCredentialCardBack(
@@ -360,6 +367,7 @@ class ContextCredentialCardBack extends IdCard {
       super.backgroundImage,
       this.onReturnTap,
       this.deleteOnTap,
+      this.onUpdateTap,
       required this.credential,
       super.noAspectRatio = true});
 
@@ -414,6 +422,21 @@ class ContextCredentialCardBack extends IdCard {
               ),
             ),
           ),
+          onUpdateTap != null
+              ? SizedBox(
+                  height: 45,
+                  width: 45,
+                  child: InkWell(
+                    onTap: onUpdateTap,
+                    child: const Icon(
+                      Icons.upgrade_sharp,
+                      size: 35,
+                    ),
+                  ),
+                )
+              : const SizedBox(
+                  width: 0,
+                ),
           SizedBox(
             height: 45,
             width: 45,
@@ -530,12 +553,13 @@ class MemberCard extends IdCard {
 
 class PaymentCard extends IdCard {
   final String balance;
-  final void Function()? onReturnTap, deleteOnTap;
+  final void Function()? onReturnTap, deleteOnTap, onUpdateTap;
 
   const PaymentCard(
       {super.key,
       required this.balance,
       this.deleteOnTap,
+      this.onUpdateTap,
       required super.cardTitle,
       required super.subjectName,
       required super.bottomLeftText,
@@ -590,6 +614,21 @@ class PaymentCard extends IdCard {
                 ),
               ),
             ),
+            onUpdateTap != null
+                ? SizedBox(
+                    height: 45,
+                    width: 45,
+                    child: InkWell(
+                      onTap: onUpdateTap,
+                      child: const Icon(
+                        Icons.upgrade_sharp,
+                        size: 35,
+                      ),
+                    ),
+                  )
+                : const SizedBox(
+                    width: 0,
+                  ),
             SizedBox(
               height: 45,
               width: 45,

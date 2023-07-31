@@ -120,7 +120,7 @@ class AddContextCredentialState extends State<AddContextCredential> {
 
 Future<void> issueContext(
     WalletProvider wallet, Map<String, dynamic> content, String id) async {
-  var did = await wallet.newCredentialDid();
+  var did = await wallet.getContextDid(id);
 
   logger.d(did);
 
@@ -139,6 +139,7 @@ Future<void> issueContext(
   wallet.storeCredential(signed, storageCred!.hdPath);
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
   wallet.addContextIds([id]);
+  wallet.removeIdFromUpdateList(id);
 }
 
 Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
@@ -231,6 +232,7 @@ Future<void> issueLNTestNetContext(
       id: did,
       credentialSubject: {
         'id': did,
+        'contextId': isMainnet ? '2' : '3',
         'paymentType':
             isMainnet ? 'LightningMainnetPayment' : 'LightningTestnetPayment',
         ...content
@@ -284,7 +286,7 @@ Future<void> issueMemberCardContext(WalletProvider wallet) async {
       credentialSubject: {
         'id': did,
         'name': 'Kundenkarten',
-        'groupedTypes': ['MemberCard'],
+        'contexttype': 'MemberCard'
       },
       issuanceDate: DateTime.now());
 

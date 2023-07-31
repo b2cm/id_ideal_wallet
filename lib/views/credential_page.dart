@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
@@ -13,6 +14,7 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
@@ -313,6 +315,17 @@ class ContextCardState extends State<ContextCard> {
                       ? PaymentCard(
                           key: const ValueKey(false),
                           deleteOnTap: _deleteCredential,
+                          onUpdateTap: wallet.hasUpdate.contains(
+                                  '${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}_${widget.context.id!}')
+                              ? () async {
+                                  var download = await get(Uri.parse(
+                                      '$contextEndpoint?contextid=${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}'));
+                                  if (download.statusCode == 200) {
+                                    wallet.reIssuePaymentContext(widget.context,
+                                        jsonDecode(download.body));
+                                  }
+                                }
+                              : null,
                           onReturnTap: () => setState(() {
                             back = !back;
                           }),
@@ -334,6 +347,20 @@ class ContextCardState extends State<ContextCard> {
                           credential: widget.context,
                           key: const ValueKey(false),
                           deleteOnTap: _deleteCredential,
+                          onUpdateTap: wallet.hasUpdate.contains(
+                                  widget.context.credentialSubject['contextId'])
+                              ? () async {
+                                  var download = await get(Uri.parse(
+                                      '$contextEndpoint?contextid=${widget.context.credentialSubject['contextId']}'));
+                                  if (download.statusCode == 200) {
+                                    issueContext(
+                                        wallet,
+                                        jsonDecode(download.body),
+                                        widget.context
+                                            .credentialSubject['contextId']);
+                                  }
+                                }
+                              : null,
                           onReturnTap: () => setState(() {
                                 back = !back;
                               }),
@@ -363,19 +390,17 @@ class ContextCardState extends State<ContextCard> {
                           ? HexColor.fromHex(
                               widget.context.credentialSubject['overlaycolor'])
                           : const Color.fromARGB(255, 255, 255, 255),
-                      backgroundImage: widget.context
-                                  .credentialSubject['backgroundImage'] !=
-                              null
-                          ? Image.memory(base64Decode(widget
-                                  .context.credentialSubject['backgroundImage']
-                                  .split(',')
-                                  .last))
-                              .image
-                          : widget.context.credentialSubject['mainbgimg'] !=
+                      backgroundImage:
+                          widget.context.credentialSubject['backgroundImage'] !=
                                   null
-                              ? Image.network(widget.context.credentialSubject['mainbgimg'])
+                              ? Image.memory(base64Decode(widget.context
+                                      .credentialSubject['backgroundImage']
+                                      .split(',')
+                                      .last))
                                   .image
-                              : null,
+                              : widget.context.credentialSubject['mainbgimg'] != null
+                                  ? Image.network(widget.context.credentialSubject['mainbgimg']).image
+                                  : null,
                       subjectName: widget.context.credentialSubject['name'],
                       bottomLeftText: const SizedBox(
                         width: 0,

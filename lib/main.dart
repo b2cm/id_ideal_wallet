@@ -92,6 +92,15 @@ class App extends StatelessWidget {
                       );
                     }
                   }));
+        } else if (args.name != null && args.name!.contains('invoice')) {
+          var uri = Uri.parse('https://wallet.bccm.dev${args.name}');
+          var invoice = uri.queryParameters['invoice'];
+          if (invoice != null) {
+            payInvoiceInteraction(invoice,
+                isMainnet: invoice.toLowerCase().startsWith('lnbc'));
+          } else if (uri.queryParameters.containsKey('lnurl')) {
+            handleLnurl(uri.queryParameters['lnurl']!);
+          }
         }
         return null;
       },
@@ -118,8 +127,9 @@ class MainPage extends StatelessWidget {
     showModalBottomSheet<dynamic>(
         useRootNavigator: true,
         isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10), topRight: Radius.circular(10)),
         ),
         context: navigatorKey.currentContext!,
         builder: (context) {
@@ -384,6 +394,8 @@ class MainPage extends StatelessWidget {
                                                         .width *
                                                     0.4,
                                                 child: ContextCredentialCard(
+                                                    borderWidth: 1,
+                                                    edgeRadius: 10,
                                                     cardTitle: '',
                                                     cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] !=
                                                             null
@@ -595,6 +607,7 @@ class CustomSwiperPaginationBuilder extends SwiperPlugin {
           child: Icon(
             Icons.star,
             color: config.activeIndex == 0 ? Colors.black26 : Colors.black12,
+            size: 35,
           ),
         ),
         SizedBox(
@@ -615,6 +628,7 @@ class CustomSwiperPaginationBuilder extends SwiperPlugin {
             color: config.activeIndex == config.itemCount - 1
                 ? Colors.black26
                 : Colors.black12,
+            size: 35,
           ),
         )
       ],

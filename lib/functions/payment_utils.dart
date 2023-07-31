@@ -221,8 +221,9 @@ void payInvoiceInteraction(String invoice,
 
   Future.delayed(const Duration(seconds: 0), () {
     showModalBottomSheet(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10), topRight: Radius.circular(10)),
         ),
         context: navigatorKey.currentContext!,
         builder: (context) {
@@ -279,8 +280,10 @@ void payInvoiceInteraction(String invoice,
                 }
 
                 showModalBottomSheet(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10)),
                     ),
                     context: navigatorKey.currentContext!,
                     builder: (context) {

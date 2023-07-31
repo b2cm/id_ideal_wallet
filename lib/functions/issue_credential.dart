@@ -84,8 +84,9 @@ Future<bool> handleOfferCredential(
 
       if (paymentTypes.isEmpty) {
         await showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
@@ -157,8 +158,10 @@ Future<bool> handleOfferCredential(
               '${getTypeToShow(message.detail!.first.credential.type)} empfangen';
 
           showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
               ),
               context: navigatorKey.currentContext!,
               builder: (context) {
@@ -177,8 +180,10 @@ Future<bool> handleOfferCredential(
               });
         } catch (e) {
           showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
               ),
               context: navigatorKey.currentContext!,
               builder: (context) {
@@ -388,8 +393,10 @@ Future<bool> handleIssueCredential(
               credDid, DateTime.now(), 'issue', message.from!);
 
           showModalBottomSheet(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
               ),
               context: navigatorKey.currentContext!,
               builder: (context) {

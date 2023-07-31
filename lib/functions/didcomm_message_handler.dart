@@ -296,8 +296,9 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
         type = type.substring(0, type.length - 3);
 
         showModalBottomSheet(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
             ),
             context: navigatorKey.currentContext!,
             builder: (context) {
@@ -374,9 +375,9 @@ bool handleProblemReport(ProblemReport message, WalletProvider wallet) {
 
 void showErrorMessage(String headline, [String? subtext]) {
   showModalBottomSheet(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10), topRight: Radius.circular(10))),
       context: navigatorKey.currentContext!,
       builder: (context) {
         return ModalDismissWrapper(
