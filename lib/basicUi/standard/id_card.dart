@@ -478,12 +478,7 @@ class LNDWCard extends IdCard {
                   height: 60,
                   image: Image.memory(base64Decode(cardTitle.split(',').last))
                       .image),
-          Text(
-              subjectName
-                  .replaceAll(' ', '\n')
-                  .replaceAll('ae', 'ä')
-                  .replaceAll('ue', 'ü')
-                  .replaceAll('oe', 'ö'),
+          Text(Uri.decodeFull(subjectName),
               //overflow: TextOverflow.clip,
               softWrap: true,
               overflow: TextOverflow.visible,

@@ -129,5 +129,8 @@
   "enterAmount": "Betrag eingeben",
   "description": "Beschreibung",
   "favorites": "Favoriten",
-  "amount": "Betrag"
+  "amount": "Betrag",
+  "termsOfService": "Nutzungsbedingungen",
+  "termsOfServiceNote": "Ausgewählte Kontexte haben zusätzliche Nutzungsbedingungen. Bitte lesen Sie diese sorgfälltig durch und wählen die aus, denen Sie zustimmen. Kontexte, deren Nutzungsbedingungen Sie nicht zustimmen, werden nicht hinzugefügt.",
+  "termsOfServiceButton": "Hinzufügen wie ausgewählt"
 }

@@ -442,6 +442,7 @@ class MainPage extends StatelessWidget {
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 10),
                                   child: ContextCard(
+                                      key: UniqueKey(),
                                       background: overallBackground,
                                       context: wallet
                                           .contextCredentials[indexOut - 1])

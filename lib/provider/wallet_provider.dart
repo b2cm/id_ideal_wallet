@@ -21,7 +21,8 @@ import '../functions/util.dart' as my_util;
 class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   bool _authRunning = false;
-  bool _hasMemberCardContext = false;
+
+  // bool _hasMemberCardContext = false;
   Set<int> favoriteIndex = {};
   Set<String> hasUpdate = {};
   DateTime? lastCheckForUpdates;
@@ -100,10 +101,10 @@ class WalletProvider extends ChangeNotifier {
         _wallet.storeConfigEntry('favorites', jsonEncode([]));
       }
 
-      var memberContext = _wallet.getConfigEntry('hasMemberCardContext');
-      if (memberContext != null) {
-        _hasMemberCardContext = true;
-      }
+      // var memberContext = _wallet.getConfigEntry('hasMemberCardContext');
+      // if (memberContext != null) {
+      //   _hasMemberCardContext = true;
+      // }
 
       var updateable = _wallet.getConfigEntry('updateContext');
       var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
@@ -481,12 +482,14 @@ class WalletProvider extends ChangeNotifier {
 
     var all = allCredentials();
     for (var cred in all.values) {
-      if (cred.w3cCredential == '') {
+      if (cred.w3cCredential == '' || cred.w3cCredential == 'vc') {
         continue;
       }
       if (cred.plaintextCredential == '') {
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('ContextCredential')) {
+          _wallet.storeConfigEntry(
+              'contextId_${vc.credentialSubject['contextId']}', vc.id!);
           if (vc.type.contains('PaymentContext')) {
             paymentCredentials.add(vc);
             _updateLastThreePayments(vc.id!);
@@ -600,6 +603,8 @@ class WalletProvider extends ChangeNotifier {
       // await restoreCredentialsOfContext(
       //     vcParsed.id!, vcParsed.credentialSubject['contextId']);
       // await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
+      _wallet.storeConfigEntry(
+          'contextId_${vcParsed.credentialSubject['contextId']}', vcParsed.id!);
       if (_wallet.getConfigEntry(vcParsed.id!) == null) {
         await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
       }
@@ -625,7 +630,8 @@ class WalletProvider extends ChangeNotifier {
           }
         } else if (vcs.credentialSubject.containsKey('contexttype')) {
           if (vcParsed.type.contains(vcs.credentialSubject['contexttype'])) {
-            var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
+            var old =
+                jsonDecode(_wallet.getConfigEntry(vcs.id!) ?? '[]') as List;
             var id = vcParsed.id ?? getHolderDidFromCredential(vc);
             if (id == '') {
               id = '${vcParsed.issuanceDate.toIso8601String()}$type';
@@ -706,7 +712,13 @@ class WalletProvider extends ChangeNotifier {
         }
 
         var hdPath = cred.hdPath;
-        storeCredential('', hdPath);
+        await _wallet.storeCredential('', '', hdPath,
+            keyType: KeyType.ed25519, credDid: null);
+
+        // if (vc.credentialSubject['name'] == 'Kundenkarten') {
+        //   _hasMemberCardContext = false;
+        //   _wallet.deleteConfigEntry('hasMemberCardContext');
+        // }
       }
     } else {
       await _wallet.deleteCredential(credDid);
@@ -775,10 +787,12 @@ class WalletProvider extends ChangeNotifier {
   }
 
   Future<void> addMemberCard(Map<String, String> subject) async {
-    if (!_hasMemberCardContext) {
-      await issueMemberCardContext(this);
-      _hasMemberCardContext = true;
-      await _wallet.storeConfigEntry('hasMemberCardContext', 'true');
+    if (!getExistingContextIds().contains('5')) {
+      var res = await get(Uri.parse('$contextEndpoint?contextid=5'));
+      await issueContext(this, jsonDecode(res.body), '5');
+      //await issueMemberCardContext(this);
+      // _hasMemberCardContext = true;
+      // await _wallet.storeConfigEntry('hasMemberCardContext', 'true');
     }
 
     var did = await newCredentialDid();
@@ -787,7 +801,7 @@ class WalletProvider extends ChangeNotifier {
         context: ['schema.org'],
         issuer: did,
         issuanceDate: DateTime.now(),
-        type: ['MemberCard'],
+        type: ['HidyContextKundenkarten', 'MemberCard'],
         credentialSubject: {'id': did, ...subject});
 
     var signed = await signCredential(_wallet, vc.toJson());

@@ -31,9 +31,11 @@ This branch supports http as transport protocol for didcomm messages.
   webview: `https://wallet.bccm.dev/webview?url=https://maps.google.com&title=Karte`, where url
   parameter is mandatory and title optional
 - if the url for the webview contains fragment and query it MUST be percent-encoded
-- the wallet will add an additional query-parameter to the url of the url-property: `wid=<uuid>`.
-  For the given example this means a webview with initial
-  url `https://maps.google.com?wid=<uuid>` is opened.
+- the wallet will add a wallet id to the url if requested. To request this id, add the
+  query-parameter `wid=` (without value) to your url.
+- the wallet can also understand links with ligthning-invoices or
+  lnurls : `https://wallet.bccm.dev/invoice?invoice=<lightning invoice>`
+  or `https://wallet.bccm.dev/invoice?lnurl=<lnurl>`
 
 **Important Notes**
 
@@ -63,7 +65,8 @@ This branch supports http as transport protocol for didcomm messages.
 
 1. Add "FlutterDeepLinkingEnabled": YES (boolean) to the Info.plist
 2. In Singing & Capabilities, add applinks:wallet.bccm.dev to the domains
-3. Create a file <https://wallet.bccm.dev/.well-known/apple-app-site-association> (must be https), with this content:
+3. Create a file <https://wallet.bccm.dev/.well-known/apple-app-site-association> (must be https),
+   with this content:
 
 ```json
 {
@@ -72,13 +75,18 @@ This branch supports http as transport protocol for didcomm messages.
     "details": [
       {
         "appID": "9MY7ZZP3KS.eu.hidy.app",
-        "paths": ["*"]
+        "paths": [
+          "*"
+        ]
       }
     ]
   }
 }
 ```
-(the weird code before the identifier is the team id, which can be found in the development team apple ID)
-  
-4. Make sure that the file is delivered as content-type: application/json (it has no extension, so configure the web server accordingly)
+
+(the weird code before the identifier is the team id, which can be found in the development team
+apple ID)
+
+4. Make sure that the file is delivered as content-type: application/json (it has no extension, so
+   configure the web server accordingly)
 5. Write the app-internal code to handle routing

@@ -156,10 +156,7 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
                   }
                 },
               )
-            : Text(value
-                .replaceAll('ae', 'ä')
-                .replaceAll('ue', 'ü')
-                .replaceAll('oe', 'ö'));
+            : Text(Uri.decodeFull(value));
 
         children.add(ListTile(
           visualDensity: const VisualDensity(horizontal: 0, vertical: -4),

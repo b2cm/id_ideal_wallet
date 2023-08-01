@@ -21,6 +21,7 @@ class AddContextCredential extends StatefulWidget {
 
 class AddContextCredentialState extends State<AddContextCredential> {
   bool initialised = false;
+  bool isLoading = false;
   String errorMessage = '';
   Map<String, Map<String, String>> availableCredentials = {};
   Map<String, bool> checked = {};
@@ -63,18 +64,24 @@ class AddContextCredentialState extends State<AddContextCredential> {
   }
 
   void store() async {
-    Navigator.pop(navigatorKey.currentContext!);
+    setState(() {
+      isLoading = true;
+    });
 
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
+
+    Map<String, dynamic> hasTermsOfService = {};
 
     for (var key in checked.keys) {
       var value = checked[key]!;
       if (value) {
         var infoRequest =
             await get(Uri.parse('$contextEndpoint?contextid=$key'));
-        var contextInfo = jsonDecode(infoRequest.body);
-        if (key == '3') {
+        Map<String, dynamic> contextInfo = jsonDecode(infoRequest.body);
+        if (contextInfo.containsKey('termsofserviceurl')) {
+          hasTermsOfService[key] = contextInfo;
+        } else if (key == '3') {
           await issueLNTestNetContext(wallet, contextInfo);
         } else if (key == '2') {
           await issueLNTestNetContext(wallet, contextInfo, isMainnet: true);
@@ -84,11 +91,111 @@ class AddContextCredentialState extends State<AddContextCredential> {
         }
       }
     }
+
+    if (hasTermsOfService.isNotEmpty) {
+      Map<String, bool> selected =
+          hasTermsOfService.map((key, value) => MapEntry(key, false));
+      setState(() {
+        isLoading = false;
+      });
+      bool? answer = await showDialog(
+          context: navigatorKey.currentContext!,
+          builder: (context) {
+            return StatefulBuilder(builder: (context, setState) {
+              return Dialog(
+                  child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(
+                    AppLocalizations.of(context)!.termsOfService,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Text(AppLocalizations.of(context)!.termsOfServiceNote),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  SizedBox(
+                      child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: selected.length,
+                          itemBuilder: (context, index) {
+                            var contextId =
+                                hasTermsOfService.keys.toList()[index];
+                            return CheckboxListTile(
+                                title:
+                                    Text(hasTermsOfService[contextId]['name']),
+                                subtitle: Text(hasTermsOfService[contextId]
+                                    ['termsofserviceurl']),
+                                value: selected[contextId],
+                                onChanged: (newValue) {
+                                  logger.d(newValue);
+                                  if (newValue != null) {
+                                    setState(() {
+                                      selected[contextId] = newValue;
+                                    });
+                                  }
+                                });
+                          })),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      minimumSize: const Size.fromHeight(45),
+                    ),
+                    child: Text(AppLocalizations.of(context)!.cancel),
+                  ),
+                  const SizedBox(
+                    height: 5,
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.greenAccent.shade700,
+                      minimumSize: const Size.fromHeight(45),
+                    ),
+                    child: Text(
+                        AppLocalizations.of(context)!.termsOfServiceButton),
+                  )
+                ]),
+              ));
+            });
+          });
+
+      logger.d(answer);
+      answer ??= false;
+      if (answer) {
+        setState(() {
+          isLoading = true;
+        });
+
+        selected.forEach((key, value) async {
+          if (value) {
+            var contextInfo = hasTermsOfService[key];
+            if (key == '3') {
+              await issueLNTestNetContext(wallet, contextInfo);
+            } else if (key == '2') {
+              await issueLNTestNetContext(wallet, contextInfo, isMainnet: true);
+            } else {
+              await issueContext(wallet, contextInfo, key);
+            }
+          }
+        });
+      }
+    }
+
+    Navigator.pop(navigatorKey.currentContext!);
   }
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffoldTitle(
+    return Stack(children: [
+      StyledScaffoldTitle(
         footerButtons: [
           TextButton(
               onPressed: store,
@@ -114,7 +221,18 @@ class AddContextCredentialState extends State<AddContextCredential> {
                 })
             : const Center(
                 child: CircularProgressIndicator(),
-              ));
+              ),
+      ),
+      if (isLoading)
+        const Opacity(
+          opacity: 0.8,
+          child: ModalBarrier(dismissible: false, color: Colors.black),
+        ),
+      if (isLoading)
+        const Center(
+          child: CircularProgressIndicator(),
+        ),
+    ]);
   }
 }
 

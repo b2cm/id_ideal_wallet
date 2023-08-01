@@ -129,5 +129,8 @@
   "enterAmount": "Enter Amount",
   "description": "Description",
   "favorites": "Favorites",
-  "amount": "Amount"
+  "amount": "Amount",
+  "termsOfService": "Terms of Service",
+  "termsOfServiceNote": "Selected contexts have additional terms of use. Please read them carefully and select the ones you agree with. Contexts whose terms of use you do not agree with will not be added.",
+  "termsOfServiceButton": "Add as selected"
 }
