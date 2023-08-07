@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/xml_widget.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -98,20 +99,48 @@ class IdCard extends StatelessWidget {
             width: 0,
           ));
     } else {
-      return IdCard(
-          //subjectImage: image?.image,
-          backgroundImage: background != null
-              ? Image.memory(base64Decode(background.split(',').last)).image
-              : null,
-          cardTitle: getTypeToShow(credential.type),
-          subjectName:
-              '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
-          bottomLeftText: IssuerInfoText(
-              issuer: credential.issuer, selfIssued: credential.isSelfIssued()),
-          bottomRightText: IssuerInfoIcon(
-            issuer: credential.issuer,
-            selfIssued: credential.isSelfIssued(),
-          ));
+      var type = getTypeToShow(credential.type);
+      var id = credential.id ?? getHolderDidFromCredential(credential.toJson());
+      if (id == '') {
+        id = '${credential.issuanceDate.toIso8601String()}$type';
+      }
+      var context = wallet?.getContextForCredential(id);
+      var layout = context?.credentialSubject['vclayouts']?[type];
+      if (layout != null) {
+        return XmlCard(
+            credential: credential,
+            xmlValue: layout['baselayout'],
+            backgroundImage: layout['credentialbackgroundimage'] != null
+                ? Image.network(layout['credentialbackgroundimage']).image
+                : null,
+            cardTitleColor: layout['overlaycolor'] != null
+                ? HexColor.fromHex(layout['overlaycolor'])
+                : Colors.black,
+            cardTitle: '',
+            subjectName: '',
+            bottomLeftText: const SizedBox(
+              height: 0,
+            ),
+            bottomRightText: const SizedBox(
+              height: 0,
+            ));
+      } else {
+        return IdCard(
+            //subjectImage: image?.image,
+            backgroundImage: background != null
+                ? Image.memory(base64Decode(background.split(',').last)).image
+                : null,
+            cardTitle: getTypeToShow(credential.type),
+            subjectName:
+                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+            bottomLeftText: IssuerInfoText(
+                issuer: credential.issuer,
+                selfIssued: credential.isSelfIssued()),
+            bottomRightText: IssuerInfoIcon(
+              issuer: credential.issuer,
+              selfIssued: credential.isSelfIssued(),
+            ));
+      }
     }
   }
 
@@ -266,6 +295,42 @@ class IdCard extends StatelessWidget {
   }
 }
 
+class XmlCard extends IdCard {
+  final VerifiableCredential credential;
+  final String xmlValue;
+
+  const XmlCard(
+      {super.key,
+      required this.credential,
+      super.cardTitleColor,
+      super.backgroundImage,
+      required this.xmlValue,
+      required super.cardTitle,
+      required super.subjectName,
+      required super.bottomLeftText,
+      required super.bottomRightText});
+
+  @override
+  Widget buildCenterOverlay() {
+    return XmlWidget(
+        xml: xmlValue, credential: credential, overlayColor: cardTitleColor);
+  }
+
+  @override
+  Widget buildFooter() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
 class ContextCredentialCard extends IdCard {
   final void Function()? onReturnTap, addToFavorites;
   final bool isFavorite;
@@ -364,6 +429,8 @@ class ContextCredentialCardBack extends IdCard {
       required super.subjectName,
       required super.bottomLeftText,
       required super.bottomRightText,
+      super.backgroundColor,
+      super.cardTitleColor,
       super.backgroundImage,
       this.onReturnTap,
       this.deleteOnTap,
@@ -404,8 +471,9 @@ class ContextCredentialCardBack extends IdCard {
             width: 45,
             child: InkWell(
               onTap: deleteOnTap,
-              child: const Icon(
+              child: Icon(
                 Icons.delete_outline_sharp,
+                color: cardTitleColor,
                 size: 35,
               ),
             ),
@@ -415,8 +483,8 @@ class ContextCredentialCardBack extends IdCard {
               maxLines: 3,
               subjectName,
               overflow: TextOverflow.clip,
-              style: const TextStyle(
-                color: Colors.black,
+              style: TextStyle(
+                color: cardTitleColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -428,8 +496,9 @@ class ContextCredentialCardBack extends IdCard {
                   width: 45,
                   child: InkWell(
                     onTap: onUpdateTap,
-                    child: const Icon(
+                    child: Icon(
                       Icons.upgrade_sharp,
+                      color: cardTitleColor,
                       size: 35,
                     ),
                   ),
@@ -442,8 +511,9 @@ class ContextCredentialCardBack extends IdCard {
             width: 45,
             child: InkWell(
               onTap: onReturnTap,
-              child: const Icon(
+              child: Icon(
                 Icons.change_circle_outlined,
+                color: cardTitleColor,
                 size: 35,
               ),
             ),
@@ -555,6 +625,8 @@ class PaymentCard extends IdCard {
       required this.balance,
       this.deleteOnTap,
       this.onUpdateTap,
+      super.backgroundColor,
+      super.cardTitleColor,
       required super.cardTitle,
       required super.subjectName,
       required super.bottomLeftText,
@@ -565,6 +637,7 @@ class PaymentCard extends IdCard {
   Widget buildCenterOverlay() {
     return CurrencyDisplay(
       amount: balance,
+      amountColor: cardTitleColor,
       symbol: 'sat',
       centered: true,
       mainFontSize: 30,
@@ -591,8 +664,9 @@ class PaymentCard extends IdCard {
               width: 45,
               child: InkWell(
                 onTap: deleteOnTap,
-                child: const Icon(
+                child: Icon(
                   Icons.delete_outline_sharp,
+                  color: cardTitleColor,
                   size: 35,
                 ),
               ),
@@ -602,8 +676,8 @@ class PaymentCard extends IdCard {
                 maxLines: 3,
                 cardTitle,
                 overflow: TextOverflow.clip,
-                style: const TextStyle(
-                  color: Colors.black,
+                style: TextStyle(
+                  color: cardTitleColor,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -615,8 +689,9 @@ class PaymentCard extends IdCard {
                     width: 45,
                     child: InkWell(
                       onTap: onUpdateTap,
-                      child: const Icon(
+                      child: Icon(
                         Icons.upgrade_sharp,
+                        color: cardTitleColor,
                         size: 35,
                       ),
                     ),
@@ -629,7 +704,8 @@ class PaymentCard extends IdCard {
               width: 45,
               child: InkWell(
                 onTap: onReturnTap,
-                child: const Icon(
+                child: Icon(
+                  color: cardTitleColor,
                   Icons.change_circle_outlined,
                   size: 35,
                 ),
@@ -643,7 +719,7 @@ class PaymentCard extends IdCard {
 
   @override
   Widget buildFooter() {
-    return SizedBox(
+    return const SizedBox(
       height: 0,
     );
   }

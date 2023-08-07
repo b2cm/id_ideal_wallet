@@ -99,6 +99,9 @@ class CredentialPageState extends State<CredentialPage> {
                       }
 
                       if (type != 'PaymentReceipt') {
+                        var contextCredential =
+                            wallet.getContextForCredential(id);
+
                         return Column(children: [
                           CredentialCard(
                             credential: cred,
@@ -156,7 +159,7 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
                   }
                 },
               )
-            : Text(Uri.decodeFull(value));
+            : Text(uriDecode(value));
 
         children.add(ListTile(
           visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
@@ -175,6 +178,14 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
     }
   });
   return children;
+}
+
+String uriDecode(String value) {
+  try {
+    return Uri.decodeFull(value);
+  } catch (_) {
+    return '';
+  }
 }
 
 class Base64ImagePreview extends StatelessWidget {
@@ -332,6 +343,18 @@ class ContextCardState extends State<ContextCard> {
                                   ?.toStringAsFixed(2) ??
                               '0.0',
                           cardTitle: widget.context.credentialSubject['name'],
+                          cardTitleColor: widget.context
+                                      .credentialSubject['overlaycolor'] !=
+                                  null
+                              ? HexColor.fromHex(widget
+                                  .context.credentialSubject['overlaycolor'])
+                              : Colors.black,
+                          backgroundColor: widget.context
+                                      .credentialSubject['backsidecolor'] !=
+                                  null
+                              ? HexColor.fromHex(widget
+                                  .context.credentialSubject['backsidecolor'])
+                              : const Color.fromARGB(255, 233, 224, 200),
                           subjectName: '',
                           bottomLeftText: const SizedBox(
                             width: 0,
@@ -362,6 +385,17 @@ class ContextCardState extends State<ContextCard> {
                                 back = !back;
                               }),
                           cardTitle: '',
+                          cardTitleColor:
+                              widget.context.credentialSubject['overlaycolor'] != null
+                                  ? HexColor.fromHex(widget.context
+                                      .credentialSubject['overlaycolor'])
+                                  : Colors.black,
+                          backgroundColor:
+                              widget.context.credentialSubject['backsidecolor'] !=
+                                      null
+                                  ? HexColor.fromHex(widget.context
+                                      .credentialSubject['backsidecolor'])
+                                  : const Color.fromARGB(255, 233, 224, 200),
                           subjectName: widget.context.credentialSubject['name'],
                           bottomLeftText: const SizedBox(
                             width: 0,
@@ -381,23 +415,15 @@ class ContextCardState extends State<ContextCard> {
                             back = !back;
                           }),
                       cardTitle: '',
-                      cardTitleColor: widget
-                                  .context.credentialSubject['overlaycolor'] !=
-                              null
-                          ? HexColor.fromHex(
-                              widget.context.credentialSubject['overlaycolor'])
-                          : const Color.fromARGB(255, 255, 255, 255),
-                      backgroundImage:
-                          widget.context.credentialSubject['backgroundImage'] !=
-                                  null
-                              ? Image.memory(base64Decode(widget.context
-                                      .credentialSubject['backgroundImage']
-                                      .split(',')
-                                      .last))
-                                  .image
-                              : widget.context.credentialSubject['mainbgimg'] != null
-                                  ? Image.network(widget.context.credentialSubject['mainbgimg']).image
-                                  : null,
+                      cardTitleColor:
+                          widget.context.credentialSubject['overlaycolor'] != null
+                              ? HexColor.fromHex(widget.context.credentialSubject['overlaycolor'])
+                              : const Color.fromARGB(255, 255, 255, 255),
+                      backgroundImage: widget.context.credentialSubject['backgroundImage'] != null
+                          ? Image.memory(base64Decode(widget.context.credentialSubject['backgroundImage'].split(',').last)).image
+                          : widget.context.credentialSubject['mainbgimg'] != null
+                              ? Image.network(widget.context.credentialSubject['mainbgimg']).image
+                              : null,
                       subjectName: widget.context.credentialSubject['name'],
                       bottomLeftText: const SizedBox(
                         width: 0,
