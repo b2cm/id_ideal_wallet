@@ -1,6 +1,6 @@
 import 'package:barcode_widget/barcode_widget.dart' as barcode;
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -150,28 +150,9 @@ class AddMemberCardState extends State<AddMemberCard> {
         ),
       ),
       persistentFooterButtons: [
-        Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                minimumSize: const Size.fromHeight(45),
-              ),
-              child: Text(AppLocalizations.of(context)!.cancel),
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            ElevatedButton(
-              onPressed: storeCard,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent.shade700,
-                minimumSize: const Size.fromHeight(45),
-              ),
-              child: const Text('Ok'),
-            )
-          ],
+        FooterButtons(
+          positiveFunction: storeCard,
+          positiveText: 'Ok',
         )
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 
 class AmountSelection extends StatefulWidget {
   final int minAmount, maxAmount;
@@ -103,29 +104,11 @@ class AmountSelectionState extends State<AmountSelection> {
           ),
         )),
         persistentFooterButtons: [
-          Column(
-            children: [
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  minimumSize: const Size.fromHeight(45),
-                ),
-                child: Text(AppLocalizations.of(context)!.cancel),
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).pop(selectedValue.toInt()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent.shade700,
-                  minimumSize: const Size.fromHeight(45),
-                ),
-                child: const Text('Ok'),
-              )
-            ],
+          FooterButtons(
+            positiveFunction: () =>
+                Navigator.of(context).pop(selectedValue.toInt()),
+            negativeFunction: () => Navigator.of(context).pop(null),
+            positiveText: 'Ok',
           )
         ]);
   }

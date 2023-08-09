@@ -5,7 +5,12 @@ import 'package:logger/logger.dart';
 
 var relay = 'http://167.235.195.132:8888';
 //var relay = 'http://localhost:8888';
-var contextEndpoint = 'https://braceland.de/walletcontext';
+//var contextEndpoint =
+//  'https://braceland.de/walletcontext?${Platform.isIOS ? '1' : '2'}';
+var contextEndpoint =
+    'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
+// var contextEndpoint =
+//     'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
 
 var lnTestNetEndpoint = 'https://testpayments.pixeldev.eu';
 var lnMainnetEndpoint = 'https://payments.pixeldev.eu';

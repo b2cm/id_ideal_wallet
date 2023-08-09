@@ -36,6 +36,11 @@ class AddContextCredentialState extends State<AddContextCredential> {
 
   getAvailableContexts() async {
     var contextRequest = await get(Uri.parse(contextEndpoint));
+    if (contextRequest.statusCode != 200) {
+      errorMessage = 'Keine Kontexte';
+      initialised = true;
+      return;
+    }
     var contextList = jsonDecode(contextRequest.body);
     if (contextList is! List) {
       errorMessage = 'No List';
@@ -77,9 +82,10 @@ class AddContextCredentialState extends State<AddContextCredential> {
       var value = checked[key]!;
       if (value) {
         var infoRequest =
-            await get(Uri.parse('$contextEndpoint?contextid=$key'));
+            await get(Uri.parse('$contextEndpoint&contextid=$key'));
         Map<String, dynamic> contextInfo = jsonDecode(infoRequest.body);
-        if (contextInfo.containsKey('termsofserviceurl')) {
+        if (contextInfo.containsKey('termsofserviceurl') &&
+            contextInfo['termsofserviceurl'] != '') {
           hasTermsOfService[key] = contextInfo;
         } else if (key == '3') {
           await issueLNTestNetContext(wallet, contextInfo);
@@ -203,22 +209,24 @@ class AddContextCredentialState extends State<AddContextCredential> {
         ],
         title: AppLocalizations.of(context)!.contextCredentialTitle,
         child: initialised
-            ? ListView.builder(
-                itemCount: availableCredentials.length,
-                itemBuilder: (context, index) {
-                  var id = availableCredentials.keys.toList()[index];
-                  return CheckboxListTile(
-                      title: Text(availableCredentials[id]!['name']!),
-                      subtitle:
-                          Text(availableCredentials[id]!['description'] ?? ''),
-                      value: checked[id],
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          checked[id] = newValue;
-                          setState(() {});
-                        }
-                      });
-                })
+            ? errorMessage.isNotEmpty
+                ? Center(child: Text(errorMessage))
+                : ListView.builder(
+                    itemCount: availableCredentials.length,
+                    itemBuilder: (context, index) {
+                      var id = availableCredentials.keys.toList()[index];
+                      return CheckboxListTile(
+                          title: Text(availableCredentials[id]!['name']!),
+                          subtitle: Text(
+                              availableCredentials[id]!['description'] ?? ''),
+                          value: checked[id],
+                          onChanged: (newValue) {
+                            if (newValue != null) {
+                              checked[id] = newValue;
+                              setState(() {});
+                            }
+                          });
+                    })
             : const Center(
                 child: CircularProgressIndicator(),
               ),
@@ -237,7 +245,8 @@ class AddContextCredentialState extends State<AddContextCredential> {
 }
 
 Future<void> issueContext(
-    WalletProvider wallet, Map<String, dynamic> content, String id) async {
+    WalletProvider wallet, Map<String, dynamic> content, String id,
+    [bool update = false]) async {
   var did = await wallet.getContextDid(id);
 
   logger.d(did);
@@ -255,7 +264,8 @@ Future<void> issueContext(
   var storageCred = wallet.getCredential(did);
 
   wallet.storeCredential(signed, storageCred!.hdPath);
-  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+  wallet.storeExchangeHistoryEntry(
+      did, DateTime.now(), update ? 'update' : 'issue', did);
   wallet.addContextIds([id]);
   wallet.removeIdFromUpdateList(id);
 }

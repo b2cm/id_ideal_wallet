@@ -646,73 +646,64 @@ class PaymentCard extends IdCard {
 
   @override
   Widget buildHeader() {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(18),
-          topRight: Radius.circular(18),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(right: 10, top: 5, left: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              height: 45,
-              width: 45,
-              child: InkWell(
-                onTap: deleteOnTap,
-                child: Icon(
-                  Icons.delete_outline_sharp,
-                  color: cardTitleColor,
-                  size: 35,
-                ),
+    return Padding(
+      padding: const EdgeInsets.only(right: 10, top: 5, left: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SizedBox(
+            height: 45,
+            width: 45,
+            child: InkWell(
+              onTap: deleteOnTap,
+              child: Icon(
+                Icons.delete_outline_sharp,
+                color: cardTitleColor,
+                size: 35,
               ),
             ),
-            Expanded(
-              child: Text(
-                maxLines: 3,
-                cardTitle,
-                overflow: TextOverflow.clip,
-                style: TextStyle(
-                  color: cardTitleColor,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+          ),
+          Expanded(
+            child: Text(
+              maxLines: 3,
+              cardTitle,
+              overflow: TextOverflow.clip,
+              style: TextStyle(
+                color: cardTitleColor,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            onUpdateTap != null
-                ? SizedBox(
-                    height: 45,
-                    width: 45,
-                    child: InkWell(
-                      onTap: onUpdateTap,
-                      child: Icon(
-                        Icons.upgrade_sharp,
-                        color: cardTitleColor,
-                        size: 35,
-                      ),
+          ),
+          onUpdateTap != null
+              ? SizedBox(
+                  height: 45,
+                  width: 45,
+                  child: InkWell(
+                    onTap: onUpdateTap,
+                    child: Icon(
+                      Icons.upgrade_sharp,
+                      color: cardTitleColor,
+                      size: 35,
                     ),
-                  )
-                : const SizedBox(
-                    width: 0,
                   ),
-            SizedBox(
-              height: 45,
-              width: 45,
-              child: InkWell(
-                onTap: onReturnTap,
-                child: Icon(
-                  color: cardTitleColor,
-                  Icons.change_circle_outlined,
-                  size: 35,
+                )
+              : const SizedBox(
+                  width: 0,
                 ),
+          SizedBox(
+            height: 45,
+            width: 45,
+            child: InkWell(
+              onTap: onReturnTap,
+              child: Icon(
+                color: cardTitleColor,
+                Icons.change_circle_outlined,
+                size: 35,
               ),
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       ),
     );
   }

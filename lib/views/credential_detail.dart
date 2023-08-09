@@ -39,9 +39,11 @@ class HistoryEntries extends StatelessWidget {
               ? AppLocalizations.of(context)!.issued
               : h.action == 'add'
                   ? '${AppLocalizations.of(context)!.add}: ${h.otherParty}'
-                  : h.action == 'present'
-                      ? AppLocalizations.of(context)!.presented
-                      : AppLocalizations.of(context)!.presentedError),
+                  : h.action == 'update'
+                      ? 'Update'
+                      : h.action == 'present'
+                          ? AppLocalizations.of(context)!.presented
+                          : AppLocalizations.of(context)!.presentedError),
         );
         entries.add(tile);
       }

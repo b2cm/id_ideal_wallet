@@ -327,7 +327,7 @@ class ContextCardState extends State<ContextCard> {
                                   '${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}_${widget.context.id!}')
                               ? () async {
                                   var download = await get(Uri.parse(
-                                      '$contextEndpoint?contextid=${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}'));
+                                      '$contextEndpoint&contextid=${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}'));
                                   if (download.statusCode == 200) {
                                     wallet.reIssuePaymentContext(widget.context,
                                         jsonDecode(download.body));
@@ -371,13 +371,14 @@ class ContextCardState extends State<ContextCard> {
                                   widget.context.credentialSubject['contextId'])
                               ? () async {
                                   var download = await get(Uri.parse(
-                                      '$contextEndpoint?contextid=${widget.context.credentialSubject['contextId']}'));
+                                      '$contextEndpoint&contextid=${widget.context.credentialSubject['contextId']}'));
                                   if (download.statusCode == 200) {
                                     issueContext(
                                         wallet,
                                         jsonDecode(download.body),
                                         widget.context
-                                            .credentialSubject['contextId']);
+                                            .credentialSubject['contextId'],
+                                        true);
                                   }
                                 }
                               : null,

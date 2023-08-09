@@ -701,6 +701,8 @@ class WalletProvider extends ChangeNotifier {
 
   void deleteCredential(String credDid) async {
     var cred = getCredential(credDid);
+    logger.d(credDid);
+    logger.d(cred);
     if (cred != null) {
       var vc = VerifiableCredential.fromJson(cred.w3cCredential);
       if (vc.type.contains('ContextCredential')) {
@@ -719,11 +721,11 @@ class WalletProvider extends ChangeNotifier {
         //   _hasMemberCardContext = false;
         //   _wallet.deleteConfigEntry('hasMemberCardContext');
         // }
+      } else {
+        await _wallet.deleteCredential(credDid);
+        await _wallet.deleteExchangeHistory(credDid);
+        // await _wallet.deleteConfigEntry(credDid);
       }
-    } else {
-      await _wallet.deleteCredential(credDid);
-      await _wallet.deleteExchangeHistory(credDid);
-      // await _wallet.deleteConfigEntry(credDid);
     }
     _buildCredentialList();
     notifyListeners();

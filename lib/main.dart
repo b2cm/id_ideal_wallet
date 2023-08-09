@@ -427,15 +427,25 @@ class MainPage extends StatelessWidget {
                                   constraints: BoxConstraints(
                                       maxHeight:
                                           MediaQuery.of(context).size.height *
-                                              0.3),
-                                  child: const Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 140),
-                                      child: Icon(
-                                        Icons.add,
-                                        color: Colors.grey,
-                                        size: 90,
-                                      )))
+                                              0.5),
+                                  child: Column(children: [
+                                    const Padding(
+                                        padding: EdgeInsets.only(
+                                            top: 140, bottom: 20),
+                                        child: Icon(
+                                          Icons.add,
+                                          color: Colors.grey,
+                                          size: 90,
+                                        )),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(
+                                      AppLocalizations.of(context)!.addNewApp,
+                                      style: const TextStyle(
+                                          color: Colors.grey, fontSize: 18),
+                                    )
+                                  ]))
                               : //count == 1
                               //?
                               Padding(

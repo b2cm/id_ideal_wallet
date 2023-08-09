@@ -140,7 +140,7 @@ class PresentationRequestDialog extends StatefulWidget {
 class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   //'Database' for Checkboxes
   Map<String, bool> selectedCredsPerResult = {};
-  bool needEnterData = false;
+  bool dataEntered = true;
   bool send = false;
   bool fulfillable = true;
 
@@ -214,7 +214,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
-        needEnterData = true;
+        dataEntered = false;
         for (var i in result.selfIssuable!) {
           outerTileExpanded = true;
           outerTileChildList.add(
@@ -258,7 +258,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     selectedCredsPerResult[
                             'o${pos}i${widget.results[index].credentials.length - 1}'] =
                         true;
-                    needEnterData = false;
+                    dataEntered = true;
                     setState(() {});
                   }
                 },
@@ -273,7 +273,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           );
         }
       }
-      int credCount = 0;
+      int credCount = result.selfIssuable?.length ?? 0;
       var selectedCredNames = <String>[];
       innerPos = 0;
       for (var v in result.credentials) {
@@ -303,6 +303,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
 
       if (!result.fulfilled) {
+        logger.d('entirely not');
         fulfillable = false;
       }
 
@@ -310,6 +311,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           result.submissionRequirement?.count ??
           1;
       if (credCount < minCount) {
+        logger.d('less creds: $credCount < $minCount');
         fulfillable = false;
       }
 
@@ -325,7 +327,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 ),
                 children: [
                   TextSpan(
-                      text: '$credCount / $minCount ',
+                      text:
+                          '${credCount - (result.selfIssuable?.length ?? 0)} / $minCount ',
                       style: TextStyle(
                         fontSize: 21,
                         color: result.fulfilled
@@ -490,13 +493,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   void reject() async {
     logger.d('user declined presentation');
+    logger.d(widget.otherEndpoint);
     if (widget.otherEndpoint
         .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
-      logger.d('LNDW: send info');
-      var res = await get(Uri.parse(
+      get(Uri.parse(
           'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
-      logger.d(res.statusCode);
-      logger.d(res.body);
+    } else if (widget.otherEndpoint.startsWith('https://braceland.de')) {
+      get(Uri.parse(
+          'https://braceland.de/bas23/api/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
     }
     Navigator.of(context).pop();
     //TODO: send Problem Report, if user rejects
@@ -504,6 +508,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
+    bool error = fulfillable && dataEntered;
     return Stack(
       children: [
         Scaffold(
@@ -517,100 +522,24 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             ),
           ),
           persistentFooterButtons: [
-            Column(
-              children: [
-                fulfillable
-                    ? const SizedBox(
-                        height: null,
-                      )
-                    : SizedBox(
-                        child: RichText(
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 17,
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: AppLocalizations.of(context)!.attention,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              WidgetSpan(
-                                child: Container(
-                                  padding: const EdgeInsets.only(
-                                    left: 1,
-                                    bottom: 5,
-                                  ),
-                                  child: Icon(
-                                    Icons.error_outline,
-                                    size: 18,
-                                    color: Colors.redAccent.shade700,
-                                  ),
-                                ),
-                              ),
-                              TextSpan(
-                                  text:
-                                      '\n${AppLocalizations.of(context)!.errorNotEnoughCredentials}',
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.normal)),
-                            ],
-                          ),
-                        ),
-                      ),
-                SizedBox(
-                  height: fulfillable ? 0 : 5,
-                ),
-                ElevatedButton(
-                    onPressed: reject,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      minimumSize: const Size.fromHeight(45),
-                    ),
-                    child: Text(AppLocalizations.of(context)!.cancel)),
-                SizedBox(height: fulfillable ? 5 : 0),
-                fulfillable
-                    ? ElevatedButton(
-                        onPressed: () async {
-                          if (needEnterData) {
-                            showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!
-                                          .missingDataTitle),
-                                      content: Text(
-                                          AppLocalizations.of(context)!
-                                              .missingDataNote),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text('Ok'))
-                                      ],
-                                    ));
-                          } else {
-                            setState(() {
-                              send = true;
-                            });
-                            await Future.delayed(
-                                const Duration(milliseconds: 50), sendAnswer);
-                            Navigator.pop(context);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.greenAccent.shade700,
-                          minimumSize: const Size.fromHeight(45),
-                        ),
-                        child: Text(
-                            AppLocalizations.of(context)!.sendPresentation))
-                    : const SizedBox(
-                        height: 0,
-                      ),
-              ],
-            )
+            if (!dataEntered)
+              FooterErrorText(
+                  errorMessage: AppLocalizations.of(context)!.missingDataNote,
+                  reject: reject)
+            else if (!fulfillable)
+              FooterErrorText(
+                  errorMessage:
+                      AppLocalizations.of(context)!.errorNotEnoughCredentials,
+                  reject: reject)
+            else
+              FooterButtons(
+                negativeFunction: reject,
+                positiveFunction: () async {
+                  await Future.delayed(
+                      const Duration(milliseconds: 50), sendAnswer);
+                  Navigator.of(context).pop();
+                },
+              )
           ],
         ),
         if (send)
@@ -639,6 +568,68 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               ],
             ),
           ),
+      ],
+    );
+  }
+}
+
+class FooterErrorText extends StatelessWidget {
+  final void Function() reject;
+  final String errorMessage;
+
+  const FooterErrorText(
+      {super.key, required this.errorMessage, required this.reject});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontSize: 17,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+              children: [
+                TextSpan(
+                  text: AppLocalizations.of(context)!.attention,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                WidgetSpan(
+                  child: Container(
+                    padding: const EdgeInsets.only(
+                      left: 1,
+                      bottom: 5,
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 18,
+                      color: Colors.redAccent.shade700,
+                    ),
+                  ),
+                ),
+                TextSpan(
+                    text: '\n$errorMessage',
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.normal)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 5,
+        ),
+        ElevatedButton(
+            onPressed: reject,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              minimumSize: const Size.fromHeight(45),
+            ),
+            child: Text(AppLocalizations.of(context)!.cancel))
       ],
     );
   }

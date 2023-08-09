@@ -115,31 +115,49 @@ class CredentialOfferDialog extends StatelessWidget {
         ),
       ),
       persistentFooterButtons: [
-        Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                minimumSize: const Size.fromHeight(45),
-              ),
-              child: Text(AppLocalizations.of(context)!.cancel),
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent.shade700,
-                minimumSize: const Size.fromHeight(45),
-              ),
-              child: toPay != null
-                  ? Text(AppLocalizations.of(context)!.orderWithPayment)
-                  : Text(AppLocalizations.of(context)!.accept),
-            )
-          ],
-        )
+        FooterButtons(
+            positiveText: toPay != null
+                ? AppLocalizations.of(context)!.orderWithPayment
+                : AppLocalizations.of(context)!.accept),
+      ],
+    );
+  }
+}
+
+class FooterButtons extends StatelessWidget {
+  final String? positiveText, negativeText;
+  final void Function()? negativeFunction, positiveFunction;
+
+  const FooterButtons(
+      {super.key,
+      this.positiveText,
+      this.negativeText,
+      this.negativeFunction,
+      this.positiveFunction});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: positiveFunction ?? () => Navigator.of(context).pop(true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.greenAccent.shade700,
+            minimumSize: const Size.fromHeight(45),
+          ),
+          child: Text(positiveText ?? AppLocalizations.of(context)!.accept),
+        ),
+        const SizedBox(
+          height: 5,
+        ),
+        ElevatedButton(
+          onPressed: negativeFunction ?? () => Navigator.of(context).pop(false),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            minimumSize: const Size.fromHeight(45),
+          ),
+          child: Text(negativeText ?? AppLocalizations.of(context)!.reject),
+        ),
       ],
     );
   }
