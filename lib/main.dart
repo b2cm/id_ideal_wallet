@@ -175,7 +175,14 @@ class MainPage extends StatelessWidget {
                       const EdgeInsets.only(left: 10, right: 10, bottom: 5),
                   child: Image(
                     image: const AssetImage('assets/images/stempel.png'),
-                    width: MediaQuery.of(context).size.width,
+                    width: MediaQuery.of(context).orientation ==
+                            Orientation.portrait
+                        ? MediaQuery.of(context).size.width
+                        : null,
+                    height: MediaQuery.of(context).orientation ==
+                            Orientation.landscape
+                        ? MediaQuery.of(context).size.height
+                        : null,
                     fit: BoxFit.fill,
                   ),
                 )

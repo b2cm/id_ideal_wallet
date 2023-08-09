@@ -44,7 +44,7 @@ dependencies:
   flutter_secure_storage:
   random_password_generator:
   uuid: any
-  mobile_scanner: ^3.3.0
+  mobile_scanner: ^3.4.0
   http: ^1.0.0
   qr_flutter:
     git:

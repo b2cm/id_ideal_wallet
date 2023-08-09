@@ -99,15 +99,9 @@ class CredentialPageState extends State<CredentialPage> {
                       }
 
                       if (type != 'PaymentReceipt') {
-                        var contextCredential =
-                            wallet.getContextForCredential(id);
-
                         return Column(children: [
                           CredentialCard(
                             credential: cred,
-                            background: wallet
-                                .getContextForCredential(id)
-                                ?.credentialSubject['backgroundImage'],
                           ),
                           const SizedBox(
                             height: 10,

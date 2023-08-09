@@ -39,11 +39,14 @@ class AddContextCredentialState extends State<AddContextCredential> {
     if (contextRequest.statusCode != 200) {
       errorMessage = 'Keine Kontexte';
       initialised = true;
+      setState(() {});
       return;
     }
     var contextList = jsonDecode(contextRequest.body);
     if (contextList is! List) {
       errorMessage = 'No List';
+      initialised = true;
+      setState(() {});
       return;
     }
 

@@ -413,7 +413,7 @@ class WalletProvider extends ChangeNotifier {
       var id = context.credentialSubject['contextId'];
       logger.d(id);
       if (id != null) {
-        var onlineInfo = await get(Uri.parse('$contextEndpoint?contextid=$id'));
+        var onlineInfo = await get(Uri.parse('$contextEndpoint&contextid=$id'));
         if (onlineInfo.statusCode == 200) {
           var parsed = jsonDecode(onlineInfo.body);
           logger.d(
@@ -676,7 +676,7 @@ class WalletProvider extends ChangeNotifier {
     var contextId = _wallet.getConfigEntry('${credentialId}_context');
     if (contextId != null) {
       var contextCred = getCredential(contextId);
-      if (contextCred != null) {
+      if (contextCred != null && contextCred.w3cCredential.isNotEmpty) {
         return VerifiableCredential.fromJson(contextCred.w3cCredential);
       }
     }
@@ -790,7 +790,7 @@ class WalletProvider extends ChangeNotifier {
 
   Future<void> addMemberCard(Map<String, String> subject) async {
     if (!getExistingContextIds().contains('5')) {
-      var res = await get(Uri.parse('$contextEndpoint?contextid=5'));
+      var res = await get(Uri.parse('$contextEndpoint&contextid=5'));
       await issueContext(this, jsonDecode(res.body), '5');
       //await issueMemberCardContext(this);
       // _hasMemberCardContext = true;
