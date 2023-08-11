@@ -18,6 +18,12 @@ import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+class LightningException implements Exception {
+  String message;
+
+  LightningException(this.message);
+}
+
 Future<void> createLNWallet(String paymentId, {bool isMainnet = false}) async {
   var id = const Uuid().v4();
   var res = await post(
@@ -79,8 +85,11 @@ Future<Map<String, dynamic>> createInvoice(String inKey, SatoshiAmount amount,
     return answer;
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
-    logger.d(answer['detail'] ?? answer['message']);
-    throw Exception(answer['detail']);
+    String m = answer['detail'] ?? answer['message'];
+    if (m.contains('exceeds limit')) {
+      m = AppLocalizations.of(navigatorKey.currentContext!)!.invoiceLimit;
+    }
+    throw LightningException(m);
   } else {
     logger.d('Something went wrong : ${res.statusCode}; ${res.body}');
     throw Exception('Something went wrong : ${res.statusCode}; ${res.body}');

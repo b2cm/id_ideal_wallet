@@ -15,13 +15,16 @@ import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:id_ideal_wallet/views/settings_page.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
+import 'package:id_ideal_wallet/views/welcome_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -29,14 +32,19 @@ void main() async {
   HttpOverrides.global = DevHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   final appDocumentDir = await getApplicationDocumentsDirectory();
+  bool isInit = await isOnboard();
   runApp(ChangeNotifierProvider(
     create: (context) => WalletProvider(appDocumentDir.path),
-    child: const App(),
+    child: App(
+      init: isInit,
+    ),
   ));
 }
 
 class App extends StatelessWidget {
-  const App({Key? key}) : super(key: key);
+  final bool init;
+
+  const App({Key? key, required this.init}) : super(key: key);
 
   @override
   Widget build(context) {
@@ -55,8 +63,11 @@ class App extends StatelessWidget {
         Locale('en'),
       ],
       navigatorKey: navigatorKey,
-      home: MainPage(),
+      home: const StartScreen(),
       onGenerateRoute: (args) {
+        if (!init) {
+          return null;
+        }
         logger.d(args.name);
         if (args.name != null && args.name!.contains('oob')) {
           handleDidcommMessage('https://wallet.bccm.dev${args.name}');
@@ -108,10 +119,51 @@ class App extends StatelessWidget {
   }
 }
 
-class MainPage extends StatelessWidget {
+class StartScreen extends StatefulWidget {
+  const StartScreen({super.key});
+
+  @override
+  StartScreenState createState() => StartScreenState();
+}
+
+class StartScreenState extends State<StartScreen> {
+  bool init = true;
+  bool showWelcome = false;
+
+  @override
+  initState() {
+    super.initState();
+    checkOnboard();
+  }
+
+  Future<void> checkOnboard() async {
+    var on = await isOnboard();
+    logger.d(on);
+    showWelcome = !on;
+    init = false;
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return init
+        ? const Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          )
+        : showWelcome
+            ? const WelcomeScreen()
+            : HomeScreen();
+  }
+}
+
+class HomeScreen extends StatelessWidget {
   final SwiperController controller = SwiperController();
 
-  MainPage({Key? key}) : super(key: key);
+  HomeScreen({Key? key}) : super(key: key);
 
   void onTopUpSats(SatoshiAmount amount, String memo,
       VerifiableCredential? paymentCredential) async {
@@ -119,42 +171,52 @@ class MainPage extends StatelessWidget {
         listen: false);
     var payType = wallet.getLnPaymentType(paymentCredential!.id!);
     logger.d(payType);
-    var invoiceMap = await createInvoice(
-        wallet.getLnInKey(paymentCredential.id!)!, amount,
-        memo: memo, isMainnet: payType == 'mainnet');
-    var index = invoiceMap['checking_id'];
-    wallet.newPayment(paymentCredential.id!, index, memo, amount);
-    showModalBottomSheet<dynamic>(
-        useRootNavigator: true,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-        ),
-        context: navigatorKey.currentContext!,
-        builder: (context) {
-          return Consumer<WalletProvider>(builder: (context, wallet, child) {
-            if (wallet.paymentTimer != null) {
-              return InvoiceDisplay(
-                invoice: invoiceMap['payment_request'] ?? '',
-                amount: CurrencyDisplay(
-                    amount: amount.toSat().toStringAsFixed(2),
-                    symbol: 'sat',
-                    mainFontSize: 35,
-                    centered: true),
-                memo: memo,
-              );
-            } else {
-              Future.delayed(
-                  const Duration(seconds: 1),
-                  () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst));
-              return const SizedBox(
-                height: 10,
-              );
-            }
+    try {
+      var invoiceMap = await createInvoice(
+          wallet.getLnInKey(paymentCredential.id!)!, amount,
+          memo: memo, isMainnet: payType == 'mainnet');
+      var index = invoiceMap['checking_id'];
+      wallet.newPayment(paymentCredential.id!, index, memo, amount);
+      showModalBottomSheet<dynamic>(
+          useRootNavigator: true,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+          ),
+          context: navigatorKey.currentContext!,
+          builder: (context) {
+            return Consumer<WalletProvider>(builder: (context, wallet, child) {
+              if (wallet.paymentTimer != null) {
+                return InvoiceDisplay(
+                  invoice: invoiceMap['payment_request'] ?? '',
+                  amount: CurrencyDisplay(
+                      amount: amount.toSat().toStringAsFixed(2),
+                      symbol: 'sat',
+                      mainFontSize: 35,
+                      centered: true),
+                  memo: memo,
+                );
+              } else {
+                Future.delayed(
+                    const Duration(seconds: 1),
+                    () => Navigator.of(context)
+                        .popUntil((route) => route.isFirst));
+                return const SizedBox(
+                  height: 10,
+                );
+              }
+            });
           });
-        });
+    } on LightningException catch (e) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.creationFailed,
+          e.message);
+    } catch (e) {
+      showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.creationFailed,
+      );
+    }
   }
 
   void onTopUpFiat(int amount) {}
@@ -539,11 +601,8 @@ class MainPage extends StatelessWidget {
                       builder: (context) => const QrScanner()));
                   break;
                 case 2:
-                  var locale = AppLocalizations.of(context)!.localeName;
                   Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => WebViewWindow(
-                          initialUrl: 'https://hidy.eu/$locale/app',
-                          title: 'About')));
+                      builder: (context) => const SettingsPage()));
                   break;
               }
             },

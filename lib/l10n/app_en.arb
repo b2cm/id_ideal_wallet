@@ -133,5 +133,18 @@
   "termsOfService": "Terms of Service",
   "termsOfServiceNote": "Selected contexts have additional terms of use. Please read them carefully and select the ones you agree with. Contexts whose terms of use you do not agree with will not be added.",
   "termsOfServiceButton": "Add as selected",
-  "addNewApp": "Add a new app"
+  "termsOfServiceNote1": "I have read and accept the terms and conditions and privacy policy at ",
+  "termsOfServiceNote2": ".",
+  "addNewApp": "Add a new app",
+  "invoiceLimit": "For security reasons, your account balance must not exceed the equivalent of 10€. The invoice exceeds this amount.",
+  "creationFailed": "Creation failed",
+  "license": "Licenses",
+  "welcome": "Welcome to Hidy",
+  "welcomeNote": "Before your personal wallet is available to you, a few things need to be cleared up.",
+  "technic": "Technical Requirements",
+  "technicNoteOk": "Your smartphone is protected with pin, pattern, password or biometrics.",
+  "technicNoteBad": "Your smartphone is not protected with pin, pattern, password or biometrics.",
+  "openSettings": "Open System-Settings",
+  "recheck": "Check again",
+  "start": "Let's start"
 }

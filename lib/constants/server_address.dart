@@ -1,16 +1,28 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logger/logger.dart';
 
 var relay = 'https://167.235.195.132:8888';
 //var relay = 'http://localhost:8888';
-//var contextEndpoint =
-//   'https://braceland.de/walletcontext?${Platform.isIOS ? '1' : '2'}';
+
+// *****Endpoints for Public release*****
+
+// var contextEndpoint =
+//     'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
+// var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
+// String versionNumber = '2.0.0';
+
+// ******Endpoints for Test-Release******
+
 var contextEndpoint =
     'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
-//var contextEndpoint =
-//  'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
+var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
+String versionNumber = '2.0.6-test';
+
+var tosEndpoint =
+    'https://hidy.eu/${AppLocalizations.of(navigatorKey.currentContext!)!.localeName}/terms';
 
 var lnTestNetEndpoint = 'https://testpayments.pixeldev.eu';
 var lnMainnetEndpoint = 'https://payments.pixeldev.eu';

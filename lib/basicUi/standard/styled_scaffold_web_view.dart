@@ -29,11 +29,7 @@ class StyledScaffoldWebView extends StatelessWidget {
                 child: const Icon(Icons.arrow_back, size: 40)),
           ],
         ),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(
-          color: Colors.black, //change your color here
-        ),
-        title: Text(title, style: const TextStyle(color: Colors.black)),
+        title: Text(title),
         // actions: [
         //   InkWell(
         //       onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),

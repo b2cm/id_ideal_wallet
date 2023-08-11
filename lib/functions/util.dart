@@ -6,7 +6,19 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:random_password_generator/random_password_generator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x509b/x509.dart' as x509;
+
+Future<bool> isOnboard() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final bool? onboard = prefs.getBool('onboard');
+  return onboard ?? false;
+}
+
+Future<bool> checkAuthSupport() {
+  var auth = LocalAuthentication();
+  return auth.isDeviceSupported();
+}
 
 Future<bool> openWallet(WalletStore wallet) async {
   try {

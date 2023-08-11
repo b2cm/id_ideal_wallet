@@ -130,8 +130,21 @@
   "description": "Beschreibung",
   "favorites": "Favoriten",
   "amount": "Betrag",
-  "termsOfService": "Nutzungsbedingungen",
+  "termsOfService": "AGBs und Datenschutzbestimmungen",
   "termsOfServiceNote": "Ausgewählte Kontexte haben zusätzliche Nutzungsbedingungen. Bitte lesen Sie diese sorgfälltig durch und wählen die aus, denen Sie zustimmen. Kontexte, deren Nutzungsbedingungen Sie nicht zustimmen, werden nicht hinzugefügt.",
   "termsOfServiceButton": "Hinzufügen wie ausgewählt",
-  "addNewApp": "Füge eine neue Anwendung hinzu"
+  "termsOfServiceNote1": "Ich habe die AGBs und Datenschutzbestimmungen unter ",
+  "termsOfServiceNote2": " gelesen und akzeptiere diese.",
+  "addNewApp": "Füge eine neue Anwendung hinzu",
+  "invoiceLimit": "Aus Sicherheitsgründen darf dein Kontostand umgerechnet nicht mehr als 10€ betragen. Die Invoice überschreitet diesen Betrag.",
+  "creationFailed": "Erstellen Fehlgeschlagen",
+  "license": "Lizenzen",
+  "welcome": "Willkommen bei Hidy",
+  "welcomeNote": "Bevor dir deine persönliche Wallet zur Verfügung steht, müssen noch ein paar Dinge geklärt werden.",
+  "technic": "Technische Vorraussetzungen",
+  "technicNoteOk": "Dein Smartphone ist mit Pin, Muster, Passwort oder Biometrie geshützt.",
+  "technicNoteBad": "Dein Smartphone ist nicht mit Pin, Muster, Passwort oder Biometrie geshützt.",
+  "openSettings": "System-Einstellungen öffnen",
+  "recheck": "Erneut prüfen",
+  "start": "Los geht's"
 }

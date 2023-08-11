@@ -133,45 +133,64 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
         List<Widget> subs = buildCredSubject(value, key);
         children.addAll(subs);
       } else if (value is List) {
+        var index = 0;
+        var primitiveString = '';
+        for (var v in value) {
+          if (v is Map) {
+            List<Widget> subs =
+                buildCredSubject(v.cast<String, dynamic>(), '$key.$index');
+            children.addAll(subs);
+          } else if (v is List) {
+            List<Widget> subs = buildCredSubject({index.toString(): v}, key);
+            children.addAll(subs);
+          } else {
+            primitiveString += '${uriDecode(v)}, ';
+          }
+          index++;
+        }
+        if (primitiveString.isNotEmpty) {
+          children.add(generateTile(before, key,
+              primitiveString.substring(0, primitiveString.length - 2)));
+        }
       } else {
-        var subtitle = '${before != null ? '$before.' : ''}$key';
-        var title = (value is String && value.startsWith('data:'))
-            ? InkWell(
-                child: Text(
-                    AppLocalizations.of(navigatorKey.currentContext!)!.show),
-                onTap: () {
-                  if (value.contains('image')) {
-                    Navigator.of(navigatorKey.currentContext!).push(
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                Base64ImagePreview(imageDataUri: value)));
-                  } else if (value.contains('application/pdf')) {
-                    Navigator.of(navigatorKey.currentContext!).push(
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                Base64PdfPreview(pdfDataUri: value)));
-                  }
-                },
-              )
-            : Text(uriDecode(value));
-
-        children.add(ListTile(
-          visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
-          leading: Container(
-            constraints: const BoxConstraints(minWidth: 100, maxWidth: 100),
-            child: Text(
-              propertyNames[subtitle] ?? subtitle,
-            ),
-          ),
-          minLeadingWidth: 100,
-          titleAlignment: ListTileTitleAlignment.center,
-          leadingAndTrailingTextStyle: const TextStyle(color: Colors.black38),
-          title: title,
-        ));
+        children.add(generateTile(before, key, value));
       }
     }
   });
   return children;
+}
+
+ListTile generateTile(String? before, String key, dynamic value) {
+  var subtitle = '${before != null ? '$before.' : ''}$key';
+  var title = (value is String && value.startsWith('data:'))
+      ? InkWell(
+          child: Text(AppLocalizations.of(navigatorKey.currentContext!)!.show),
+          onTap: () {
+            if (value.contains('image')) {
+              Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
+                  builder: (context) =>
+                      Base64ImagePreview(imageDataUri: value)));
+            } else if (value.contains('application/pdf')) {
+              Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
+                  builder: (context) => Base64PdfPreview(pdfDataUri: value)));
+            }
+          },
+        )
+      : Text(uriDecode(value));
+
+  return ListTile(
+    visualDensity: const VisualDensity(horizontal: 0, vertical: -2.5),
+    leading: Container(
+      constraints: const BoxConstraints(minWidth: 100, maxWidth: 100),
+      child: Text(
+        propertyNames[subtitle] ?? subtitle,
+      ),
+    ),
+    minLeadingWidth: 100,
+    titleAlignment: ListTileTitleAlignment.center,
+    leadingAndTrailingTextStyle: const TextStyle(color: Colors.black38),
+    title: title,
+  );
 }
 
 String uriDecode(String value) {

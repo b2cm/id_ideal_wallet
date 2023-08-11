@@ -32,6 +32,7 @@ Future<bool> handleOobUrl(String url) async {
 Future<bool> handleDidcommMessage(String message) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+
   var plaintext = await getPlaintext(message, wallet);
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {
     for (var a in plaintext.attachments!) {
