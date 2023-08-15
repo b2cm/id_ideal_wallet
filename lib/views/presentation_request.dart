@@ -498,9 +498,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
       get(Uri.parse(
           'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
-    } else if (widget.otherEndpoint.startsWith('https://braceland.de')) {
+    } else if (widget.otherEndpoint.startsWith(baseUrl)) {
       get(Uri.parse(
-          'https://braceland.de/bas23/api/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
+          '$baseUrl/bas23/api/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
     }
     Navigator.of(context).pop();
     //TODO: send Problem Report, if user rejects

@@ -11,6 +11,7 @@ import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/server_address.dart';
@@ -71,7 +72,7 @@ Future<bool> handleOfferCredential(
   //payment requested?
   String? toPay;
   String? invoice;
-  String? paymentId, lnInKey, lnAdminKey;
+  String? paymentId, lnInKey, lnAdminKey, paymentType;
 
   if (message.attachments!.length > 1) {
     logger.d('with payment');
@@ -111,15 +112,35 @@ Future<bool> handleOfferCredential(
         return false;
       }
 
-      //TODO: ask user which to use
-      paymentId = paymentTypes.first.id!;
-      var paymentType = paymentTypes.first.credentialSubject['paymentType'];
+      String paymentId;
+      if (paymentTypes.length > 1) {
+        int? selectedIndex =
+            await Future.delayed(const Duration(seconds: 1), () async {
+          return await Navigator.push(
+              navigatorKey.currentContext!,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      PaymentMethodSelector(paymentMethods: paymentTypes)));
+        });
+        logger.d(selectedIndex);
+        if (selectedIndex == null) {
+          return false;
+        } else {
+          paymentId = paymentTypes[selectedIndex].id!;
+          paymentType =
+              paymentTypes[selectedIndex].credentialSubject['paymentType'];
+        }
+      } else {
+        paymentId = paymentTypes.first.id!;
+        paymentType = paymentTypes.first.credentialSubject['paymentType'];
+      }
 
       if (paymentType != 'SimulatedPayment') {
         lnInKey = wallet.getLnInKey(paymentId);
         lnAdminKey = wallet.getLnAdminKey(paymentId);
-        var decoded = await decodeInvoice(lnInKey!, invoice);
-        toPay = decoded.amount.toEuro().toStringAsFixed(2);
+        var decoded = await decodeInvoice(lnInKey!, invoice,
+            isMainnet: paymentType == 'LightningMainnetPayment');
+        toPay = decoded.amount.toSat().toString();
         logger.d(toPay);
         logger.d(decoded.amount.milliSatoshi);
       } else {
@@ -146,7 +167,8 @@ Future<bool> handleOfferCredential(
       if (invoice != null) {
         try {
           if (lnAdminKey != null) {
-            await payInvoice(lnAdminKey, invoice);
+            await payInvoice(lnAdminKey, invoice,
+                isMainnet: paymentType == 'LightningMainnetPayment');
             wallet.getLnBalance(paymentId!);
           } else {
             wallet.fakePay(paymentId!, double.parse(toPay!));
@@ -172,7 +194,7 @@ Future<bool> handleOfferCredential(
                     success: true,
                     amount: CurrencyDisplay(
                         amount: "-$toPay",
-                        symbol: '€',
+                        symbol: 'sat',
                         mainFontSize: 35,
                         centered: true),
                   ),
@@ -192,7 +214,7 @@ Future<bool> handleOfferCredential(
                   success: false,
                   amount: CurrencyDisplay(
                       amount: "-$toPay",
-                      symbol: '€',
+                      symbol: 'sat',
                       mainFontSize: 35,
                       centered: true),
                   additionalInfo: Column(children: [
@@ -208,11 +230,11 @@ Future<bool> handleOfferCredential(
       logger.d('user declined credential');
       var reply = determineReplyUrl(message.replyUrl, message.replyTo);
       if (reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
-        logger.d('LNDW: send info');
-        var res = await get(Uri.parse(
+        await get(Uri.parse(
             'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${message.threadId ?? message.id}'));
-        logger.d(res.statusCode);
-        logger.d(res.body);
+      } else if (reply.startsWith(baseUrl)) {
+        get(Uri.parse(
+            '$baseUrl/bas23/api/addtocanceled?thid=${message.threadId ?? message.id}'));
       }
       // TODO: send problem report
       return false;

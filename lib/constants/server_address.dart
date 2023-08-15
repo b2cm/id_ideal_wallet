@@ -13,6 +13,7 @@ var relay = 'https://167.235.195.132:8888';
 //     'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
 // var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
 // String versionNumber = '2.0.0';
+// String baseUrl = 'https://hidy.app
 
 // ******Endpoints for Test-Release******
 
@@ -20,6 +21,7 @@ var contextEndpoint =
     'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
 var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
 String versionNumber = '2.0.6-test';
+String baseUrl = 'https://test.hidy.app';
 
 var tosEndpoint =
     'https://hidy.eu/${AppLocalizations.of(navigatorKey.currentContext!)!.localeName}/terms';
