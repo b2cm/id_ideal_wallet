@@ -33,7 +33,7 @@ class WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> checkTech() async {
-    techOk = await checkAuthSupport();
+    techOk = Platform.isAndroid ? await checkAuthSupport() : true;
     load = false;
     setState(() {});
     var res = await get(Uri.parse(termsVersionEndpoint));
@@ -87,49 +87,57 @@ class WelcomeScreenState extends State<WelcomeScreen> {
               Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Text(AppLocalizations.of(context)!.welcomeNote)),
-              ListTile(
-                leading: Icon(
-                  load
-                      ? Icons.refresh
-                      : techOk
-                          ? Icons.check
-                          : Icons.close,
-                  size: 45,
-                  color: load
-                      ? Colors.grey
-                      : techOk
-                          ? Colors.greenAccent.shade700
-                          : Colors.redAccent,
-                ),
-                isThreeLine: true,
-                title: Text(AppLocalizations.of(context)!.technic),
-                subtitle: Column(
-                  children: [
-                    Text(techOk
-                        ? AppLocalizations.of(context)!.technicNoteOk
-                        : AppLocalizations.of(context)!.technicNoteBad),
-                    techOk
-                        ? const SizedBox(
-                            height: 0,
-                          )
-                        : Row(
-                            children: [
-                              TextButton(
-                                  onPressed: () => AppSettings.openAppSettings(
-                                      type: Platform.isAndroid
-                                          ? AppSettingsType.lockAndPassword
-                                          : AppSettingsType.settings),
-                                  child: Text(AppLocalizations.of(context)!
-                                      .openSettings)),
-                              TextButton(
-                                  onPressed: checkTech,
-                                  child: Text(
-                                      AppLocalizations.of(context)!.recheck))
-                            ],
-                          )
-                  ],
-                ),
-              ),
+              Platform.isAndroid
+                  ? ListTile(
+                      leading: Icon(
+                        load
+                            ? Icons.refresh
+                            : techOk
+                                ? Icons.check
+                                : Icons.close,
+                        size: 45,
+                        color: load
+                            ? Colors.grey
+                            : techOk
+                                ? Colors.greenAccent.shade700
+                                : Colors.redAccent,
+                      ),
+                      isThreeLine: true,
+                      title: Text(AppLocalizations.of(context)!.technic),
+                      subtitle: Column(
+                        children: [
+                          Text(techOk
+                              ? AppLocalizations.of(context)!.technicNoteOk
+                              : AppLocalizations.of(context)!.technicNoteBad),
+                          techOk
+                              ? const SizedBox(
+                                  height: 0,
+                                )
+                              : Row(
+                                  children: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            AppSettings.openAppSettings(
+                                                type: Platform.isAndroid
+                                                    ? AppSettingsType
+                                                        .lockAndPassword
+                                                    : AppSettingsType.settings),
+                                        child: Text(
+                                            AppLocalizations.of(context)!
+                                                .openSettings)),
+                                    TextButton(
+                                        onPressed: checkTech,
+                                        child: Text(
+                                            AppLocalizations.of(context)!
+                                                .recheck))
+                                  ],
+                                )
+                        ],
+                      ),
+                    )
+                  : const SizedBox(
+                      height: 0,
+                    ),
               ListTile(
                 leading: Checkbox(
                     value: dataImprintCheck,
