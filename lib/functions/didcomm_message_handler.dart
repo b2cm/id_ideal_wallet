@@ -382,6 +382,7 @@ void showErrorMessage(String headline, [String? subtext]) {
       context: navigatorKey.currentContext!,
       builder: (context) {
         return ModalDismissWrapper(
+          closeSeconds: 4,
           child: PaymentFinished(
             headline: headline,
             success: false,
