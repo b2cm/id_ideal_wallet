@@ -34,17 +34,13 @@ void main() async {
   final appDocumentDir = await getApplicationDocumentsDirectory();
   bool isInit = await isOnboard();
   runApp(ChangeNotifierProvider(
-    create: (context) => WalletProvider(appDocumentDir.path),
-    child: App(
-      init: isInit,
-    ),
+    create: (context) => WalletProvider(appDocumentDir.path, isInit),
+    child: const App(),
   ));
 }
 
 class App extends StatelessWidget {
-  final bool init;
-
-  const App({Key? key, required this.init}) : super(key: key);
+  const App({Key? key}) : super(key: key);
 
   @override
   Widget build(context) {
@@ -64,8 +60,10 @@ class App extends StatelessWidget {
       ],
       navigatorKey: navigatorKey,
       home: const StartScreen(),
+      onUnknownRoute: (args) =>
+          MaterialPageRoute(builder: (context) => const StartScreen()),
       onGenerateRoute: (args) {
-        if (!init) {
+        if (!Provider.of<WalletProvider>(context, listen: false).onboard) {
           return null;
         }
         logger.d(args.name);
@@ -415,6 +413,25 @@ class HomeScreen extends StatelessWidget {
                       buttons.add(empty);
                     }
                   }
+
+                  if (contextCred.credentialSubject['contextId'] == '5') {
+                    buttons.add(SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.595,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context)!.addCardExplanation,
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                            const Icon(
+                              Icons.arrow_downward_rounded,
+                              size: 45,
+                              color: Colors.black54,
+                            )
+                          ],
+                        )));
+                  }
                 }
 
                 String? overallBackground =
@@ -433,64 +450,87 @@ class HomeScreen extends StatelessWidget {
                       //     maxHeight: MediaQuery.of(context).size.height * 0.3),
                       // child:
                       indexOut == 0
-                          ? Wrap(children: [
-                              Padding(
+                          ? wallet.getFavorites().isEmpty
+                              ? Padding(
                                   padding: const EdgeInsets.all(7),
-                                  child: SizedBox(
-                                      width: MediaQuery.of(context).size.width,
-                                      child: Text(
-                                        textAlign: TextAlign.center,
-                                        AppLocalizations.of(context)!.favorites,
-                                        style: const TextStyle(
-                                            fontSize: 25,
-                                            fontWeight: FontWeight.bold),
-                                      ))),
-                              for (int i = 0;
-                                  i < wallet.contextCredentials.length;
-                                  i++)
-                                wallet.isFavorite(
-                                        wallet.contextCredentials[i].id!)
-                                    ? InkWell(
-                                        onTap: () {
-                                          logger.d('tap : $i');
-                                          controller.move(i + 1);
-                                        },
-                                        child: Padding(
-                                            padding: const EdgeInsets.all(5),
-                                            child: SizedBox(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.4,
-                                                child: ContextCredentialCard(
-                                                    borderWidth: 1,
-                                                    edgeRadius: 10,
-                                                    cardTitle: '',
-                                                    cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] !=
-                                                            null
-                                                        ? HexColor.fromHex(
-                                                            wallet.contextCredentials[i].credentialSubject[
-                                                                'overlaycolor'])
-                                                        : const Color.fromARGB(
-                                                            255, 255, 255, 255),
-                                                    backgroundImage:
-                                                        wallet.contextCredentials[i].credentialSubject['mainbgimg'] !=
-                                                                null
-                                                            ? Image.network(wallet.contextCredentials[i].credentialSubject['mainbgimg'])
-                                                                .image
-                                                            : null,
-                                                    subjectName: wallet
-                                                        .contextCredentials[i]
-                                                        .credentialSubject['name'],
-                                                    bottomLeftText: const SizedBox(
-                                                      width: 0,
-                                                    ),
-                                                    bottomRightText: const SizedBox(
-                                                      width: 0,
-                                                    )))),
-                                      )
-                                    : const SizedBox(height: 0)
-                            ])
+                                  child: Column(children: [
+                                    Text(
+                                      textAlign: TextAlign.center,
+                                      AppLocalizations.of(context)!.favorites,
+                                      style: const TextStyle(
+                                          fontSize: 25,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(AppLocalizations.of(context)!
+                                        .favoriteExplanation)
+                                  ]))
+                              : Wrap(children: [
+                                  Padding(
+                                      padding: const EdgeInsets.all(7),
+                                      child: SizedBox(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          child: Text(
+                                            textAlign: TextAlign.center,
+                                            AppLocalizations.of(context)!
+                                                .favorites,
+                                            style: const TextStyle(
+                                                fontSize: 25,
+                                                fontWeight: FontWeight.bold),
+                                          ))),
+                                  for (int i = 0;
+                                      i < wallet.contextCredentials.length;
+                                      i++)
+                                    wallet.isFavorite(
+                                            wallet.contextCredentials[i].id!)
+                                        ? InkWell(
+                                            onTap: () {
+                                              logger.d('tap : $i');
+                                              controller.move(i + 1);
+                                            },
+                                            child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(5),
+                                                child: SizedBox(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.4,
+                                                    child:
+                                                        ContextCredentialCard(
+                                                            borderWidth: 1,
+                                                            edgeRadius: 10,
+                                                            cardTitle: '',
+                                                            cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] != null
+                                                                ? HexColor.fromHex(
+                                                                    wallet.contextCredentials[i].credentialSubject[
+                                                                        'overlaycolor'])
+                                                                : const Color.fromARGB(
+                                                                    255,
+                                                                    255,
+                                                                    255,
+                                                                    255),
+                                                            backgroundImage:
+                                                                wallet.contextCredentials[i].credentialSubject['mainbgimg'] != null
+                                                                    ? Image.network(wallet.contextCredentials[i].credentialSubject['mainbgimg'])
+                                                                        .image
+                                                                    : null,
+                                                            subjectName: wallet
+                                                                .contextCredentials[i]
+                                                                .credentialSubject['name'],
+                                                            bottomLeftText: const SizedBox(
+                                                              width: 0,
+                                                            ),
+                                                            bottomRightText: const SizedBox(
+                                                              width: 0,
+                                                            )))),
+                                          )
+                                        : const SizedBox(height: 0)
+                                ])
                           : indexOut == wallet.contextCredentials.length + 1
                               ? ConstrainedBox(
                                   constraints: BoxConstraints(
@@ -503,7 +543,7 @@ class HomeScreen extends StatelessWidget {
                                             top: 140, bottom: 20),
                                         child: Icon(
                                           Icons.add,
-                                          color: Colors.grey,
+                                          color: Colors.black54,
                                           size: 90,
                                         )),
                                     const SizedBox(
@@ -512,7 +552,7 @@ class HomeScreen extends StatelessWidget {
                                     Text(
                                       AppLocalizations.of(context)!.addNewApp,
                                       style: const TextStyle(
-                                          color: Colors.grey, fontSize: 18),
+                                          color: Colors.black54, fontSize: 18),
                                     )
                                   ]))
                               : //count == 1

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ModalDismissWrapper extends StatefulWidget {
-  const ModalDismissWrapper({super.key, required this.child});
+  const ModalDismissWrapper(
+      {super.key, required this.child, this.closeSeconds = 2});
 
   final Widget child;
+  final int closeSeconds;
 
   @override
   ModalDismissWrapperState createState() => ModalDismissWrapperState();
@@ -18,7 +20,7 @@ class ModalDismissWrapperState extends State<ModalDismissWrapper> {
   void initState() {
     super.initState();
 
-    end = Timer.periodic(const Duration(seconds: 2), (t) {
+    end = Timer.periodic(Duration(seconds: widget.closeSeconds), (t) {
       if (ModalRoute.of(context)?.isCurrent ?? false) {
         t.cancel();
         Navigator.pop(context);

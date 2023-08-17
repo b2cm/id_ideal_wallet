@@ -21,6 +21,7 @@ import '../functions/util.dart' as my_util;
 class WalletProvider extends ChangeNotifier {
   final WalletStore _wallet;
   bool _authRunning = false;
+  bool onboard;
 
   // bool _hasMemberCardContext = false;
   Set<int> favoriteIndex = {};
@@ -47,8 +48,13 @@ class WalletProvider extends ChangeNotifier {
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
 
-  WalletProvider(String walletPath) : _wallet = WalletStore(walletPath) {
+  WalletProvider(String walletPath, [this.onboard = true])
+      : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+  }
+
+  void onBoarded() {
+    onboard = true;
   }
 
   void openWallet() async {
@@ -147,6 +153,10 @@ class WalletProvider extends ChangeNotifier {
   bool isFavorite(String id) {
     var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
     return f.contains(id);
+  }
+
+  List getFavorites() {
+    return jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
   }
 
   String? getLnInKey(String paymentId) {
@@ -511,6 +521,17 @@ class WalletProvider extends ChangeNotifier {
     }
 
     logger.d(contextCredentials.length);
+
+    // sort contexts by date
+    contextCredentials.sort((a, b) {
+      if (a.issuanceDate.isAfter(b.issuanceDate)) {
+        return 1;
+      } else if (a.issuanceDate.isBefore(b.issuanceDate)) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
 
     if (sortingType == SortingType.dateDown ||
         sortingType == SortingType.dateUp) {

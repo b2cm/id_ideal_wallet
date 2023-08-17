@@ -5,6 +5,7 @@ import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_ios/local_auth_ios.dart';
 import 'package:random_password_generator/random_password_generator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -28,8 +29,19 @@ Future<bool> openWallet(WalletStore wallet) async {
               AppLocalizations.of(navigatorKey.currentContext!)!.openWallet,
           cancelButton:
               AppLocalizations.of(navigatorKey.currentContext!)!.cancel,
-          biometricHint: AppLocalizations.of(navigatorKey.currentContext!)!
-              .verifyIdentity);
+          biometricHint:
+              AppLocalizations.of(navigatorKey.currentContext!)!.verifyIdentity,
+          goToSettingsButton:
+              AppLocalizations.of(navigatorKey.currentContext!)!.openSettings,
+          goToSettingsDescription:
+              '${AppLocalizations.of(navigatorKey.currentContext!)!.technicNoteBad}\n${AppLocalizations.of(navigatorKey.currentContext!)!.noteGoToSettings}');
+      var iosMessage = IOSAuthMessages(
+        cancelButton: AppLocalizations.of(navigatorKey.currentContext!)!.cancel,
+        goToSettingsButton:
+            AppLocalizations.of(navigatorKey.currentContext!)!.openSettings,
+        goToSettingsDescription:
+            '${AppLocalizations.of(navigatorKey.currentContext!)!.technicNoteBad}\n${AppLocalizations.of(navigatorKey.currentContext!)!.noteGoToSettings}',
+      );
       var auth = LocalAuthentication();
       if (!await auth.isDeviceSupported()) return false;
       logger.d('device supported');
@@ -38,7 +50,7 @@ Future<bool> openWallet(WalletStore wallet) async {
       didAuthWork = await auth.authenticate(
           localizedReason: AppLocalizations.of(navigatorKey.currentContext!)!
               .localizedReason,
-          authMessages: [messages]);
+          authMessages: [messages, iosMessage]);
 
       if (didAuthWork) {
         const storage = FlutterSecureStorage();
