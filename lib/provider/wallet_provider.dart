@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:archive/archive.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
@@ -48,9 +50,98 @@ class WalletProvider extends ChangeNotifier {
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
 
+  static const platform = MethodChannel('app.channel.shared.data');
+  static const stream = EventChannel('app.channel.shared.data/events');
+
+  List<int> dataShared = [];
+
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+  }
+
+  Future<List<int>?> startUri() async {
+    try {
+      return platform.invokeMethod('getSharedText');
+    } on PlatformException catch (e) {
+      logger.d('cant fetch pkpass: $e');
+    }
+    return null;
+  }
+
+  (String, Map) getPassType(Map<String, dynamic> pass) {
+    if (pass.containsKey('boardingPass')) {
+      return ('BoardingPass', pass.remove('boardingPass'));
+    } else if (pass.containsKey('coupon')) {
+      return ('Coupon', pass.remove('coupon'));
+    } else if (pass.containsKey('eventTicket')) {
+      return ('EventTicket', pass.remove('eventTicket'));
+    } else if (pass.containsKey('storeCard')) {
+      return ('StoreCard', pass.remove('storeCard'));
+    } else {
+      return ('Generic', pass.remove('generic'));
+    }
+  }
+
+  toKeyAndValue(Map goal, List data) {
+    for (var d in data) {
+      goal[d['label'] ?? d['key']] = d['value'];
+    }
+  }
+
+  void getSharedText(List<int>? sharedData) async {
+    if (sharedData != null) {
+      dataShared = sharedData;
+      logger.d(dataShared.length);
+      var archive = ZipDecoder().decodeBytes(dataShared);
+      var passFile = archive.findFile('pass.json');
+      if (passFile != null) {
+        var passAsJson = jsonDecode(utf8.decode(passFile.content));
+        String type;
+        Map mainPassData;
+        (type, mainPassData) = getPassType(passAsJson);
+        Map<String, dynamic> simplyfiedData = {};
+        if (mainPassData.containsKey('headerFields')) {
+          var fields = mainPassData['headerFields'] as List;
+          toKeyAndValue(simplyfiedData, fields);
+        }
+        if (mainPassData.containsKey('auxiliaryFields')) {
+          var fields = mainPassData['auxiliaryFields'] as List;
+          toKeyAndValue(simplyfiedData, fields);
+        }
+        if (mainPassData.containsKey('backFields')) {
+          var fields = mainPassData['backFields'] as List;
+          toKeyAndValue(simplyfiedData, fields);
+        }
+        if (mainPassData.containsKey('primaryFields')) {
+          var fields = mainPassData['primaryFields'] as List;
+          toKeyAndValue(simplyfiedData, fields);
+        }
+        if (mainPassData.containsKey('secondaryFields')) {
+          var fields = mainPassData['secondaryFields'] as List;
+          toKeyAndValue(simplyfiedData, fields);
+        }
+        if (mainPassData.containsKey('transitType')) {
+          simplyfiedData['transitType'] = mainPassData['transitType'];
+        }
+
+        var did = await newCredentialDid();
+
+        var vc = VerifiableCredential(
+            context: ['schema.org'],
+            type: [type],
+            issuer: did,
+            credentialSubject: {'id': did, ...passAsJson, ...simplyfiedData},
+            issuanceDate: DateTime.now());
+
+        var signed = await signCredential(_wallet, vc.toJson());
+        var storageCred = getCredential(did);
+        storeCredential(signed, storageCred!.hdPath);
+        storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+      } else {
+        logger.d('no valid pkpassFile');
+      }
+    }
   }
 
   void onBoarded() {
@@ -131,6 +222,10 @@ class WalletProvider extends ChangeNotifier {
       if (relayedDidsEntry != null && relayedDidsEntry.isNotEmpty) {
         relayedDids = jsonDecode(relayedDidsEntry).cast<String>();
       }
+
+      startUri().then(getSharedText);
+      //Checking broadcast stream, if deep link was clicked in opened appication
+      stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
     }

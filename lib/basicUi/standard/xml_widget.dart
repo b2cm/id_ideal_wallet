@@ -6,22 +6,10 @@ import 'package:id_ideal_wallet/main.dart';
 import 'package:intl/intl.dart';
 import 'package:xml/xml.dart';
 
-class XmlWidget extends StatefulWidget {
+class XmlWidget extends StatelessWidget {
   final String xml;
   final VerifiableCredential credential;
   final Color overlayColor;
-
-  const XmlWidget(
-      {super.key,
-      required this.xml,
-      required this.credential,
-      this.overlayColor = Colors.black});
-
-  @override
-  XmlWidgetState createState() => XmlWidgetState();
-}
-
-class XmlWidgetState extends State<XmlWidget> {
   final double aspectRatioInverse = 195 / 335;
   String basic = 'container';
   List<Widget> childs = [];
@@ -29,12 +17,14 @@ class XmlWidgetState extends State<XmlWidget> {
   String? text;
   Uint8List? imageData;
 
-  @override
-  void initState() {
-    super.initState();
+  XmlWidget(
+      {super.key,
+      required this.xml,
+      required this.credential,
+      this.overlayColor = Colors.black}) {
     XmlDocument document;
     try {
-      document = XmlDocument.parse(widget.xml);
+      document = XmlDocument.parse(xml);
     } catch (_) {
       basic = 'error';
       return;
@@ -47,7 +37,7 @@ class XmlWidgetState extends State<XmlWidget> {
         if (e.startsWith('\$')) {
           if (e.contains('%')) {
             var split = e.split('%');
-            var value = widget.credential
+            var value = credential
                     .credentialSubject[split.first.replaceAll('\$', '')] ??
                 '';
             if (split.last == 'date') {
@@ -55,9 +45,7 @@ class XmlWidgetState extends State<XmlWidget> {
             }
             return value;
           } else {
-            return widget
-                    .credential.credentialSubject[e.replaceAll('\$', '')] ??
-                '';
+            return credential.credentialSubject[e.replaceAll('\$', '')] ?? '';
           }
         } else {
           return e;
@@ -73,8 +61,7 @@ class XmlWidgetState extends State<XmlWidget> {
           .map((key, value) => MapEntry(value.name.toString(), value.value));
       try {
         var text = document.children.first.firstChild.toString();
-        var value =
-            widget.credential.credentialSubject[text.replaceAll('\$', '')];
+        var value = credential.credentialSubject[text.replaceAll('\$', '')];
         imageData = UriData.fromUri(Uri.parse(value)).contentAsBytes();
       } catch (_) {
         basic = 'container';
@@ -87,8 +74,7 @@ class XmlWidgetState extends State<XmlWidget> {
           .asMap()
           .map((key, value) => MapEntry(value.name.toString(), value.value));
       for (var element in document.childElements.first.childElements) {
-        childs.add(
-            XmlWidget(xml: element.toString(), credential: widget.credential));
+        childs.add(XmlWidget(xml: element.toString(), credential: credential));
       }
     }
   }
@@ -121,7 +107,7 @@ class XmlWidgetState extends State<XmlWidget> {
                   : null,
               color: attributes.containsKey('color')
                   ? HexColor.fromHex(attributes['color'])
-                  : widget.overlayColor,
+                  : overlayColor,
               fontWeight: attributes.containsKey('fontweight')
                   ? fontWeight[attributes['fontweight']]
                   : null),

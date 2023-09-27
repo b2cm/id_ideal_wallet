@@ -114,7 +114,8 @@ class QrRenderState extends State<QrRender> {
             data: AttachmentData(
                 links: ['$relay/get/$bufferId'],
                 hash: base64Encode(multihash.Multihash.encode(
-                    'sha2-256', Uint8List.fromList(hash.bytes)))))
+                        'sha2-256', Uint8List.fromList(hash.bytes))
+                    .digest)))
       ]);
       var url = oob.toUrl('http', 'ver', '');
       qrData = url;
@@ -160,7 +161,8 @@ class QrRenderState extends State<QrRender> {
             data: AttachmentData(
                 links: ['$relay/get/$bufferId'],
                 hash: base64Encode(multihash.Multihash.encode(
-                    'sha2-256', Uint8List.fromList(hash.bytes)))))
+                        'sha2-256', Uint8List.fromList(hash.bytes))
+                    .digest)))
       ]);
       var url = oob.toUrl('http', 'ver', '');
       qrData = url;

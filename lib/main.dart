@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:card_swiper/card_swiper.dart';
@@ -66,7 +67,7 @@ class App extends StatelessWidget {
         if (!Provider.of<WalletProvider>(context, listen: false).onboard) {
           return null;
         }
-        logger.d(args.name);
+        logger.d(args);
         if (args.name != null && args.name!.contains('oob')) {
           handleDidcommMessage('https://wallet.bccm.dev${args.name}');
         } else if (args.name != null && args.name!.contains('webview')) {

@@ -171,6 +171,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
+      useBackSwipe: false,
       title: '',
       appBarActions: [
         InkWell(

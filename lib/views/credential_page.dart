@@ -176,7 +176,9 @@ ListTile generateTile(String? before, String key, dynamic value) {
             }
           },
         )
-      : Text(uriDecode(value));
+      : value is String
+          ? Text(uriDecode(value))
+          : Text(value.toString());
 
   return ListTile(
     visualDensity: const VisualDensity(horizontal: 0, vertical: -2.5),
@@ -193,11 +195,11 @@ ListTile generateTile(String? before, String key, dynamic value) {
   );
 }
 
-String uriDecode(String value) {
+dynamic uriDecode(dynamic value) {
   try {
     return Uri.decodeFull(value);
   } catch (_) {
-    return '';
+    return value;
   }
 }
 
