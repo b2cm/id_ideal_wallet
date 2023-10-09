@@ -150,5 +150,14 @@
   "recheck": "Erneut prüfen",
   "start": "Los geht's",
   "favoriteExplanation": "Füge einen Kontext zu deiner Favoriten-Liste hinzu, indem Du den Stern auf der Karte berührst.",
-  "addCardExplanation": "Füge eine Karte durch Scannen Ihres QR- oder Strichcodes hinzu"
+  "addCardExplanation": "Füge eine Karte durch Scannen Ihres QR- oder Strichcodes hinzu",
+  "importSuccess": "{passType} erfolgreich importiert",
+  "@importSuccess": {
+    "placeholders": {
+      "passType": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import fehlgeschlagen"
 }

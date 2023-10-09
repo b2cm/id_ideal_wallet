@@ -150,5 +150,14 @@
   "recheck": "Check again",
   "start": "Let's start",
   "favoriteExplanation": "Add a context to your favorites list by touching the star on the map.",
-  "addCardExplanation": "Add a card by scanning its QR or barcode"
+  "addCardExplanation": "Add a card by scanning its QR or barcode",
+  "importSuccess": "{passType} successfully imported",
+  "@importSuccess": {
+    "placeholders": {
+      "passType": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import failed"
 }

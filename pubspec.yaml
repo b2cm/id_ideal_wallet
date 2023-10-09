@@ -76,6 +76,7 @@ dependencies:
   app_settings: ^5.0.0
   url_launcher: any
   archive: ^3.4.0
+  pkcs7: any
 
 
   # The following adds the Cupertino Icons font to your application.

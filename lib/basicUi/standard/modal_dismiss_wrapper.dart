@@ -14,23 +14,25 @@ class ModalDismissWrapper extends StatefulWidget {
 }
 
 class ModalDismissWrapperState extends State<ModalDismissWrapper> {
-  late Timer end;
+  Timer? end;
 
   @override
   void initState() {
     super.initState();
 
-    end = Timer.periodic(Duration(seconds: widget.closeSeconds), (t) {
-      if (ModalRoute.of(context)?.isCurrent ?? false) {
-        t.cancel();
-        Navigator.pop(context);
-      }
-    });
+    if (widget.closeSeconds > 0) {
+      end = Timer.periodic(Duration(seconds: widget.closeSeconds), (t) {
+        if (ModalRoute.of(context)?.isCurrent ?? false) {
+          t.cancel();
+          Navigator.pop(context);
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    end.cancel();
+    end?.cancel();
     super.dispose();
   }
 

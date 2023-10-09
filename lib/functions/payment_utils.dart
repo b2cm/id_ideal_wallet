@@ -237,6 +237,7 @@ void payInvoiceInteraction(String invoice,
         context: navigatorKey.currentContext!,
         builder: (context) {
           return ModalDismissWrapper(
+            closeSeconds: -1,
             child: PaymentIntent(
               amount: CurrencyDisplay(
                   amount: toPay.toSat().toString(),
