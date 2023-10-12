@@ -75,7 +75,7 @@ Future<bool> handleOfferCredential(
   String? paymentId, lnInKey, lnAdminKey, paymentType;
 
   if (message.attachments!.length > 1) {
-    logger.d('with payment');
+    logger.d('with payment (or credential manifest + fulfillment)');
     var paymentReq = message.attachments!.where(
         (element) => element.format != null && element.format == 'lnInvoice');
     if (paymentReq.isNotEmpty) {
@@ -157,7 +157,9 @@ Future<bool> handleOfferCredential(
       context: navigatorKey.currentContext!,
       barrierColor: Colors.white,
       builder: (BuildContext context) => CredentialOfferDialog(
-        credentials: message.detail!,
+        credentials: message.detail?.map((e) => e.credential).toList() ??
+            message.fulfillment?.verifiableCredential ??
+            [],
         toPay: toPay,
       ),
     );
@@ -248,28 +250,40 @@ Future<bool> handleOfferCredential(
   }
 
   //check, if we control did
-  for (var credDetail in message.detail!) {
-    var subject = credDetail.credential.credentialSubject;
-    if (subject.containsKey('id')) {
-      String id = subject['id'];
-      String? private;
-      try {
-        private = await wallet.getPrivateKeyForCredentialDid(id);
-      } catch (e) {
-        _sendProposeCredential(message, wallet, myDid, paymentDetails);
+  if (message.detail != null) {
+    for (var credDetail in message.detail!) {
+      var subject = credDetail.credential.credentialSubject;
+      if (subject.containsKey('id')) {
+        String id = subject['id'];
+        String? private;
+        try {
+          private = await wallet.getPrivateKeyForCredentialDid(id);
+        } catch (e) {
+          _sendProposeCredential(message, wallet, myDid, paymentDetails);
+          return false;
+        }
+        if (private == null) {
+          _sendProposeCredential(message, wallet, myDid, paymentDetails);
+          return false;
+        }
+      } else {
+        // Issuer likes to issue credential without id (not bound to holder)
+        _sendRequestCredential(message, wallet, myDid, paymentDetails);
         return false;
       }
-      if (private == null) {
-        _sendProposeCredential(message, wallet, myDid, paymentDetails);
-        return false;
-      }
-    } else {
-      // Issuer likes to issue credential without id (not bound to holder)
-      _sendRequestCredential(message, wallet, myDid, paymentDetails);
-      return false;
     }
+    await _sendRequestCredential(message, wallet, myDid, paymentDetails);
+  } else if (message.credentialManifest != null) {
+    var request = RequestCredential(
+        replyUrl: '$relay/buffer/$myDid',
+        threadId: message.threadId ?? message.id,
+        returnRoute: ReturnRouteValue.thread,
+        from: myDid,
+        to: [message.from!]);
+
+    sendMessage(myDid, determineReplyUrl(message.replyUrl, message.replyTo),
+        wallet, request, message.from!);
   }
-  await _sendRequestCredential(message, wallet, myDid, paymentDetails);
   return false;
 }
 

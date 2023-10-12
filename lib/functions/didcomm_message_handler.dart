@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -27,6 +28,26 @@ Future<bool> handleOobUrl(String url) async {
     return handleDidcommMessage(messageGot.body);
   }
   return false;
+}
+
+Future<bool> handleOobId(String url) async {
+  try {
+    var messageResponse = await get(Uri.parse(url));
+    logger.d(messageResponse.body);
+
+    Map json = jsonDecode(messageResponse.body);
+    if (json.containsKey('value')) {
+      return handleDidcommMessage(json['value']);
+    }
+    return handleDidcommMessage(messageResponse.body);
+  } catch (e) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .downloadFailedExplanation);
+    logger.d(e);
+    return false;
+  }
 }
 
 Future<bool> handleDidcommMessage(String message) async {
@@ -84,6 +105,14 @@ Future<bool> handleDidcommMessage(String message) async {
           Presentation.fromJson(plaintext.toJson()), wallet);
 
     case DidcommMessages.problemReport:
+      return handleProblemReport(
+          ProblemReport.fromJson(plaintext.toJson()), wallet);
+
+    case DidcommMessages.issueCredentialProblem:
+      return handleProblemReport(
+          ProblemReport.fromJson(plaintext.toJson()), wallet);
+
+    case DidcommMessages.requestPresentationProblem:
       return handleProblemReport(
           ProblemReport.fromJson(plaintext.toJson()), wallet);
 
@@ -231,6 +260,24 @@ Future<bool> handleInvitation(
         wallet,
         propose,
         invitation.from!);
+  } else if (invitation.goalCode != null &&
+      invitation.goalCode == 'streamlined-vc') {
+    // counterpart like to issue credential
+    var threadId = const Uuid().v4();
+    var myDid = await wallet.newConnectionDid(KeyType.secp256k1);
+    var propose = ProposeCredential(
+        id: threadId,
+        threadId: threadId,
+        parentThreadId: invitation.id,
+        from: myDid,
+        to: [invitation.from!]);
+
+    sendMessage(
+        myDid,
+        determineReplyUrl(invitation.replyUrl, invitation.replyTo),
+        wallet,
+        propose,
+        invitation.from!);
   } else {
     try {
       dynamic jsonData = invitation.attachments!.first.data.json!;
@@ -261,9 +308,18 @@ String determineReplyUrl(String? replyUrl, List<String>? replyTo) {
 sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
     DidcommPlaintextMessage message, String receiverDid) async {
   var myPrivateKey = await wallet.privateKeyForConnectionDidAsJwk(myDid);
-  var recipientDDO = (await resolveDidDocument(receiverDid))
-      .resolveKeyIds()
-      .convertAllKeysToJwk();
+  DidDocument recipientDDO;
+  if (receiverDid.startsWith('did:keri')) {
+    var res = await get(Uri.parse(
+        'https://mags.kt.et.kaprion.de/VcIssuerSp/dereference?didUrl=$receiverDid'));
+    var jsonBody = jsonDecode(res.body);
+    var dd = DidDocument.fromJson(jsonBody['contentStream']['didDocument']);
+    recipientDDO = dd.resolveKeyIds();
+  } else {
+    recipientDDO = (await resolveDidDocument(receiverDid))
+        .resolveKeyIds()
+        .convertAllKeysToJwk();
+  }
   if (message.type != DidcommMessages.emptyMessage) {
     wallet.storeConversation(message, myDid);
   }
@@ -374,6 +430,8 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
 }
 
 bool handleProblemReport(ProblemReport message, WalletProvider wallet) {
+  logger.d(message.toJson());
+  showErrorMessage('Problem Report', message.interpolateComment());
   return false;
 }
 

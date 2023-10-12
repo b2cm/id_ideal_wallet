@@ -1,4 +1,4 @@
-import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
@@ -15,14 +15,13 @@ class CredentialOfferDialog extends StatelessWidget {
     this.toPay,
   });
 
-  final List<LdProofVcDetail> credentials;
+  final List<VerifiableCredential> credentials;
   final String? toPay;
 
   List<Widget> buildContent() {
     List<Widget> contentData = [];
 
-    for (var d in credentials) {
-      var credential = d.credential;
+    for (var credential in credentials) {
       var type = getTypeToShow(credential.type);
       if (type != 'PaymentReceipt') {
         var title = Text(

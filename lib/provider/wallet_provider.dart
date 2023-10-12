@@ -761,8 +761,8 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConversationEntry(id);
   }
 
-  Future<String> newConnectionDid() async {
-    return _wallet.getNextConnectionDID(KeyType.x25519);
+  Future<String> newConnectionDid([KeyType keytype = KeyType.x25519]) async {
+    return _wallet.getNextConnectionDID(keytype, true);
   }
 
   Future<String> newCredentialDid() async {
