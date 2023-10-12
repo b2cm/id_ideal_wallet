@@ -496,17 +496,17 @@ class HomeScreen extends StatelessWidget {
                                                 padding:
                                                     const EdgeInsets.all(5),
                                                 child: SizedBox(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.4,
+                                                    width: MediaQuery.of(context)
+                                                            .size
+                                                            .width *
+                                                        0.4,
                                                     child:
                                                         ContextCredentialCard(
                                                             borderWidth: 1,
                                                             edgeRadius: 10,
                                                             cardTitle: '',
-                                                            cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] != null
+                                                            cardTitleColor: wallet.contextCredentials[i].credentialSubject['overlaycolor'] !=
+                                                                    null
                                                                 ? HexColor.fromHex(
                                                                     wallet.contextCredentials[i].credentialSubject[
                                                                         'overlaycolor'])
@@ -516,13 +516,24 @@ class HomeScreen extends StatelessWidget {
                                                                     255,
                                                                     255),
                                                             backgroundImage:
-                                                                wallet.contextCredentials[i].credentialSubject['mainbgimg'] != null
-                                                                    ? Image.network(wallet.contextCredentials[i].credentialSubject['mainbgimg'])
-                                                                        .image
+                                                                wallet.contextCredentials[i].credentialSubject['mainbgimg'] !=
+                                                                        null
+                                                                    ? Image
+                                                                        .network(
+                                                                        wallet
+                                                                            .contextCredentials[i]
+                                                                            .credentialSubject['mainbgimg'],
+                                                                        errorBuilder: (context,
+                                                                            object,
+                                                                            stackTrace) {
+                                                                          return Text(wallet.contextCredentials[i].credentialSubject['name'] ??
+                                                                              '');
+                                                                        },
+                                                                      ).image
                                                                     : null,
-                                                            subjectName: wallet
-                                                                .contextCredentials[i]
-                                                                .credentialSubject['name'],
+                                                            backgroundColor:
+                                                                HexColor.fromHex(wallet.contextCredentials[i].credentialSubject['backsidecolor']),
+                                                            subjectName: wallet.contextCredentials[i].credentialSubject['name'],
                                                             bottomLeftText: const SizedBox(
                                                               width: 0,
                                                             ),

@@ -438,9 +438,17 @@ class ContextCardState extends State<ContextCard> {
                       backgroundImage: widget.context.credentialSubject['backgroundImage'] != null
                           ? Image.memory(base64Decode(widget.context.credentialSubject['backgroundImage'].split(',').last)).image
                           : widget.context.credentialSubject['mainbgimg'] != null
-                              ? Image.network(widget.context.credentialSubject['mainbgimg']).image
+                              ? Image.network(
+                                  widget.context.credentialSubject['mainbgimg'],
+                                  errorBuilder: (context, object, stackTrace) {
+                                    return Text(widget.context
+                                            .credentialSubject['name'] ??
+                                        '');
+                                  },
+                                ).image
                               : null,
                       subjectName: widget.context.credentialSubject['name'],
+                      backgroundColor: HexColor.fromHex(widget.context.credentialSubject['backsidecolor']),
                       bottomLeftText: const SizedBox(
                         width: 0,
                       ),

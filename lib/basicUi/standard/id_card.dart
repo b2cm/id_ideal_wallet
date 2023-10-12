@@ -54,6 +54,7 @@ class IdCard extends StatelessWidget {
         );
       } else {
         return ContextCredentialCard(
+            backgroundColor: const Color.fromARGB(255, 233, 224, 200),
             cardTitleColor: credential.credentialSubject['overlaycolor'] != null
                 ? HexColor.fromHex(credential.credentialSubject['overlaycolor'])
                 : const Color.fromARGB(255, 255, 255, 255),
@@ -141,7 +142,9 @@ class IdCard extends StatelessWidget {
             credential: credential,
             xmlValue: layout['baselayout'],
             backgroundImage: layout['credentialbackgroundimage'] != null
-                ? Image.network(layout['credentialbackgroundimage']).image
+                ? Image.network(
+                    layout['credentialbackgroundimage'],
+                  ).image
                 : null,
             cardTitleColor: layout['overlaycolor'] != null
                 ? HexColor.fromHex(layout['overlaycolor'])
@@ -373,6 +376,7 @@ class ContextCredentialCard extends IdCard {
       required super.bottomRightText,
       super.cardTitleColor,
       super.backgroundImage,
+      super.backgroundColor,
       this.onReturnTap,
       this.addToFavorites,
       this.isFavorite = false,
