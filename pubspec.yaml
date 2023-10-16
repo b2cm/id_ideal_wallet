@@ -77,6 +77,8 @@ dependencies:
   url_launcher: any
   archive: ^3.4.0
   pkcs7: any
+  cbor_test:
+    path: ../cbor_test
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -656,7 +656,8 @@ class WalletProvider extends ChangeNotifier {
       if (cred.w3cCredential == '' || cred.w3cCredential == 'vc') {
         continue;
       }
-      if (cred.plaintextCredential == '') {
+      if (cred.plaintextCredential == '' ||
+          cred.plaintextCredential.startsWith('isoData:')) {
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('ContextCredential')) {
           _wallet.storeConfigEntry(
@@ -773,8 +774,9 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getCredential(did);
   }
 
-  void storeCredential(String vc, String hdPath, [String? newDid]) async {
-    await _wallet.storeCredential(vc, '', hdPath,
+  void storeCredential(String vc, String hdPath,
+      {String? newDid, String? isoMdlData}) async {
+    await _wallet.storeCredential(vc, isoMdlData ?? '', hdPath,
         keyType: KeyType.ed25519, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);

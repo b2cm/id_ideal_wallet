@@ -407,10 +407,10 @@ Future<bool> handleIssueCredential(
 
         if (type == 'PaymentReceipt') {
           wallet.storeCredential(cred.toString(), storageCred?.hdPath ?? '',
-              cred.credentialSubject['receiptId']);
+              newDid: cred.credentialSubject['receiptId']);
         } else {
-          wallet.storeCredential(
-              cred.toString(), storageCred?.hdPath ?? '', credDid);
+          wallet.storeCredential(cred.toString(), storageCred?.hdPath ?? '',
+              newDid: credDid);
           wallet.storeExchangeHistoryEntry(
               credDid, DateTime.now(), 'issue', message.from!);
 

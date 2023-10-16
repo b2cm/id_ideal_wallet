@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cbor_test/cbor_test.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:flutter/material.dart';
@@ -151,43 +152,109 @@ Future<void> handleOfferOidc(String offerUri) async {
       if (credentialResponse.statusCode == 200) {
         var credential = jsonDecode(credentialResponse.body)['credential'];
 
-        logger.d(credential);
+        if (offer.credentials.first['format'] == 'iso-mdl') {
+          var data = IssuerSignedObject.fromCbor(base64Decode(credential));
+          var verified = verifyMso(data);
+          if (verified) {
+            var signedData =
+                MobileSecurityObject.fromCbor(data.issuerAuth.payload);
+            logger.d(signedData.deviceKeyInfo.deviceKey);
+            var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
+            logger.d(did);
+            var credSubject = {'id': did};
+            data.items.forEach((key, value) {
+              for (var i in value) {
+                credSubject[i.dataElementIdentifier] = i.dataElementValue;
+              }
+            });
 
-        var verified = await verifyCredential(credential,
-            loadDocumentFunction: loadDocumentFast);
+            var vc = VerifiableCredential(
+                context: [
+                  'schema.org'
+                ],
+                type: [
+                  'IsoMdlCredential',
+                  signedData.docType
+                ],
+                issuer: {
+                  'name': 'IsoMdlIssuer',
+                  'certificate': base64UrlEncode(
+                      data.issuerAuth.unprotected[33].cast<int>())
+                },
+                credentialSubject: credSubject,
+                issuanceDate: signedData.validityInfo.validFrom,
+                expirationDate: signedData.validityInfo.validUntil);
 
-        logger.d(verified);
-        if (verified) {
-          var credDid = getHolderDidFromCredential(credential);
-          logger.d(credDid);
-          var storageCred = wallet.getCredential(credDid.split('#').first);
-          if (storageCred == null) {
-            throw Exception(
-                'No hd path for credential found. Sure we control it?');
+            var storageCred = wallet.getCredential(did);
+
+            if (storageCred == null) {
+              throw Exception(
+                  'No hd path for credential found. Sure we control it?');
+            }
+
+            wallet.storeCredential(vc.toString(), storageCred.hdPath,
+                isoMdlData: 'isoData:$credential');
+
+            showModalBottomSheet(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10)),
+                ),
+                context: navigatorKey.currentContext!,
+                builder: (context) {
+                  return ModalDismissWrapper(
+                    child: PaymentFinished(
+                      headline: "Credential empfangen",
+                      success: true,
+                      amount: CurrencyDisplay(
+                          amount: signedData.docType,
+                          symbol: '',
+                          mainFontSize: 35,
+                          centered: true),
+                    ),
+                  );
+                });
           }
+        } else {
+          logger.d(credential);
 
-          wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+          var verified = await verifyCredential(credential,
+              loadDocumentFunction: loadDocumentFast);
 
-          showModalBottomSheet(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline: "Credential empfangen",
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: credential['type'].first,
-                        symbol: '',
-                        mainFontSize: 35,
-                        centered: true),
-                  ),
-                );
-              });
+          logger.d(verified);
+          if (verified) {
+            var credDid = getHolderDidFromCredential(credential);
+            logger.d(credDid);
+            var storageCred = wallet.getCredential(credDid.split('#').first);
+            if (storageCred == null) {
+              throw Exception(
+                  'No hd path for credential found. Sure we control it?');
+            }
+
+            wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+
+            showModalBottomSheet(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10)),
+                ),
+                context: navigatorKey.currentContext!,
+                builder: (context) {
+                  return ModalDismissWrapper(
+                    child: PaymentFinished(
+                      headline: "Credential empfangen",
+                      success: true,
+                      amount: CurrencyDisplay(
+                          amount: credential['type'].first,
+                          symbol: '',
+                          mainFontSize: 35,
+                          centered: true),
+                    ),
+                  );
+                });
+          }
         }
       } else {
         logger.d(credentialResponse.statusCode);
