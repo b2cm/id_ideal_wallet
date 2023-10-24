@@ -17,6 +17,7 @@ import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:provider/provider.dart';
 
+import '../constants/kaprionContext.dart';
 import '../functions/didcomm_message_handler.dart';
 
 class RequesterInfo extends StatefulWidget {
@@ -381,7 +382,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   Future<void> sendAnswer() async {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
-    List<FilterResult> finalSend = [];
+    List<dynamic> finalSend = [];
+    Set<String> issuerDids = {};
     int outerPos = 0;
     int innerPos = 0;
     for (var result in widget.results) {
@@ -390,6 +392,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       for (var cred in result.credentials) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
           credList.add(cred);
+          issuerDids.add(getIssuerDidFromCredential(cred.toJson()));
         }
         innerPos++;
       }
@@ -400,6 +403,18 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
+
+    for (var d in issuerDids) {
+      var entry = wallet.getConfig('certCreds:$d');
+      if (entry != null) {
+        var j = jsonDecode(entry) as List;
+        for (var c in j) {
+          logger.d(c);
+          finalSend.add(VerifiableCredential.fromJson(c));
+        }
+      }
+    }
+
     if (widget.isOidc) {
       var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
           loadDocumentFunction: loadDocumentFast);
@@ -465,7 +480,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
     } else {
       var vp = await buildPresentation(finalSend, wallet.wallet,
-          widget.message!.presentationDefinition.first.challenge);
+          widget.message!.presentationDefinition.first.challenge,
+          loadDocumentFunction: loadDocumentKaprion);
       var presentationMessage = Presentation(
           replyUrl: '$relay/buffer/${widget.myDid}',
           returnRoute: ReturnRouteValue.thread,

@@ -18,8 +18,7 @@ class HistoryEntries extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
-      var credId =
-          credential.id ?? getHolderDidFromCredential(credential.toJson());
+      var credId = getHolderDidFromCredential(credential.toJson());
       if (credId == '') {
         var type = getTypeToShow(credential.type);
         credId = '${credential.issuanceDate.toIso8601String()}$type';
@@ -91,7 +90,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
               child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
               onPressed: () async {
-                var credId = widget.credential.id ??
+                var credId =
                     getHolderDidFromCredential(widget.credential.toJson());
                 if (credId == '') {
                   var type = getTypeToShow(widget.credential.type);
@@ -294,7 +293,11 @@ class CredentialInfo extends StatelessWidget {
       otherData.add(expDateTile);
     }
 
-    var id = credential.id ?? getHolderDidFromCredential(credential.toJson());
+    var id = getHolderDidFromCredential(credential.toJson());
+    if (id == '') {
+      var type = getTypeToShow(credential.type);
+      id = '${credential.issuanceDate.toIso8601String()}$type';
+    }
     var statusTile =
         Consumer<WalletProvider>(builder: (context, wallet, child) {
       var status = wallet.revocationState[id];

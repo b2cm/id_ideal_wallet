@@ -2,6 +2,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/issuer_info.dart';
@@ -23,7 +24,7 @@ class CredentialOfferDialog extends StatelessWidget {
 
     for (var credential in credentials) {
       var type = getTypeToShow(credential.type);
-      if (type != 'PaymentReceipt') {
+      if (type != 'PaymentReceipt' && type != 'PublicKeyCertificate') {
         var title = Text(
           type,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -34,7 +35,14 @@ class CredentialOfferDialog extends StatelessWidget {
           ),
         );
         var subject = buildCredSubject(credential.credentialSubject);
+        VerifiableCredential? issuerCertCredential;
+        try {
+          issuerCertCredential = credentials.firstWhere((element) =>
+              element.type.contains('PublicKeyCertificate') &&
+              credential.issuer == getHolderDidFromCredential(element));
+        } catch (_) {}
 
+        logger.d(issuerCertCredential?.toJson());
         contentData.add(
           ExpansionTile(
             title: title,
@@ -44,9 +52,11 @@ class CredentialOfferDialog extends StatelessWidget {
               children: [
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: IssuerInfoText(issuer: credential.issuer),
+                  child: IssuerInfoText(
+                      issuer: issuerCertCredential ?? credential.issuer),
                 ),
-                IssuerInfoIcon(issuer: credential.issuer)
+                IssuerInfoIcon(
+                    issuer: issuerCertCredential ?? credential.issuer)
               ],
             ),
             children: subject,

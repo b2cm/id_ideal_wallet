@@ -74,7 +74,7 @@ Future<bool> handleRequestPresentation(
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
       var type = getTypeToShow(vc.type);
       if (type != 'PaymentReceipt') {
-        var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+        var id = getHolderDidFromCredential(vc.toJson());
         var status = wallet.revocationState[id];
         if (status == RevocationState.valid.index ||
             status == RevocationState.unknown.index) {

@@ -162,6 +162,10 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
           logger.d('cant verify certificate');
         }
         setState(() {});
+      } else if (widget.issuer.containsKey('credentialSubject') &&
+          widget.issuer.containsKey('issuer')) {
+        marker = Icons.verified_outlined;
+        iconColor = Colors.green;
       } else if (widget.issuer.containsKey('name')) {
         marker = Icons.question_mark;
         iconColor = Colors.black54;

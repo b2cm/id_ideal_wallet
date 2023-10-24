@@ -334,7 +334,11 @@ class WalletProvider extends ChangeNotifier {
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
       [bool notify = false]) async {
-    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    var id = getHolderDidFromCredential(vc.toJson());
+    if (id == '') {
+      var type = my_util.getTypeToShow(vc.type);
+      id = '${vc.issuanceDate.toIso8601String()}$type';
+    }
     logger.d(vc);
 
     // check states that won't change to speed up
@@ -753,6 +757,14 @@ class WalletProvider extends ChangeNotifier {
     _wallet.storeConversationEntry(message, myDid);
   }
 
+  void storeConfig(String key, String value) async {
+    await _wallet.storeConfigEntry(key, value);
+  }
+
+  String? getConfig(String key) {
+    return _wallet.getConfigEntry(key);
+  }
+
   bool isOpen() {
     return _wallet.isWalletOpen();
   }
@@ -765,6 +777,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getNextConnectionDID(keytype, true);
   }
 
+  Connection? getConnection(String did) {
+    return _wallet.getConnection(did);
+  }
+
   Future<String> newCredentialDid() async {
     return _wallet.getNextCredentialDID(KeyType.ed25519);
   }
@@ -773,9 +789,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getCredential(did);
   }
 
-  void storeCredential(String vc, String hdPath, [String? newDid]) async {
+  void storeCredential(String vc, String hdPath,
+      {String? newDid, KeyType keyType = KeyType.ed25519}) async {
     await _wallet.storeCredential(vc, '', hdPath,
-        keyType: KeyType.ed25519, credDid: newDid);
+        keyType: keyType, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);
     var type = vcParsed.type
