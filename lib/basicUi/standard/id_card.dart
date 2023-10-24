@@ -136,6 +136,13 @@ class IdCard extends StatelessWidget {
       }
       var context = wallet?.getContextForCredential(id);
       var layout = context?.credentialSubject['vclayouts']?[type];
+      VerifiableCredential? certCred;
+      var issuer = getIssuerDidFromCredential(credential);
+      var cCreds = wallet?.getConfig('certCreds:$issuer');
+      if (cCreds != null) {
+        certCred =
+            VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
+      }
       if (layout != null) {
         return XmlCard(
             credential: credential,
@@ -162,12 +169,12 @@ class IdCard extends StatelessWidget {
                 : null,
             cardTitle: getTypeToShow(credential.type),
             subjectName:
-                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? credential.credentialSubject['standName'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
             bottomLeftText: IssuerInfoText(
-                issuer: credential.issuer,
+                issuer: certCred ?? credential.issuer,
                 selfIssued: credential.isSelfIssued()),
             bottomRightText: IssuerInfoIcon(
-              issuer: credential.issuer,
+              issuer: certCred ?? credential.issuer,
               selfIssued: credential.isSelfIssued(),
             ));
       }

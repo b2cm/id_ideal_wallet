@@ -37,9 +37,8 @@ class CredentialOfferDialog extends StatelessWidget {
         var subject = buildCredSubject(credential.credentialSubject);
         VerifiableCredential? issuerCertCredential;
         try {
-          issuerCertCredential = credentials.firstWhere((element) =>
-              element.type.contains('PublicKeyCertificate') &&
-              credential.issuer == getHolderDidFromCredential(element));
+          issuerCertCredential = credentials.firstWhere(
+              (element) => element.type.contains('PublicKeyCertificate'));
         } catch (_) {}
 
         logger.d(issuerCertCredential?.toJson());

@@ -196,12 +196,8 @@ Future<DidcommPlaintextMessage> getPlaintext(
   } else if (isEncryptedMessage(message)) {
     try {
       var encrypted = DidcommEncryptedMessage.fromJson(message);
-      logger.d(encrypted.protectedHeaderSkid);
-      var decrypted = await encrypted.decrypt(wallet.wallet,
-          didResolver: encrypted.protectedHeaderSkid != null &&
-                  encrypted.protectedHeaderSkid!.startsWith('did:keri')
-              ? resolveKeri
-              : resolveDidDocument);
+      var decrypted =
+          await encrypted.decrypt(wallet.wallet, didResolver: resolveKeri);
       if (decrypted is DidcommPlaintextMessage) {
         decrypted.from ??= encrypted.protectedHeaderSkid!.split('#').first;
         List<String> toDids = [];
@@ -243,14 +239,18 @@ Future<DidcommPlaintextMessage> getPlaintext(
 
 Future<DidDocument> resolveKeri(String did) {
   logger.d(did);
-  var wallet =
-      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
-  var ddo = wallet.getConfig(did);
-  logger.d(ddo);
-  if (ddo != null) {
-    return Future.value(DidDocument.fromJson(ddo));
+  if (did.startsWith('did:keri')) {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var ddo = wallet.getConfig(did);
+    logger.d(ddo);
+    if (ddo != null) {
+      return Future.value(DidDocument.fromJson(ddo));
+    } else {
+      throw Exception('no ddo');
+    }
   } else {
-    throw Exception('no ddo');
+    return resolveDidDocument(did);
   }
 }
 

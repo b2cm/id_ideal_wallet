@@ -1,3 +1,4 @@
+import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -80,6 +81,9 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName =
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
       }
+    } else if (widget.issuer is VerifiableCredential) {
+      issuerName =
+          widget.issuer.credentialSubject['companyInformation']['legalName'];
     } else {
       issuerName =
           AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
@@ -171,6 +175,10 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
         iconColor = Colors.black54;
         setState(() {});
       }
+    } else if (widget.issuer is VerifiableCredential) {
+      marker = Icons.verified_outlined;
+      iconColor = Colors.green;
+      setState(() {});
     } else if (widget.endpoint != null) {
       var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
       if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
