@@ -161,7 +161,7 @@ Future<bool> handleOfferCredential(
       entry?.protocol == DidcommProtocol.discoverFeature.value ||
       lastMessage.attachments == null ||
       lastMessage.attachments!.isEmpty) {
-    logger.d(message.fulfillment!.verifiableCredential);
+    logger.d(message.fulfillment?.verifiableCredential);
     if (message.detail != null && message.detail!.isEmpty) {
       message.detail = null;
     }
@@ -521,14 +521,19 @@ Future<bool> handleIssueCredential(
       }
 
       if (myCred == null && issuerCertCredential == null) {
-        // TODO Error Message for User
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
         throw Exception('Cant find my Credential');
       }
 
       Map? issuerJwk =
           issuerCertCredential?.credentialSubject['publicKey']['publicKeyJwk'];
       if (issuerJwk == null) {
-        logger.d('no issuer jwk');
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .wrongCredentialNote);
         throw Exception('no issuer jwk');
       }
 
@@ -571,7 +576,10 @@ Future<bool> handleIssueCredential(
             });
       } catch (e) {
         logger.d(e);
-        showErrorMessage('Nicht verifizierbar', e.toString());
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .wrongCredentialNote);
       }
     }
   } else {

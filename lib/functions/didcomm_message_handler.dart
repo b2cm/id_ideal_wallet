@@ -41,6 +41,7 @@ Future<bool> handleOobId(String url) async {
       return handleDidcommMessage(json['value'],
           asUri.removeFragment().replace(queryParameters: {}).toString());
     }
+    logger.d(asUri.removeFragment().replace(queryParameters: {}).toString());
     return handleDidcommMessage(messageResponse.body,
         asUri.removeFragment().replace(queryParameters: {}).toString());
   } catch (e) {
@@ -262,9 +263,12 @@ Future<bool> handleInvitation(
     //better: send problem report
     throw Exception('counterpart do not speak didcommv2');
   }
-
-  if (invitation.goalCode != null && invitation.goalCode == 'streamlined-vp') {
+  var acceptedGoalCodesPresent = ['streamlined-vp', 'de.kaprion.ppp.s2p'];
+  var acceptedGoalCodesIssue = ['streamlined-vc', 'de.kaprion.icp.s2p'];
+  if (invitation.goalCode != null &&
+      acceptedGoalCodesPresent.contains(invitation.goalCode)) {
     // counterpart wants to ask for presentation
+    logger.d('Presentation requested');
     var threadId = const Uuid().v4();
     String myDid;
     if (invitation.from!.startsWith('did:keri') ||
@@ -274,6 +278,13 @@ Future<bool> handleInvitation(
       myDid = await wallet.newConnectionDid();
     }
 
+    if (replyUrl != null) {
+      var con = wallet.getConnection(myDid);
+      wallet.wallet.storeConnection(replyUrl, 'Kaprion', con!.hdPath,
+          keyType: KeyType.p384);
+    }
+
+    logger.d(replyUrl);
     var propose = ProposePresentation(
         id: threadId,
         threadId: threadId,
@@ -285,10 +296,11 @@ Future<bool> handleInvitation(
 
     sendMessage(
         myDid,
-        determineReplyUrl(invitation.replyUrl, invitation.replyTo),
+        replyUrl ?? determineReplyUrl(invitation.replyUrl, invitation.replyTo),
         wallet,
         propose,
         invitation.from!);
+    return true;
   } else if (invitation.goalCode != null &&
       invitation.goalCode == 'de.kaprion.icp.s2p') {
     // counterpart like to issue credential
@@ -321,14 +333,23 @@ Future<bool> handleInvitation(
   return true;
 }
 
-String determineReplyUrl(String? replyUrl, List<String>? replyTo) {
+String determineReplyUrl(String? replyUrl, List<String>? replyTo,
+    [String? myDid]) {
+  logger.d(replyTo);
   if (replyUrl != null) {
     return replyUrl;
-  } else {
-    if (replyTo == null) throw Exception('cant find a replyUrl');
+  } else if (replyTo != null && replyTo.isNotEmpty) {
     for (var url in replyTo) {
       if (url.startsWith('http')) return url;
     }
+  } else if (myDid != null) {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var con = wallet.getConnection(myDid);
+    if (con == null) {
+      throw Exception('no connection');
+    }
+    return con.otherDid;
   }
   throw Exception('cant find a replyUrl');
 }

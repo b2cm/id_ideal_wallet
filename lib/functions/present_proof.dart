@@ -84,6 +84,7 @@ Future<bool> handleRequestPresentation(
     }
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
+  logger.d(definition.toJson());
 
   try {
     var filtered =
@@ -95,7 +96,8 @@ Future<bool> handleRequestPresentation(
           name: definition.name,
           purpose: definition.purpose,
           message: message,
-          otherEndpoint: determineReplyUrl(message.replyUrl, message.replyTo),
+          otherEndpoint:
+              determineReplyUrl(message.replyUrl, message.replyTo, myDid),
           receiverDid: message.from!,
           myDid: myDid,
           results: filtered,

@@ -216,6 +216,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
         dataEntered = false;
+        if (result.credentials.isNotEmpty) {
+          dataEntered = true;
+        }
         for (var i in result.selfIssuable!) {
           outerTileExpanded = true;
           outerTileChildList.add(
@@ -272,6 +275,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               ),
             ),
           );
+        }
+
+        if (result.credentials.isNotEmpty) {
+          outerTileChildList.add(const Text(
+            'oder',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ));
         }
       }
       int credCount = result.selfIssuable?.length ?? 0;
@@ -551,8 +561,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               FooterButtons(
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  await Future.delayed(
-                      const Duration(milliseconds: 50), sendAnswer);
+                  Future.delayed(const Duration(milliseconds: 50), sendAnswer);
                   Navigator.of(context).pop();
                 },
               )

@@ -159,5 +159,7 @@
       }
     }
   },
-  "importFailed": "Import fehlgeschlagen"
+  "importFailed": "Import fehlgeschlagen",
+  "saveError": "Fehler beim Speichern",
+  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang."
 }

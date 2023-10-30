@@ -159,5 +159,7 @@
       }
     }
   },
-  "importFailed": "Import failed"
+  "importFailed": "Import failed",
+  "saveError": "Error saving",
+  "saveErrorNote": "Unable to save the credential.\nPlease retry the operation."
 }
