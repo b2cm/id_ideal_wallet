@@ -291,7 +291,9 @@ Future<bool> handleInvitation(
         parentThreadId: invitation.id,
         from: myDid,
         to: [invitation.from!],
+        returnRoute: ReturnRouteValue.thread,
         replyUrl: '$relay/buffer/$myDid');
+
     wallet.storeConversation(propose, myDid);
 
     sendMessage(
