@@ -302,7 +302,7 @@ Future<bool> handleInvitation(
         invitation.from!);
     return true;
   } else if (invitation.goalCode != null &&
-      invitation.goalCode == 'de.kaprion.icp.s2p') {
+      acceptedGoalCodesIssue.contains(invitation.goalCode)) {
     // counterpart like to issue credential
     var threadId = const Uuid().v4();
     var myDid = await wallet.newConnectionDid(KeyType.p384);

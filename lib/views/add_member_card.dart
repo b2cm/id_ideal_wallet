@@ -69,7 +69,7 @@ class AddMemberCardState extends State<AddMemberCard> {
         'barcodeType': currentType.name,
         'number': numberController.text
       });
-      Navigator.of(context).pop();
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
