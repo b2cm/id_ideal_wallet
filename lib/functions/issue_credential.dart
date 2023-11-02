@@ -244,10 +244,11 @@ Future<bool> handleOfferCredential(
     } else {
       logger.d('user declined credential');
       var reply = determineReplyUrl(message.replyUrl, message.replyTo);
-      if (reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
+      if (reply != null &&
+          reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
         await get(Uri.parse(
             'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${message.threadId ?? message.id}'));
-      } else if (reply.startsWith(baseUrl)) {
+      } else if (reply != null && reply.startsWith(baseUrl)) {
         get(Uri.parse(
             '$baseUrl/bas23/api/addtocanceled?thid=${message.threadId ?? message.id}'));
       }
@@ -499,6 +500,10 @@ Future<bool> handleIssueCredential(
       VerifiableCredential? issuerCertCredential;
 
       if (connection == null) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .wrongCredentialNote);
         throw Exception('Big Problem: no connection');
       }
 

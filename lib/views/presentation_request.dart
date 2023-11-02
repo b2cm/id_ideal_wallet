@@ -245,8 +245,15 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     var credSubject = <dynamic, dynamic>{'id': did};
                     credSubject.addAll(res);
                     var cred = VerifiableCredential(
-                        context: ['https://schema.org'],
-                        type: ['SelfIssuedCredential'],
+                        context: [
+                          credentialsV1Iri,
+                          'https://schema.org',
+                          ed25519ContextIri
+                        ],
+                        type: [
+                          'VerifiableCredential',
+                          'SelfIssuedCredential'
+                        ],
                         issuer: did,
                         credentialSubject: credSubject,
                         issuanceDate: DateTime.now());
@@ -484,8 +491,28 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               widget.receiverDid);
         }
 
-        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
-            .presentationFailed);
+        await showModalBottomSheet(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10))),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                closeSeconds: 4,
+                child: PaymentFinished(
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationFailed,
+                  success: false,
+                  amount: const CurrencyDisplay(
+                      width: 350,
+                      amount: '',
+                      symbol: '',
+                      mainFontSize: 18,
+                      centered: true),
+                ),
+              );
+            });
         // Navigator.of(context).pop();
       }
     } else {
@@ -561,7 +588,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               FooterButtons(
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  Future.delayed(const Duration(milliseconds: 50), sendAnswer);
+                  await Future.delayed(
+                      const Duration(milliseconds: 50), sendAnswer);
                   Navigator.of(context).pop();
                 },
               )

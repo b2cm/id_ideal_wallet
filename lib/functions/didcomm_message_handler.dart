@@ -298,7 +298,7 @@ Future<bool> handleInvitation(
 
     sendMessage(
         myDid,
-        replyUrl ?? determineReplyUrl(invitation.replyUrl, invitation.replyTo),
+        determineReplyUrl(invitation.replyUrl, invitation.replyTo) ?? replyUrl,
         wallet,
         propose,
         invitation.from!);
@@ -335,7 +335,7 @@ Future<bool> handleInvitation(
   return true;
 }
 
-String determineReplyUrl(String? replyUrl, List<String>? replyTo,
+String? determineReplyUrl(String? replyUrl, List<String>? replyTo,
     [String? myDid]) {
   logger.d(replyTo);
   if (replyUrl != null) {
@@ -349,15 +349,21 @@ String determineReplyUrl(String? replyUrl, List<String>? replyTo,
         listen: false);
     var con = wallet.getConnection(myDid);
     if (con == null) {
-      throw Exception('no connection');
+      return null;
     }
     return con.otherDid;
   }
-  throw Exception('cant find a replyUrl');
+  return null;
 }
 
-sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
+sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
     DidcommPlaintextMessage message, String receiverDid) async {
+  if (otherEndpoint == null) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
+    throw Exception(' no Endpoint');
+  }
   var myPrivateKey = await wallet.privateKeyForConnectionDidAsJwk(myDid);
   DidDocument recipientDDO;
   if (receiverDid.startsWith('did:keri')) {

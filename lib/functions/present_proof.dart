@@ -97,7 +97,7 @@ Future<bool> handleRequestPresentation(
           purpose: definition.purpose,
           message: message,
           otherEndpoint:
-              determineReplyUrl(message.replyUrl, message.replyTo, myDid),
+              determineReplyUrl(message.replyUrl, message.replyTo, myDid) ?? '',
           receiverDid: message.from!,
           myDid: myDid,
           results: filtered,
