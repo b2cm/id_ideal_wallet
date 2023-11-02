@@ -398,6 +398,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   }
 
   Future<void> sendAnswer() async {
+    setState(() {
+      send = true;
+    });
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     List<dynamic> finalSend = [];
     Set<String> issuerDids = {};
