@@ -254,6 +254,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                           'VerifiableCredential',
                           'SelfIssuedCredential'
                         ],
+                        id: did,
                         issuer: did,
                         credentialSubject: credSubject,
                         issuanceDate: DateTime.now());

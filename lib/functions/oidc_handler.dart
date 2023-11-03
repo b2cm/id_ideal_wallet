@@ -118,6 +118,18 @@ Future<void> handleOfferOidc(String offerUri) async {
       var signed = await buildPresentation(
           [], wallet.wallet, tokenResponse.cNonce!,
           holder: credentialDid, domain: offer.credentialIssuer);
+
+      var presentation = VerifiablePresentation(
+          context: [credentialsV1Iri, ed25519ContextIri],
+          type: ['VerifiablePresentation'],
+          holder: credentialDid);
+      var signer = EdDsaSigner(loadDocumentFast);
+      var p = await signer.buildProof(
+          presentation.toJson(), wallet.wallet, credentialDid,
+          challenge: tokenResponse.cNonce!,
+          domain: offer.credentialIssuer,
+          proofPurpose: 'authentication');
+      presentation.proof = [LinkedDataProof.fromJson(p)];
       // end VP creation
 
       var credentialRequest = {
@@ -131,7 +143,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         'format': 'ldp_vc',
         'types':
             offer.credentials.first['type'] ?? offer.credentials.first['types'],
-        'proof': {'proof_type': 'ldp_vp', 'vp': jsonDecode(signed)}
+        'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
       };
 
       logger.d(credentialRequest);
