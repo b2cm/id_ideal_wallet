@@ -11,6 +11,9 @@ FutureOr<RemoteDocument> loadDocumentKaprion(
   } else if (url.toString() ==
       'https://demo.shop.kaprion.net/assets/credentialSubject/v4/id-ideal-ld-doc-v4.jsonld') {
     return RemoteDocument(document: kaprionContext4);
+  } else if (url.toString() ==
+      'https://demo.shop.kaprion.net/ControlService/credentialSubject/v4') {
+    return RemoteDocument(document: kaprionContext4);
   } else {
     return loadDocumentFast(url, options);
   }
@@ -72,7 +75,6 @@ var kaprionContext4 = {
       "ticketToken": {"@id": "idideal:ticketToken", "@type": "xsd:hexBinary"},
       "canIssue": {"@id": "idideal:canIssue", "@type": "schema:Text"},
       "sameAs": {"@id": "schema:sameAs", "@type": "schema:URL"},
-      "url": {"@id": "schema:url", "@type": "schema:URL"},
       "address": {"@id": "schema:address", "@type": "schema:PostalAddress"},
       "addressCountry": {
         "@id": "schema:addressCountry",
@@ -242,6 +244,8 @@ var kaprionContext4 = {
         "@type": "schema:Boolean"
       },
       "docId": {"@id": "idideal:docId", "@type": "@id"},
+      "controller": {"@id": "sec:controller", "@type": "@id"},
+      "url": {"@id": "schema:url", "@type": "schema:URL"},
       "JsonWebKey2020": {
         "@id": "https://w3id.org/security#JsonWebKey2020",
         "@context": {
@@ -257,6 +261,7 @@ var kaprionContext4 = {
       "Besuchernachweis": "idideal:Besuchernachweis",
       "standName": "idideal:standName",
       "beschreibung": "idideal:beschreibung",
+      "HidyContextDemo": "idideal:HidyContextDemo",
       "Ed25519VerificationKey2020": {
         "@id": "https://w3id.org/security#Ed25519VerificationKey2020",
         "@context": {
