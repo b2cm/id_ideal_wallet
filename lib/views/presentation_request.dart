@@ -424,17 +424,24 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
-
+    logger.d(issuerDids);
+    Set<String> addedCredentials = {};
     for (var d in issuerDids) {
       var entry = wallet.getConfig('certCreds:$d');
       if (entry != null) {
         var j = jsonDecode(entry) as List;
         for (var c in j) {
           logger.d(c);
-          finalSend.add(VerifiableCredential.fromJson(c));
+          var cred = VerifiableCredential.fromJson(c);
+          if (!addedCredentials.contains(cred.id)) {
+            finalSend.add(cred);
+            addedCredentials.add(cred.id ?? '');
+          }
         }
       }
     }
+
+    logger.d('collected Credentials');
 
     if (widget.isOidc) {
       var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
