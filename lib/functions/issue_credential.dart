@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
@@ -514,6 +512,7 @@ Future<bool> handleIssueCredential(
         if (holderDid == myDid) {
           myCred = v;
           issuerDid = getIssuerDidFromCredential(myCred);
+          //break;
           //message.credentialFulfillment!.verifiableCredential!.remove(v);
         }
         logger.d('$holderDid ?== $issuerDid');
@@ -550,12 +549,12 @@ Future<bool> handleIssueCredential(
         wallet.storeCredential(myCred.toString(), connection.hdPath,
             keyType: KeyType.p384);
 
-        wallet.storeConfig(
-            'certCreds:$issuerDid',
-            jsonEncode(message.credentialFulfillment!.verifiableCredential!
-                .sublist(1)
-                .map((e) => e.toJson())
-                .toList()));
+        // wallet.storeConfig(
+        //     'certCreds:$issuerDid',
+        //     jsonEncode(message.credentialFulfillment!.verifiableCredential!
+        //         .sublist(1)
+        //         .map((e) => e.toJson())
+        //         .toList()));
 
         wallet.storeExchangeHistoryEntry(
             myDid, DateTime.now(), 'issue', message.from!);
