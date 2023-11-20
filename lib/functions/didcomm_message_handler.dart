@@ -486,6 +486,8 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
                 isMainnet: paymentType == 'LightningMainnetPayment');
             logger.d('invoice paid');
           } catch (e) {
+            showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+                .paymentFailed);
             logger.e(e);
           }
         }

@@ -562,7 +562,10 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
           threadId: widget.message!.threadId ?? widget.message!.id,
           parentThreadId: widget.message!.parentThreadId);
+      logger.d(widget.lnInvoiceRequest);
+      logger.d(widget.paymentCards);
       if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
+        logger.d('generate invoice');
         var paymentId = widget.paymentCards!.first.id!;
         var lnInKey = wallet.getLnInKey(paymentId);
         var paymentType =
@@ -574,6 +577,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             memo: widget.lnInvoiceRequest!['memo'] ?? '',
             isMainnet: paymentType == 'LightningMainnetPayment');
         var index = invoice['checking_id'];
+        logger.d(index);
         wallet.newPayment(
           paymentId,
           index,
@@ -581,9 +585,19 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           SatoshiAmount.fromUnitAndValue(
               widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
         );
+
+        var paymentAtt = Attachment(
+            format: 'lnInvoice',
+            data: AttachmentData(json: {
+              'type': 'lnInvoice',
+              'lnInvoice': invoice['payment_request']
+            }));
+
+        presentationMessage.attachments?.add(paymentAtt);
       }
       sendMessage(widget.myDid, widget.otherEndpoint, wallet,
-          presentationMessage, widget.receiverDid);
+          presentationMessage, widget.receiverDid,
+          lnInvoice: widget.lnInvoice, paymentCards: widget.paymentCards);
       for (var pres in presentationMessage.verifiablePresentation) {
         for (var cred in pres.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(

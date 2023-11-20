@@ -87,27 +87,34 @@ Future<bool> handleRequestPresentation(
   logger.d(definition.toJson());
 
   List<VerifiableCredential>? paymentCards;
+  String? invoice;
   var paymentReq = message.attachments!.where(
       (element) => element.format != null && element.format == 'lnInvoice');
-  var invoice = paymentReq.first.data.json?['lnInvoice'];
-  logger.d('invoice: $invoice');
-  if (invoice != null) {
-    paymentCards = wallet.getSuitablePaymentCredentials(invoice);
-    if (paymentCards.isEmpty) {
-      showErrorMessage(
-          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+  if (paymentReq.isNotEmpty) {
+    invoice = paymentReq.first.data.json?['lnInvoice'];
+    logger.d('invoice: $invoice');
+    if (invoice != null) {
+      paymentCards = wallet.getSuitablePaymentCredentials(invoice);
+      if (paymentCards.isEmpty) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+      }
     }
   }
 
+  Map<String, dynamic>? invoiceReq;
   var lnInvoiceReq = message.attachments!.where((element) =>
       element.format != null && element.format == 'lnInvoiceRequest');
-  var invoiceReq = lnInvoiceReq.first.data.json;
-  logger.d('invoice request: $invoiceReq');
-  if (invoice != null) {
-    paymentCards = wallet.getSuitablePaymentCredentials(invoiceReq['network']);
-    if (paymentCards.isEmpty) {
-      showErrorMessage(
-          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+  if (lnInvoiceReq.isNotEmpty) {
+    invoiceReq = lnInvoiceReq.first.data.json;
+    logger.d('invoice request: $invoiceReq');
+    if (invoiceReq != null) {
+      paymentCards =
+          wallet.getSuitablePaymentCredentialsForNetwork(invoiceReq['network']);
+      if (paymentCards.isEmpty) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+      }
     }
   }
 
