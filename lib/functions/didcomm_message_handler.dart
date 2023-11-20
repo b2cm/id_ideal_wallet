@@ -477,12 +477,14 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
             });
 
         if (lnInvoice != null && paymentCards != null) {
+          logger.d('have to pay invoice');
           var paymentId = paymentCards.first.id!;
           var lnAdminKey = wallet.getLnAdminKey(paymentId);
           var paymentType = paymentCards.first.credentialSubject['paymentType'];
           try {
             await payInvoice(lnAdminKey!, lnInvoice,
                 isMainnet: paymentType == 'LightningMainnetPayment');
+            logger.d('invoice paid');
           } catch (e) {
             logger.e(e);
           }
