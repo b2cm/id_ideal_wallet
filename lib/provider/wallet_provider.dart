@@ -577,6 +577,28 @@ class WalletProvider extends ChangeNotifier {
     return pay;
   }
 
+  List<VerifiableCredential> getSuitablePaymentCredentialsForNetwork(
+      String network) {
+    var pay = <VerifiableCredential>[];
+
+    String paymentType = '';
+    if (network.toLowerCase() == 'mainnet') {
+      paymentType = 'LightningMainnetPayment';
+    } else if (network.toLowerCase() == 'testnet') {
+      paymentType = 'LightningTestnetPayment';
+    } else {
+      paymentType = 'SimulatedPayment';
+    }
+
+    for (var p in paymentCredentials) {
+      if (p.credentialSubject['paymentType'] == paymentType) {
+        pay.add(p);
+      }
+    }
+
+    return pay;
+  }
+
   void removeIdFromUpdateList(String id) async {
     hasUpdate.remove(id);
     _wallet.storeConfigEntry('updateContext', jsonEncode(hasUpdate.toList()));

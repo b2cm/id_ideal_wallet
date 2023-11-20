@@ -113,7 +113,7 @@ Future<bool> handleOfferCredential(
         return false;
       }
 
-      String paymentId;
+      // String paymentId;
       if (paymentTypes.length > 1) {
         int? selectedIndex =
             await Future.delayed(const Duration(seconds: 1), () async {

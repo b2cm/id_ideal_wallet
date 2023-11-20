@@ -57,7 +57,8 @@ Future<void> handleOfferOidc(String offerUri) async {
     });
 
     if (authMetaReq.statusCode != 200) {
-      throw Exception('Bad Status code');
+      throw Exception(
+          'Bad Status code: ${authMetaReq.statusCode} / ${authMetaReq.body}');
     }
 
     var jsonBody = jsonDecode(authMetaReq.body);

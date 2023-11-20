@@ -13,6 +13,7 @@ import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -142,6 +143,30 @@ Future<bool> handleEmptyMessage(
   if (message.to != null && message.to!.isNotEmpty) {
     for (var d in message.to!) {
       wallet.removeRelayedDid(d);
+    }
+  }
+
+  if (message.ack != null && message.ack!.isNotEmpty) {
+    var pId = message.threadId ?? message.id;
+
+    var previous = wallet.getConversation(pId);
+    logger.d(previous);
+    if (previous != null &&
+        previous.protocol == DidcommProtocol.presentProof.value) {
+      // assume ack for presentation, check if payment follows
+      var last = DidcommPlaintextMessage.fromJson(previous.lastMessage);
+      logger.d('${message.ack} contains? ${last.id}');
+      if (message.ack!.contains(last.id) &&
+          message.attachments != null &&
+          message.attachments!.isNotEmpty) {
+        var paymentReq = message.attachments!.where((element) =>
+            element.format != null && element.format == 'lnInvoice');
+        if (paymentReq.isNotEmpty) {
+          var invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
+          logger.d(invoice);
+          payInvoiceInteraction(invoice);
+        }
+      }
     }
   }
   return true;
@@ -357,7 +382,8 @@ String? determineReplyUrl(String? replyUrl, List<String>? replyTo,
 }
 
 sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
-    DidcommPlaintextMessage message, String receiverDid) async {
+    DidcommPlaintextMessage message, String receiverDid,
+    {String? lnInvoice, List<VerifiableCredential>? paymentCards}) async {
   if (otherEndpoint == null) {
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
@@ -404,8 +430,6 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
       recipientPublicKeyJwk: [pubKey],
       plaintext: message);
 
-  logger.d(encrypted.toJson());
-
   if (otherEndpoint.startsWith('http')) {
     logger.d('send message to $otherEndpoint');
     var res = await post(Uri.parse(otherEndpoint),
@@ -451,6 +475,18 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
                 ),
               );
             });
+
+        if (lnInvoice != null && paymentCards != null) {
+          var paymentId = paymentCards.first.id!;
+          var lnAdminKey = wallet.getLnAdminKey(paymentId);
+          var paymentType = paymentCards.first.credentialSubject['paymentType'];
+          try {
+            await payInvoice(lnAdminKey!, lnInvoice,
+                isMainnet: paymentType == 'LightningMainnetPayment');
+          } catch (e) {
+            logger.e(e);
+          }
+        }
       }
       logger.d(res.headers);
       var contentType = res.headers['content-type'];

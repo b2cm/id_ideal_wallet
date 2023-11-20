@@ -86,6 +86,31 @@ Future<bool> handleRequestPresentation(
   var definition = message.presentationDefinition.first.presentationDefinition;
   logger.d(definition.toJson());
 
+  List<VerifiableCredential>? paymentCards;
+  var paymentReq = message.attachments!.where(
+      (element) => element.format != null && element.format == 'lnInvoice');
+  var invoice = paymentReq.first.data.json?['lnInvoice'];
+  logger.d('invoice: $invoice');
+  if (invoice != null) {
+    paymentCards = wallet.getSuitablePaymentCredentials(invoice);
+    if (paymentCards.isEmpty) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+    }
+  }
+
+  var lnInvoiceReq = message.attachments!.where((element) =>
+      element.format != null && element.format == 'lnInvoiceRequest');
+  var invoiceReq = lnInvoiceReq.first.data.json;
+  logger.d('invoice request: $invoiceReq');
+  if (invoice != null) {
+    paymentCards = wallet.getSuitablePaymentCredentials(invoiceReq['network']);
+    if (paymentCards.isEmpty) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+    }
+  }
+
   try {
     var filtered =
         searchCredentialsForPresentationDefinition(creds, definition);
@@ -101,6 +126,9 @@ Future<bool> handleRequestPresentation(
           receiverDid: message.from!,
           myDid: myDid,
           results: filtered,
+          lnInvoice: invoice,
+          paymentCards: paymentCards,
+          lnInvoiceRequest: invoiceReq,
         ),
       ),
     );

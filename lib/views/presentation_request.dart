@@ -11,6 +11,7 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -119,6 +120,9 @@ class PresentationRequestDialog extends StatefulWidget {
   final RequestPresentation? message;
   final bool isOidc;
   final String? nonce;
+  final String? lnInvoice;
+  final Map<String, dynamic>? lnInvoiceRequest;
+  final List<VerifiableCredential>? paymentCards;
 
   const PresentationRequestDialog(
       {Key? key,
@@ -130,7 +134,10 @@ class PresentationRequestDialog extends StatefulWidget {
       this.purpose,
       this.message,
       this.isOidc = false,
-      this.nonce})
+      this.nonce,
+      this.lnInvoice,
+      this.lnInvoiceRequest,
+      this.paymentCards})
       : super(key: key);
 
   @override
@@ -539,6 +546,26 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
           threadId: widget.message!.threadId ?? widget.message!.id,
           parentThreadId: widget.message!.parentThreadId);
+      if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
+        var paymentId = widget.paymentCards!.first.id!;
+        var lnInKey = wallet.getLnInKey(paymentId);
+        var paymentType =
+            widget.paymentCards!.first.credentialSubject['paymentType'];
+        var invoice = await createInvoice(
+            lnInKey!,
+            SatoshiAmount.fromUnitAndValue(
+                widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+            memo: widget.lnInvoiceRequest!['memo'] ?? '',
+            isMainnet: paymentType == 'LightningMainnetPayment');
+        var index = invoice['checking_id'];
+        wallet.newPayment(
+          paymentId,
+          index,
+          widget.lnInvoiceRequest!['memo'] ?? '',
+          SatoshiAmount.fromUnitAndValue(
+              widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+        );
+      }
       sendMessage(widget.myDid, widget.otherEndpoint, wallet,
           presentationMessage, widget.receiverDid);
       for (var pres in presentationMessage.verifiablePresentation) {
