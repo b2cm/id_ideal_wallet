@@ -151,6 +151,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   bool dataEntered = true;
   bool send = false;
   bool fulfillable = true;
+  String amount = '';
 
   @override
   initState() {
@@ -173,6 +174,21 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         innerPos++;
       }
       outerPos++;
+    }
+
+    getAmount();
+  }
+
+  Future<void> getAmount() async {
+    if (widget.lnInvoice != null && widget.paymentCards != null) {
+      var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+          listen: false);
+      var paymentId = widget.paymentCards!.first.id!;
+      var lnInKey = wallet.getLnInKey(paymentId);
+      var i = await decodeInvoice(lnInKey!, widget.lnInvoice!);
+      amount = i.amount.toSat().toStringAsFixed(2);
+      logger.d(amount);
+      setState(() {});
     }
   }
 
@@ -614,6 +630,11 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             ),
           ),
           persistentFooterButtons: [
+            if (widget.lnInvoice != null)
+              Text('Für das Senden der Daten werden $amount sat fällig'),
+            if (widget.lnInvoiceRequest != null)
+              Text(
+                  'Für das Senden erhalten Sie ${widget.lnInvoiceRequest?['amount']} sat'),
             if (!dataEntered)
               FooterErrorText(
                   errorMessage: AppLocalizations.of(context)!.missingDataNote,
@@ -625,6 +646,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   reject: reject)
             else
               FooterButtons(
+                positiveText: widget.lnInvoice != null
+                    ? AppLocalizations.of(context)!.orderWithPayment
+                    : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
                   await Future.delayed(
