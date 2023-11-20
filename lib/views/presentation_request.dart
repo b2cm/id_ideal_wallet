@@ -418,6 +418,113 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       );
     }
 
+    if (widget.lnInvoice != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+                children: [
+                  TextSpan(
+                    text: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .paymentInformation,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  WidgetSpan(
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                        left: 1,
+                        bottom: 5,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        // color: Colors.redAccent.shade700,
+                      ),
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.paymentInformationDetail}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                  TextSpan(
+                      text: '$amount sat',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
+    if (widget.lnInvoiceRequest != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'Information',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.funding1}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                  TextSpan(
+                      text: ' ${widget.lnInvoiceRequest?['amount']} sat ',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextSpan(
+                      text: AppLocalizations.of(navigatorKey.currentContext!)!
+                          .funding2,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
     return childList;
   }
 
@@ -644,11 +751,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             ),
           ),
           persistentFooterButtons: [
-            if (widget.lnInvoice != null)
-              Text('Für das Senden der Daten werden $amount sat fällig'),
-            if (widget.lnInvoiceRequest != null)
-              Text(
-                  'Für das Senden erhalten Sie ${widget.lnInvoiceRequest?['amount']} sat'),
             if (!dataEntered)
               FooterErrorText(
                   errorMessage: AppLocalizations.of(context)!.missingDataNote,

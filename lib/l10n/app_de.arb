@@ -161,5 +161,9 @@
   },
   "importFailed": "Import fehlgeschlagen",
   "saveError": "Fehler beim Speichern",
-  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang."
+  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang.",
+  "paymentInformation": "Zahlungsinformation",
+  "paymentInformationDetail": "Für die Weiterverarbeitung der Daten fallen folgende Kosten an: ",
+  "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
+  "funding2": "gutgeschrieben"
 }

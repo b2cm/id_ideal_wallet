@@ -161,5 +161,9 @@
   },
   "importFailed": "Import failed",
   "saveError": "Error saving",
-  "saveErrorNote": "Unable to save the credential.\nPlease retry the operation."
+  "saveErrorNote": "Unable to save the credential.\nPlease retry the operation.",
+  "paymentInformation": "Payment information",
+  "paymentInformationDetail": "The following costs are incurred for the further processing of the data: ",
+  "funding1": "You will be credited with ",
+  "funding2": "for releasing your data"
 }
