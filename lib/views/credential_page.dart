@@ -92,8 +92,7 @@ class CredentialPageState extends State<CredentialPage> {
                     itemBuilder: (context, index) {
                       var cred = credentialList[index];
                       var type = getTypeToShow(cred.type);
-                      var id =
-                          cred.id ?? getHolderDidFromCredential(cred.toJson());
+                      var id = getHolderDidFromCredential(cred.toJson());
                       if (id == '') {
                         id = '${cred.issuanceDate.toIso8601String()}$type';
                       }
@@ -176,7 +175,9 @@ ListTile generateTile(String? before, String key, dynamic value) {
             }
           },
         )
-      : Text(uriDecode(value));
+      : value is String
+          ? Text(uriDecode(value))
+          : Text(value.toString());
 
   return ListTile(
     visualDensity: const VisualDensity(horizontal: 0, vertical: -2.5),
@@ -193,11 +194,11 @@ ListTile generateTile(String? before, String key, dynamic value) {
   );
 }
 
-String uriDecode(String value) {
+dynamic uriDecode(dynamic value) {
   try {
     return Uri.decodeFull(value);
   } catch (_) {
-    return '';
+    return value;
   }
 }
 
@@ -529,8 +530,7 @@ class CredentialCardState extends State<CredentialCard> {
                         CredentialDetailView(credential: widget.credential)))
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-          var id = widget.credential.id ??
-              getHolderDidFromCredential(widget.credential.toJson());
+          var id = getHolderDidFromCredential(widget.credential.toJson());
           var revState = wallet.revocationState[id];
           if (revState == RevocationState.expired.index ||
               revState == RevocationState.revoked.index ||

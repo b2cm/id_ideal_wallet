@@ -69,6 +69,9 @@ class QrScanner extends StatelessWidget {
                 } else if (code.contains('ooburl')) {
                   handleOobUrl(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
+                } else if (code.contains('oobid')) {
+                  handleOobId(code);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('https://wallet.bccm.dev')) {
                   Navigator.popUntil(context, (route) => route.isFirst);
                   Navigator.of(context).pushReplacementNamed(code);

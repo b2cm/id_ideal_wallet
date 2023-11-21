@@ -150,5 +150,20 @@
   "recheck": "Check again",
   "start": "Let's start",
   "favoriteExplanation": "Add a context to your favorites list by touching the star on the map.",
-  "addCardExplanation": "Add a card by scanning its QR or barcode"
+  "addCardExplanation": "Add a card by scanning its QR or barcode",
+  "importSuccess": "{passType} successfully imported",
+  "@importSuccess": {
+    "placeholders": {
+      "passType": {
+        "type": "String"
+      }
+    }
+  },
+  "importFailed": "Import failed",
+  "saveError": "Error saving",
+  "saveErrorNote": "Unable to save the credential.\nPlease retry the operation.",
+  "paymentInformation": "Payment information",
+  "paymentInformationDetail": "The following costs are incurred for the further processing of the data: ",
+  "funding1": "You will be credited with ",
+  "funding2": "for releasing your data"
 }

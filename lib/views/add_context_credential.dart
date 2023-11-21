@@ -378,6 +378,10 @@ Future<void> issueLNTestNetContext(
 
   wallet.storeCredential(signed, storageCred!.hdPath);
   wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+  // TODO: remove, if it is save to have more than one payment card per type
+  var id = isMainnet ? '2' : '3';
+  wallet.addContextIds([id]);
+  wallet.removeIdFromUpdateList(id);
 }
 
 Future<void> issueSimulatePaymentContext(WalletProvider wallet) async {

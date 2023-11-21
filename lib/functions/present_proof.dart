@@ -74,7 +74,7 @@ Future<bool> handleRequestPresentation(
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
       var type = getTypeToShow(vc.type);
       if (type != 'PaymentReceipt') {
-        var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+        var id = getHolderDidFromCredential(vc.toJson());
         var status = wallet.revocationState[id];
         if (status == RevocationState.valid.index ||
             status == RevocationState.unknown.index) {
@@ -84,6 +84,39 @@ Future<bool> handleRequestPresentation(
     }
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
+  logger.d(definition.toJson());
+
+  List<VerifiableCredential>? paymentCards;
+  String? invoice;
+  var paymentReq = message.attachments!.where(
+      (element) => element.format != null && element.format == 'lnInvoice');
+  if (paymentReq.isNotEmpty) {
+    invoice = paymentReq.first.data.json?['lnInvoice'];
+    logger.d('invoice: $invoice');
+    if (invoice != null) {
+      paymentCards = wallet.getSuitablePaymentCredentials(invoice);
+      if (paymentCards.isEmpty) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+      }
+    }
+  }
+
+  Map<String, dynamic>? invoiceReq;
+  var lnInvoiceReq = message.attachments!.where((element) =>
+      element.format != null && element.format == 'lnInvoiceRequest');
+  if (lnInvoiceReq.isNotEmpty) {
+    invoiceReq = lnInvoiceReq.first.data.json;
+    logger.d('invoice request: $invoiceReq');
+    if (invoiceReq != null) {
+      paymentCards =
+          wallet.getSuitablePaymentCredentialsForNetwork(invoiceReq['network']);
+      if (paymentCards.isEmpty) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
+      }
+    }
+  }
 
   try {
     var filtered =
@@ -95,10 +128,14 @@ Future<bool> handleRequestPresentation(
           name: definition.name,
           purpose: definition.purpose,
           message: message,
-          otherEndpoint: determineReplyUrl(message.replyUrl, message.replyTo),
+          otherEndpoint:
+              determineReplyUrl(message.replyUrl, message.replyTo, myDid) ?? '',
           receiverDid: message.from!,
           myDid: myDid,
           results: filtered,
+          lnInvoice: invoice,
+          paymentCards: paymentCards,
+          lnInvoiceRequest: invoiceReq,
         ),
       ),
     );

@@ -10,13 +10,15 @@ class StyledScaffoldTitle extends StatelessWidget {
       required this.child,
       this.currentlyActive,
       this.footerButtons,
-      this.appBarActions});
+      this.appBarActions,
+      this.useBackSwipe = true});
 
   final dynamic title;
   final Widget child;
   final int? currentlyActive;
   final List<Widget>? footerButtons;
   final List<Widget>? appBarActions;
+  final bool useBackSwipe;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class StyledScaffoldTitle extends StatelessWidget {
         if (details.delta.dx > 0) {}
 
         // Swiping in left direction.
-        if (details.delta.dx < 0) {
+        if (useBackSwipe && details.delta.dx < 0) {
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },

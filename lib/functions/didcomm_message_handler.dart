@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -12,6 +13,7 @@ import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/discover_feature.dart';
 import 'package:id_ideal_wallet/functions/issue_credential.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/present_proof.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -29,9 +31,36 @@ Future<bool> handleOobUrl(String url) async {
   return false;
 }
 
-Future<bool> handleDidcommMessage(String message) async {
+Future<bool> handleOobId(String url) async {
+  try {
+    var asUri = Uri.parse(url);
+    var messageResponse = await get(asUri);
+    logger.d(messageResponse.body);
+
+    Map json = jsonDecode(messageResponse.body);
+    if (json.containsKey('value')) {
+      return handleDidcommMessage(json['value'],
+          asUri.removeFragment().replace(queryParameters: {}).toString());
+    }
+    logger.d(asUri.removeFragment().replace(queryParameters: {}).toString());
+    return handleDidcommMessage(messageResponse.body,
+        asUri.removeFragment().replace(queryParameters: {}).toString());
+  } catch (e) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .downloadFailedExplanation);
+    logger.d(e);
+    return false;
+  }
+}
+
+Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+  while (!wallet.isOpen()) {
+    await Future.delayed(const Duration(seconds: 1));
+  }
 
   var plaintext = await getPlaintext(message, wallet);
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {
@@ -50,7 +79,7 @@ Future<bool> handleDidcommMessage(String message) async {
   switch (plaintext.type) {
     case DidcommMessages.invitation:
       return handleInvitation(
-          OutOfBandMessage.fromJson(plaintext.toJson()), wallet);
+          OutOfBandMessage.fromJson(plaintext.toJson()), wallet, replyUrl);
 
     case DidcommMessages.proposeCredential:
       return handleProposeCredential(
@@ -84,6 +113,14 @@ Future<bool> handleDidcommMessage(String message) async {
       return handleProblemReport(
           ProblemReport.fromJson(plaintext.toJson()), wallet);
 
+    case DidcommMessages.issueCredentialProblem:
+      return handleProblemReport(
+          ProblemReport.fromJson(plaintext.toJson()), wallet);
+
+    case DidcommMessages.requestPresentationProblem:
+      return handleProblemReport(
+          ProblemReport.fromJson(plaintext.toJson()), wallet);
+
     case DidcommMessages.discoverFeatureQuery:
       return handleDiscoverFeatureQuery(
           QueryMessage.fromJson(plaintext.toJson()), wallet);
@@ -106,6 +143,30 @@ Future<bool> handleEmptyMessage(
   if (message.to != null && message.to!.isNotEmpty) {
     for (var d in message.to!) {
       wallet.removeRelayedDid(d);
+    }
+  }
+
+  if (message.ack != null && message.ack!.isNotEmpty) {
+    var pId = message.threadId ?? message.id;
+
+    var previous = wallet.getConversation(pId);
+    logger.d(previous);
+    if (previous != null &&
+        previous.protocol == DidcommProtocol.presentProof.value) {
+      // assume ack for presentation, check if payment follows
+      var last = DidcommPlaintextMessage.fromJson(previous.lastMessage);
+      logger.d('${message.ack} contains? ${last.id}');
+      if (message.ack!.contains(last.id) &&
+          message.attachments != null &&
+          message.attachments!.isNotEmpty) {
+        var paymentReq = message.attachments!.where((element) =>
+            element.format != null && element.format == 'lnInvoice');
+        if (paymentReq.isNotEmpty) {
+          var invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
+          logger.d(invoice);
+          payInvoiceInteraction(invoice);
+        }
+      }
     }
   }
   return true;
@@ -161,7 +222,8 @@ Future<DidcommPlaintextMessage> getPlaintext(
   } else if (isEncryptedMessage(message)) {
     try {
       var encrypted = DidcommEncryptedMessage.fromJson(message);
-      var decrypted = await encrypted.decrypt(wallet.wallet);
+      var decrypted =
+          await encrypted.decrypt(wallet.wallet, didResolver: resolveKeri);
       if (decrypted is DidcommPlaintextMessage) {
         decrypted.from ??= encrypted.protectedHeaderSkid!.split('#').first;
         List<String> toDids = [];
@@ -180,7 +242,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
           AppLocalizations.of(navigatorKey.currentContext!)!.malformedMessage,
           AppLocalizations.of(navigatorKey.currentContext!)!
               .malformedEncryptedMessage);
-      throw Exception('Decryption Error');
+      throw Exception('Decryption Error: $e');
     }
   } else if (isSignedMessage(message)) {
     var signed = DidcommSignedMessage.fromJson(message);
@@ -201,33 +263,88 @@ Future<DidcommPlaintextMessage> getPlaintext(
   }
 }
 
+Future<DidDocument> resolveKeri(String did) {
+  logger.d(did);
+  if (did.startsWith('did:keri')) {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var ddo = wallet.getConfig(did);
+    logger.d(ddo);
+    if (ddo != null) {
+      return Future.value(DidDocument.fromJson(ddo));
+    } else {
+      throw Exception('no ddo');
+    }
+  } else {
+    return resolveDidDocument(did);
+  }
+}
+
 Future<bool> handleInvitation(
-    OutOfBandMessage invitation, WalletProvider wallet) async {
+    OutOfBandMessage invitation, WalletProvider wallet,
+    [String? replyUrl]) async {
   if (invitation.accept != null &&
       !invitation.accept!.contains(DidcommProfiles.v2)) {
     //better: send problem report
     throw Exception('counterpart do not speak didcommv2');
   }
-
-  if (invitation.goalCode != null && invitation.goalCode == 'streamlined-vp') {
+  var acceptedGoalCodesPresent = ['streamlined-vp', 'de.kaprion.ppp.s2p'];
+  var acceptedGoalCodesIssue = ['streamlined-vc', 'de.kaprion.icp.s2p'];
+  if (invitation.goalCode != null &&
+      acceptedGoalCodesPresent.contains(invitation.goalCode)) {
     // counterpart wants to ask for presentation
+    logger.d('Presentation requested');
     var threadId = const Uuid().v4();
-    var myDid = await wallet.newConnectionDid();
+    String myDid;
+    if (invitation.from!.startsWith('did:keri') ||
+        invitation.from!.startsWith('did:key:z82')) {
+      myDid = await wallet.newConnectionDid(KeyType.p384);
+    } else {
+      myDid = await wallet.newConnectionDid();
+    }
+
+    if (replyUrl != null) {
+      var con = wallet.getConnection(myDid);
+      wallet.wallet.storeConnection(replyUrl, 'Kaprion', con!.hdPath,
+          keyType: KeyType.p384);
+    }
+
+    logger.d(replyUrl);
     var propose = ProposePresentation(
         id: threadId,
         threadId: threadId,
         parentThreadId: invitation.id,
         from: myDid,
         to: [invitation.from!],
+        returnRoute: ReturnRouteValue.thread,
         replyUrl: '$relay/buffer/$myDid');
+
     wallet.storeConversation(propose, myDid);
 
     sendMessage(
         myDid,
-        determineReplyUrl(invitation.replyUrl, invitation.replyTo),
+        determineReplyUrl(invitation.replyUrl, invitation.replyTo) ?? replyUrl,
         wallet,
         propose,
         invitation.from!);
+    return true;
+  } else if (invitation.goalCode != null &&
+      acceptedGoalCodesIssue.contains(invitation.goalCode)) {
+    // counterpart like to issue credential
+    var threadId = const Uuid().v4();
+    var myDid = await wallet.newConnectionDid(KeyType.p384);
+    var con = wallet.getConnection(myDid);
+    wallet.wallet.storeConnection(replyUrl!, 'Kaprion', con!.hdPath,
+        keyType: KeyType.p384);
+    logger.d(await wallet.wallet.getPublicKey(con.hdPath, KeyType.p384));
+    var propose = ProposeCredential(
+        id: threadId,
+        threadId: threadId,
+        parentThreadId: invitation.id,
+        from: myDid,
+        to: [invitation.from!]);
+
+    sendMessage(myDid, replyUrl, wallet, propose, invitation.from!);
   } else {
     try {
       dynamic jsonData = invitation.attachments!.first.data.json!;
@@ -243,32 +360,74 @@ Future<bool> handleInvitation(
   return true;
 }
 
-String determineReplyUrl(String? replyUrl, List<String>? replyTo) {
+String? determineReplyUrl(String? replyUrl, List<String>? replyTo,
+    [String? myDid]) {
+  logger.d(replyTo);
   if (replyUrl != null) {
     return replyUrl;
-  } else {
-    if (replyTo == null) throw Exception('cant find a replyUrl');
+  } else if (replyTo != null && replyTo.isNotEmpty) {
     for (var url in replyTo) {
       if (url.startsWith('http')) return url;
     }
+  } else if (myDid != null) {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var con = wallet.getConnection(myDid);
+    if (con == null) {
+      return null;
+    }
+    return con.otherDid;
   }
-  throw Exception('cant find a replyUrl');
+  return null;
 }
 
-sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
-    DidcommPlaintextMessage message, String receiverDid) async {
+sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
+    DidcommPlaintextMessage message, String receiverDid,
+    {String? lnInvoice, List<VerifiableCredential>? paymentCards}) async {
+  if (otherEndpoint == null) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
+    throw Exception(' no Endpoint');
+  }
   var myPrivateKey = await wallet.privateKeyForConnectionDidAsJwk(myDid);
-  var recipientDDO = (await resolveDidDocument(receiverDid))
-      .resolveKeyIds()
-      .convertAllKeysToJwk();
+  DidDocument recipientDDO;
+  if (receiverDid.startsWith('did:keri')) {
+    if (receiverDid.contains('?')) {
+      var res = await get(Uri.parse(
+          'https://mags.kt.et.kaprion.de/VcIssuerSp/dereference?didUrl=$receiverDid'));
+      var jsonBody = jsonDecode(res.body);
+      var dd = DidDocument.fromJson(jsonBody['contentStream']['didDocument']);
+      logger.d(dd.toJson());
+      recipientDDO = dd.resolveKeyIds();
+      var did = receiverDid.split('?').first;
+      wallet.storeConfig(did, recipientDDO.toString());
+    } else {
+      var ddo = wallet.getConfig(receiverDid);
+      logger.d(ddo);
+      if (ddo != null) {
+        recipientDDO = DidDocument.fromJson(ddo);
+      } else {
+        throw Exception('no ddo');
+      }
+    }
+  } else {
+    recipientDDO = (await resolveDidDocument(receiverDid))
+        .resolveKeyIds()
+        .convertAllKeysToJwk();
+  }
   if (message.type != DidcommMessages.emptyMessage) {
     wallet.storeConversation(message, myDid);
   }
+
+  var pubKey =
+      (recipientDDO.keyAgreement!.first as VerificationMethod).publicKeyJwk!;
+  if (pubKey['kid'] == null) {
+    pubKey['kid'] = (recipientDDO.keyAgreement!.first as VerificationMethod).id;
+  }
   var encrypted = DidcommEncryptedMessage.fromPlaintext(
       senderPrivateKeyJwk: myPrivateKey!,
-      recipientPublicKeyJwk: [
-        (recipientDDO.keyAgreement!.first as VerificationMethod).publicKeyJwk!
-      ],
+      recipientPublicKeyJwk: [pubKey],
       plaintext: message);
 
   if (otherEndpoint.startsWith('http')) {
@@ -316,12 +475,28 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
                 ),
               );
             });
+
+        if (lnInvoice != null && paymentCards != null) {
+          logger.d('have to pay invoice');
+          var paymentId = paymentCards.first.id!;
+          var lnAdminKey = wallet.getLnAdminKey(paymentId);
+          var paymentType = paymentCards.first.credentialSubject['paymentType'];
+          try {
+            await payInvoice(lnAdminKey!, lnInvoice,
+                isMainnet: paymentType == 'LightningMainnetPayment');
+            logger.d('invoice paid');
+          } catch (e) {
+            showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+                .paymentFailed);
+            logger.e(e);
+          }
+        }
       }
       logger.d(res.headers);
       var contentType = res.headers['content-type'];
       logger.d(contentType);
 
-      if (contentType == 'application/json') {
+      if (contentType!.startsWith('application/json')) {
         // here we assume we talk with our agent
         Map<String, dynamic> body = jsonDecode(res.body);
         if (body.containsKey('responses')) {
@@ -330,12 +505,14 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
             handleDidcommMessage(jsonEncode(responses.first));
           }
         } else {
-          wallet.addRelayedDid(myDid);
+          handleDidcommMessage(res.body);
+          //wallet.addRelayedDid(myDid);
           //TODO: appropriate Reaction
           //throw Exception('Something went wrong');
         }
-      } else if (contentType == 'application/didcomm-encrypted+json' ||
-          contentType == 'application/didcomm-signed+json') {
+      } else if (contentType.startsWith('application/didcomm-encrypted+json') ||
+          contentType.startsWith('application/didcomm-signed+json') ||
+          contentType.startsWith('application/didcomm-plain+json')) {
         handleDidcommMessage(res.body);
       } else {
         //we assume we get message over relay
@@ -371,6 +548,8 @@ sendMessage(String myDid, String otherEndpoint, WalletProvider wallet,
 }
 
 bool handleProblemReport(ProblemReport message, WalletProvider wallet) {
+  logger.d(message.toJson());
+  showErrorMessage('Problem Report', message.interpolateComment());
   return false;
 }
 

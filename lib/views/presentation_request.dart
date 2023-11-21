@@ -11,12 +11,14 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:provider/provider.dart';
 
+import '../constants/kaprionContext.dart';
 import '../functions/didcomm_message_handler.dart';
 
 class RequesterInfo extends StatefulWidget {
@@ -118,6 +120,9 @@ class PresentationRequestDialog extends StatefulWidget {
   final RequestPresentation? message;
   final bool isOidc;
   final String? nonce;
+  final String? lnInvoice;
+  final Map<String, dynamic>? lnInvoiceRequest;
+  final List<VerifiableCredential>? paymentCards;
 
   const PresentationRequestDialog(
       {Key? key,
@@ -129,7 +134,10 @@ class PresentationRequestDialog extends StatefulWidget {
       this.purpose,
       this.message,
       this.isOidc = false,
-      this.nonce})
+      this.nonce,
+      this.lnInvoice,
+      this.lnInvoiceRequest,
+      this.paymentCards})
       : super(key: key);
 
   @override
@@ -143,6 +151,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   bool dataEntered = true;
   bool send = false;
   bool fulfillable = true;
+  String amount = '';
 
   @override
   initState() {
@@ -165,6 +174,21 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         innerPos++;
       }
       outerPos++;
+    }
+
+    getAmount();
+  }
+
+  Future<void> getAmount() async {
+    if (widget.lnInvoice != null && widget.paymentCards != null) {
+      var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+          listen: false);
+      var paymentId = widget.paymentCards!.first.id!;
+      var lnInKey = wallet.getLnInKey(paymentId);
+      var i = await decodeInvoice(lnInKey!, widget.lnInvoice!);
+      amount = i.amount.toSat().toStringAsFixed(2);
+      logger.d(amount);
+      setState(() {});
     }
   }
 
@@ -215,6 +239,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
         dataEntered = false;
+        if (result.credentials.isNotEmpty) {
+          dataEntered = true;
+        }
         for (var i in result.selfIssuable!) {
           outerTileExpanded = true;
           outerTileChildList.add(
@@ -241,8 +268,16 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     var credSubject = <dynamic, dynamic>{'id': did};
                     credSubject.addAll(res);
                     var cred = VerifiableCredential(
-                        context: ['https://schema.org'],
-                        type: ['SelfIssuedCredential'],
+                        context: [
+                          credentialsV1Iri,
+                          'https://schema.org',
+                          ed25519ContextIri
+                        ],
+                        type: [
+                          'VerifiableCredential',
+                          'SelfIssuedCredential'
+                        ],
+                        id: did,
                         issuer: did,
                         credentialSubject: credSubject,
                         issuanceDate: DateTime.now());
@@ -271,6 +306,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               ),
             ),
           );
+        }
+
+        if (result.credentials.isNotEmpty) {
+          outerTileChildList.add(const Text(
+            'oder',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ));
         }
       }
       int credCount = result.selfIssuable?.length ?? 0;
@@ -376,12 +418,123 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       );
     }
 
+    if (widget.lnInvoice != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+                children: [
+                  TextSpan(
+                    text: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .paymentInformation,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  WidgetSpan(
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                        left: 1,
+                        bottom: 5,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        // color: Colors.redAccent.shade700,
+                      ),
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.paymentInformationDetail}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                  TextSpan(
+                      text: '$amount sat',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
+    if (widget.lnInvoiceRequest != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'Information',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.funding1}',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                  TextSpan(
+                      text: ' ${widget.lnInvoiceRequest?['amount']} sat ',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  TextSpan(
+                      text: AppLocalizations.of(navigatorKey.currentContext!)!
+                          .funding2,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.normal)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
     return childList;
   }
 
   Future<void> sendAnswer() async {
+    setState(() {
+      send = true;
+    });
     var wallet = Provider.of<WalletProvider>(context, listen: false);
-    List<FilterResult> finalSend = [];
+    List<dynamic> finalSend = [];
+    Set<String> issuerDids = {};
     int outerPos = 0;
     int innerPos = 0;
     for (var result in widget.results) {
@@ -390,6 +543,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       for (var cred in result.credentials) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
           credList.add(cred);
+          issuerDids.add(getIssuerDidFromCredential(cred.toJson()));
         }
         innerPos++;
       }
@@ -400,6 +554,26 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
+    // logger.d(issuerDids);
+    // Set<String> addedCredentials = {};
+    // for (var d in issuerDids) {
+    //   var entry = wallet.getConfig('certCreds:$d');
+    //   if (entry != null) {
+    //     logger.d(entry);
+    //     var j = jsonDecode(entry) as List;
+    //     for (var c in j) {
+    //       var cred = VerifiableCredential.fromJson(c);
+    //       if (!addedCredentials.contains(cred.id)) {
+    //         finalSend.add(cred);
+    //         addedCredentials.add(cred.id!);
+    //         logger.d(c);
+    //       }
+    //     }
+    //   }
+    // }
+    //
+    // logger.d('collected Credentials');
+
     if (widget.isOidc) {
       var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
           loadDocumentFunction: loadDocumentFast);
@@ -459,13 +633,34 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               widget.receiverDid);
         }
 
-        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
-            .presentationFailed);
+        await showModalBottomSheet(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10))),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                closeSeconds: 4,
+                child: PaymentFinished(
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationFailed,
+                  success: false,
+                  amount: const CurrencyDisplay(
+                      width: 350,
+                      amount: '',
+                      symbol: '',
+                      mainFontSize: 18,
+                      centered: true),
+                ),
+              );
+            });
         // Navigator.of(context).pop();
       }
     } else {
       var vp = await buildPresentation(finalSend, wallet.wallet,
-          widget.message!.presentationDefinition.first.challenge);
+          widget.message!.presentationDefinition.first.challenge,
+          loadDocumentFunction: loadDocumentKaprion);
       var presentationMessage = Presentation(
           replyUrl: '$relay/buffer/${widget.myDid}',
           returnRoute: ReturnRouteValue.thread,
@@ -474,8 +669,42 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
           threadId: widget.message!.threadId ?? widget.message!.id,
           parentThreadId: widget.message!.parentThreadId);
+      logger.d(widget.lnInvoiceRequest);
+      logger.d(widget.paymentCards);
+      if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
+        logger.d('generate invoice');
+        var paymentId = widget.paymentCards!.first.id!;
+        var lnInKey = wallet.getLnInKey(paymentId);
+        var paymentType =
+            widget.paymentCards!.first.credentialSubject['paymentType'];
+        var invoice = await createInvoice(
+            lnInKey!,
+            SatoshiAmount.fromUnitAndValue(
+                widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+            memo: widget.lnInvoiceRequest!['memo'] ?? '',
+            isMainnet: paymentType == 'LightningMainnetPayment');
+        var index = invoice['checking_id'];
+        logger.d(index);
+        wallet.newPayment(
+          paymentId,
+          index,
+          widget.lnInvoiceRequest!['memo'] ?? '',
+          SatoshiAmount.fromUnitAndValue(
+              widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+        );
+
+        var paymentAtt = Attachment(
+            format: 'lnInvoice',
+            data: AttachmentData(json: {
+              'type': 'lnInvoice',
+              'lnInvoice': invoice['payment_request']
+            }));
+
+        presentationMessage.attachments?.add(paymentAtt);
+      }
       sendMessage(widget.myDid, widget.otherEndpoint, wallet,
-          presentationMessage, widget.receiverDid);
+          presentationMessage, widget.receiverDid,
+          lnInvoice: widget.lnInvoice, paymentCards: widget.paymentCards);
       for (var pres in presentationMessage.verifiablePresentation) {
         for (var cred in pres.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(
@@ -533,6 +762,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   reject: reject)
             else
               FooterButtons(
+                positiveText: widget.lnInvoice != null
+                    ? AppLocalizations.of(context)!.orderWithPayment
+                    : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
                   await Future.delayed(

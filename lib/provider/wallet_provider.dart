@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
+import 'package:pkcs7/pkcs7.dart';
 import 'package:uuid/uuid.dart';
 
 import '../functions/util.dart' as my_util;
@@ -48,9 +54,160 @@ class WalletProvider extends ChangeNotifier {
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
 
+  static const platform = MethodChannel('app.channel.shared.data');
+  static const stream = EventChannel('app.channel.shared.data/events');
+
+  List<int> dataShared = [];
+
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
     t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+  }
+
+  Future<List<int>?> startUri() async {
+    try {
+      return platform.invokeMethod('getSharedText');
+    } on PlatformException catch (e) {
+      logger.d('cant fetch pkpass: $e');
+    }
+    return null;
+  }
+
+  (String, Map) getPassType(Map<String, dynamic> pass) {
+    if (pass.containsKey('boardingPass')) {
+      return ('BoardingPass', pass.remove('boardingPass'));
+    } else if (pass.containsKey('coupon')) {
+      return ('Coupon', pass.remove('coupon'));
+    } else if (pass.containsKey('eventTicket')) {
+      return ('EventTicket', pass.remove('eventTicket'));
+    } else if (pass.containsKey('storeCard')) {
+      return ('StoreCard', pass.remove('storeCard'));
+    } else {
+      return ('Generic', pass.remove('generic'));
+    }
+  }
+
+  toKeyAndValue(Map goal, List data) {
+    for (var d in data) {
+      goal[d['label'] ?? d['key']] = d['value'];
+    }
+  }
+
+  String rgbColorToHex(String rgb) {
+    var color = rgb.replaceAll('rgb(', '').replaceAll(')', '');
+    var values = color.split(',');
+    var asInt = values.map((e) => int.parse(e.trim()).toRadixString(16));
+    var hexColor = asInt.join();
+    return '#$hexColor';
+  }
+
+  void getSharedText(List<int>? sharedData) async {
+    if (sharedData != null) {
+      try {
+        dataShared = sharedData;
+        logger.d(dataShared.length);
+        var archive = ZipDecoder().decodeBytes(dataShared);
+        var passFile = archive.findFile('pass.json');
+        var sigFile = archive.findFile('signature');
+        var manifestFile = archive.findFile('manifest.json');
+        if (sigFile != null && manifestFile != null) {
+          var parsed = Pkcs7.fromDer(sigFile.content);
+          var info = parsed.verify([appleRootCert, appleComputerRootCert]);
+          var hash = sha256.convert(manifestFile.content).bytes;
+          var manifestAsJson = jsonDecode(utf8.decode(manifestFile.content));
+          var givenPassHash = manifestAsJson['pass.json'];
+          var valid =
+              info.listEquality(info.messageDigest!, Uint8List.fromList(hash));
+          if (givenPassHash == null || passFile == null) {
+            valid = false;
+          } else {
+            var passHash = sha1.convert(passFile.content).toString();
+            logger.d('$passHash ==? $givenPassHash');
+            valid = givenPassHash == passHash;
+          }
+          if (!valid) {
+            logger.d('Invalid pkpass signature');
+            my_util.showScaffoldMessenger(
+                navigatorKey.currentContext!,
+                AppLocalizations.of(navigatorKey.currentContext!)!
+                    .importFailed);
+            return;
+          }
+        }
+        if (passFile != null) {
+          var passAsJson = jsonDecode(utf8.decode(passFile.content));
+          String type;
+          Map mainPassData;
+          (type, mainPassData) = getPassType(passAsJson);
+          if (passAsJson['backgroundColor'] != null) {
+            String color = passAsJson['backgroundColor'];
+            if (!color.startsWith('#')) {
+              if (color.startsWith('rgb')) {
+                passAsJson['backgroundColor'] = rgbColorToHex(color);
+              }
+            }
+          }
+          if (passAsJson['foregroundColor'] != null) {
+            String color = passAsJson['foregroundColor'];
+            if (!color.startsWith('#')) {
+              if (color.startsWith('rgb')) {
+                passAsJson['foregroundColor'] = rgbColorToHex(color);
+              }
+            }
+          }
+          Map<String, dynamic> simplyfiedData = {};
+          if (mainPassData.containsKey('headerFields')) {
+            var fields = mainPassData['headerFields'] as List;
+            toKeyAndValue(simplyfiedData, fields);
+          }
+          if (mainPassData.containsKey('auxiliaryFields')) {
+            var fields = mainPassData['auxiliaryFields'] as List;
+            toKeyAndValue(simplyfiedData, fields);
+          }
+          if (mainPassData.containsKey('backFields')) {
+            var fields = mainPassData['backFields'] as List;
+            toKeyAndValue(simplyfiedData, fields);
+          }
+          if (mainPassData.containsKey('primaryFields')) {
+            var fields = mainPassData['primaryFields'] as List;
+            toKeyAndValue(simplyfiedData, fields);
+          }
+          if (mainPassData.containsKey('secondaryFields')) {
+            var fields = mainPassData['secondaryFields'] as List;
+            toKeyAndValue(simplyfiedData, fields);
+          }
+          if (mainPassData.containsKey('transitType')) {
+            simplyfiedData['transitType'] = mainPassData['transitType'];
+          }
+
+          var did = await newCredentialDid();
+
+          var vc = VerifiableCredential(
+              context: ['schema.org'],
+              type: [type, 'PkPass'],
+              issuer: did,
+              credentialSubject: {'id': did, ...passAsJson, ...simplyfiedData},
+              issuanceDate: DateTime.now());
+
+          var signed = await signCredential(_wallet, vc.toJson());
+          var storageCred = getCredential(did);
+          storeCredential(signed, storageCred!.hdPath);
+          storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+          my_util.showScaffoldMessenger(
+              navigatorKey.currentContext!,
+              AppLocalizations.of(navigatorKey.currentContext!)!
+                  .importSuccess(type));
+        } else {
+          logger.d('no valid pkpassFile');
+          my_util.showScaffoldMessenger(navigatorKey.currentContext!,
+              AppLocalizations.of(navigatorKey.currentContext!)!.importFailed);
+        }
+      } catch (e) {
+        logger.d(e);
+        my_util.showScaffoldMessenger(navigatorKey.currentContext!,
+            AppLocalizations.of(navigatorKey.currentContext!)!.importFailed);
+      }
+    }
   }
 
   void onBoarded() {
@@ -132,6 +289,10 @@ class WalletProvider extends ChangeNotifier {
         relayedDids = jsonDecode(relayedDidsEntry).cast<String>();
       }
 
+      startUri().then(getSharedText);
+      //Checking broadcast stream, if deep link was clicked in opened appication
+      stream.receiveBroadcastStream().listen((d) => getSharedText(d));
+
       notifyListeners();
     }
   }
@@ -173,7 +334,11 @@ class WalletProvider extends ChangeNotifier {
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
       [bool notify = false]) async {
-    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    var id = getHolderDidFromCredential(vc.toJson());
+    if (id == '') {
+      var type = my_util.getTypeToShow(vc.type);
+      id = '${vc.issuanceDate.toIso8601String()}$type';
+    }
     logger.d(vc);
 
     // check states that won't change to speed up
@@ -412,6 +577,28 @@ class WalletProvider extends ChangeNotifier {
     return pay;
   }
 
+  List<VerifiableCredential> getSuitablePaymentCredentialsForNetwork(
+      String network) {
+    var pay = <VerifiableCredential>[];
+
+    String paymentType = '';
+    if (network.toLowerCase() == 'mainnet') {
+      paymentType = 'LightningMainnetPayment';
+    } else if (network.toLowerCase() == 'testnet') {
+      paymentType = 'LightningTestnetPayment';
+    } else {
+      paymentType = 'SimulatedPayment';
+    }
+
+    for (var p in paymentCredentials) {
+      if (p.credentialSubject['paymentType'] == paymentType) {
+        pay.add(p);
+      }
+    }
+
+    return pay;
+  }
+
   void removeIdFromUpdateList(String id) async {
     hasUpdate.remove(id);
     _wallet.storeConfigEntry('updateContext', jsonEncode(hasUpdate.toList()));
@@ -592,6 +779,14 @@ class WalletProvider extends ChangeNotifier {
     _wallet.storeConversationEntry(message, myDid);
   }
 
+  void storeConfig(String key, String value) async {
+    await _wallet.storeConfigEntry(key, value);
+  }
+
+  String? getConfig(String key) {
+    return _wallet.getConfigEntry(key);
+  }
+
   bool isOpen() {
     return _wallet.isWalletOpen();
   }
@@ -600,8 +795,12 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConversationEntry(id);
   }
 
-  Future<String> newConnectionDid() async {
-    return _wallet.getNextConnectionDID(KeyType.x25519);
+  Future<String> newConnectionDid([KeyType keytype = KeyType.x25519]) async {
+    return _wallet.getNextConnectionDID(keytype, true);
+  }
+
+  Connection? getConnection(String did) {
+    return _wallet.getConnection(did);
   }
 
   Future<String> newCredentialDid() async {
@@ -612,9 +811,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getCredential(did);
   }
 
-  void storeCredential(String vc, String hdPath, [String? newDid]) async {
+  void storeCredential(String vc, String hdPath,
+      {String? newDid, KeyType keyType = KeyType.ed25519}) async {
     await _wallet.storeCredential(vc, '', hdPath,
-        keyType: KeyType.ed25519, credDid: newDid);
+        keyType: keyType, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);
     var type = vcParsed.type

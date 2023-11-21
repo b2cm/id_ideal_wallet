@@ -1,4 +1,5 @@
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
@@ -90,4 +91,18 @@ String getTypeToShow(List<String> types) {
           element != 'VerifiableCredential' &&
           (!element.contains('HidyContext')),
       orElse: () => '');
+}
+
+void showScaffoldMessenger(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    duration: const Duration(seconds: 2),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(
+        Radius.circular(30.0),
+      ),
+    ),
+    backgroundColor: Colors.black.withOpacity(0.6),
+    behavior: SnackBarBehavior.floating,
+    content: Text(message),
+  ));
 }

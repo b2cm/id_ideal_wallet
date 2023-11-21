@@ -17,8 +17,12 @@ class IdCard extends StatelessWidget {
       {super.key,
       required this.cardTitle,
       required this.subjectName,
-      required this.bottomLeftText,
-      required this.bottomRightText,
+      this.bottomLeftText = const SizedBox(
+        height: 0,
+      ),
+      this.bottomRightText = const SizedBox(
+        height: 0,
+      ),
       this.cardColor = const Color.fromARGB(255, 255, 86, 86),
       this.cardTitleColor = const Color.fromARGB(255, 255, 255, 255),
       this.backgroundColor = const Color.fromARGB(255, 233, 224, 200),
@@ -98,6 +102,32 @@ class IdCard extends StatelessWidget {
           bottomRightText: const SizedBox(
             width: 0,
           ));
+    } else if (credential.type.contains('PkPass')) {
+      var map = {
+        'PKBarcodeFormatQR': BarcodeType.QrCode,
+        'PKBarcodeFormatPDF417': BarcodeType.PDF417,
+        'PKBarcodeFormatAztec': BarcodeType.Aztec
+      };
+      return PkPassCard(
+          description: credential.credentialSubject['description'] ?? '',
+          barcodeType: map[credential.credentialSubject['barcode']?['format']],
+          barcodeData: credential.credentialSubject['barcode']?['message'],
+          backgroundColor: credential.credentialSubject['backgroundColor'] !=
+                      null &&
+                  credential.credentialSubject['backgroundColor']
+                      .startsWith('#')
+              ? HexColor.fromHex(
+                  credential.credentialSubject['backgroundColor'])
+              : const Color.fromARGB(255, 233, 224, 200),
+          cardTitleColor:
+              credential.credentialSubject['foregroundColor'] != null &&
+                      credential.credentialSubject['foregroundColor']
+                          .startsWith('#')
+                  ? HexColor.fromHex(
+                      credential.credentialSubject['foregroundColor'])
+                  : const Color.fromARGB(255, 0, 0, 0),
+          cardTitle: '',
+          subjectName: '');
     } else {
       var type = getTypeToShow(credential.type);
       var id = credential.id ?? getHolderDidFromCredential(credential.toJson());
@@ -106,6 +136,13 @@ class IdCard extends StatelessWidget {
       }
       var context = wallet?.getContextForCredential(id);
       var layout = context?.credentialSubject['vclayouts']?[type];
+      VerifiableCredential? certCred;
+      var issuer = getIssuerDidFromCredential(credential);
+      var cCreds = wallet?.getConfig('certCreds:$issuer');
+      if (cCreds != null) {
+        certCred =
+            VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
+      }
       if (layout != null) {
         return XmlCard(
             credential: credential,
@@ -132,12 +169,12 @@ class IdCard extends StatelessWidget {
                 : null,
             cardTitle: getTypeToShow(credential.type),
             subjectName:
-                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? credential.credentialSubject['standName'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
             bottomLeftText: IssuerInfoText(
-                issuer: credential.issuer,
+                issuer: certCred ?? credential.issuer,
                 selfIssued: credential.isSelfIssued()),
             bottomRightText: IssuerInfoIcon(
-              issuer: credential.issuer,
+              issuer: certCred ?? credential.issuer,
               selfIssued: credential.isSelfIssued(),
             ));
       }
@@ -610,6 +647,69 @@ class MemberCard extends IdCard {
   @override
   Widget buildFooter() {
     // TODO: implement buildFooter
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
+class PkPassCard extends IdCard {
+  final BarcodeType? barcodeType;
+  final String? barcodeData;
+  final String description;
+
+  const PkPassCard(
+      {super.key,
+      super.backgroundColor,
+      super.cardTitleColor,
+      this.barcodeType,
+      this.barcodeData,
+      required this.description,
+      required super.cardTitle,
+      required super.subjectName});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Center(
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        height: 90,
+        width: 90,
+        child: barcodeData != null && barcodeType != null
+            ? BarcodeWidget(
+                data: barcodeData!, barcode: Barcode.fromType(barcodeType!))
+            : const SizedBox(
+                height: 0,
+              ),
+      ),
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return Container(
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+          ),
+        ),
+        height: 45,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          child: Text(
+            description,
+            style: TextStyle(
+                color: cardTitleColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w600),
+          ),
+        ));
+  }
+
+  @override
+  Widget buildFooter() {
     return const SizedBox(
       height: 0,
     );
