@@ -722,17 +722,24 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   void reject() async {
     logger.d('user declined presentation');
-    logger.d(widget.otherEndpoint);
-    if (widget.otherEndpoint
-        .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
-      get(Uri.parse(
-          'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
-    } else if (widget.otherEndpoint.startsWith(baseUrl)) {
-      get(Uri.parse(
-          '$baseUrl/bas23/api/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
+    if (widget.message != null) {
+      var problem = ProblemReport(
+          replyUrl: '$relay/buffer/${widget.myDid}',
+          returnRoute: ReturnRouteValue.thread,
+          to: [widget.receiverDid],
+          from: widget.myDid,
+          parentThreadId: widget.message!.threadId ?? widget.message!.id,
+          code: 'e.p.user.decline');
+
+      // TODO sendMessage(
+      //     widget.myDid,
+      //     widget.otherEndpoint,
+      //     Provider.of<WalletProvider>(navigatorKey.currentContext!,
+      //         listen: false),
+      //     problem,
+      //     widget.receiverDid);
     }
     Navigator.of(context).pop();
-    //TODO: send Problem Report, if user rejects
   }
 
   @override

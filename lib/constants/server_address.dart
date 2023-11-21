@@ -20,7 +20,7 @@ var relay = 'https://167.235.195.132:8888';
 var contextEndpoint =
     'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
 var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
-String versionNumber = '2.0.8-test';
+String versionNumber = '2.0.9-test';
 String baseUrl = 'https://test.hidy.app';
 
 var tosEndpoint =

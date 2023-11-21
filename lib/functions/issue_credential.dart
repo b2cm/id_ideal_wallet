@@ -4,7 +4,6 @@ import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
@@ -69,6 +68,11 @@ Future<bool> handleOfferCredential(
   //Are there any previous messages?
   var entry = wallet.getConversation(threadId);
   String myDid;
+  if (entry == null) {
+    myDid = await wallet.newConnectionDid();
+  } else {
+    myDid = entry.myDid;
+  }
 
   //payment requested?
   String? toPay;
@@ -242,23 +246,17 @@ Future<bool> handleOfferCredential(
     } else {
       logger.d('user declined credential');
       var reply = determineReplyUrl(message.replyUrl, message.replyTo);
-      if (reply != null &&
-          reply.startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
-        await get(Uri.parse(
-            'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${message.threadId ?? message.id}'));
-      } else if (reply != null && reply.startsWith(baseUrl)) {
-        get(Uri.parse(
-            '$baseUrl/bas23/api/addtocanceled?thid=${message.threadId ?? message.id}'));
-      }
-      // TODO: send problem report
+      var problem = ProblemReport(
+          replyUrl: '$relay/buffer/$myDid',
+          returnRoute: ReturnRouteValue.thread,
+          to: [message.from!],
+          from: myDid,
+          parentThreadId: message.threadId ?? message.id,
+          code: 'e.p.user.decline');
+
+      // TODO: sendMessage(myDid, reply, wallet, problem, message.from!);
       return false;
     }
-  }
-
-  if (entry == null) {
-    myDid = await wallet.newConnectionDid();
-  } else {
-    myDid = entry.myDid;
   }
 
   //check, if we control did
