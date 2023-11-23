@@ -180,6 +180,8 @@ Future<void> handleOfferOidc(String offerUri) async {
           }
 
           wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+          wallet.storeExchangeHistoryEntry(
+              credDid, DateTime.now(), 'issue', offer.credentialIssuer);
 
           showModalBottomSheet(
               shape: const RoundedRectangleBorder(
@@ -278,7 +280,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       ),
     );
   } catch (e, stack) {
-    logger.e(e, ['', stack]);
+    logger.e(e, stackTrace: stack);
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);

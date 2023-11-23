@@ -14,6 +14,12 @@ This app is under development and for now only recommended to use for testing, d
 research
 purpose.
 
+## In case you experience problems when building the app
+
+- it might be, that it only works with latest flutter version 3.16.x (if you see an error message
+  during pub get)
+- use `flutter clean` if you experience problems during build with the mobile_scanner package
+
 ## App-Link
 
 - `https://wallet.bccm.dev`
@@ -35,11 +41,6 @@ purpose.
   found in doc folder
 - running the wallet works like running every other flutter app using `flutter run`
   after `flutter pub get`
-
-**Flutter 3.10.x**
-
-- after last update it is possible that the wallet is only buildable with at least this
-  flutter-version (because of some problems with pdf package)
 
 **Last update added Internationalization**
 If building the app won't work out of box, run:

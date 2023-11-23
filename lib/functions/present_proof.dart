@@ -140,7 +140,7 @@ Future<bool> handleRequestPresentation(
       ),
     );
   } catch (e, stack) {
-    logger.e(e, ['', stack]);
+    logger.e(e, stackTrace: stack);
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
