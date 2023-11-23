@@ -44,7 +44,7 @@ dependencies:
   flutter_secure_storage:
   random_password_generator:
   uuid: any
-  mobile_scanner: 3.4.1
+  mobile_scanner: 3.5.4
   http: ^1.0.0
   qr_flutter:
     git:
@@ -52,7 +52,7 @@ dependencies:
   json_path: any
   json_schema: ^5.1.2
   provider: ^6.0.4
-  logger: ^1.1.0
+  logger: ^2.0.0
   x509b:
     git:
       url: https://github.com/SaOtto/x509/
@@ -62,7 +62,7 @@ dependencies:
   json_schema_form:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form
-  device_info_plus: ^9.0.0
+  # device_info_plus: ^9.1.1
   android_id: ^0.3.3
   flutter_inappwebview: ^6.0.0-beta.22
   action_slider: any
@@ -71,7 +71,7 @@ dependencies:
   intl: ^0.18.0
   barcode_widget: any
   bech32: ^0.2.2
-  xml: any
+  xml: ^6.3.0
   shared_preferences: ^2.2.0
   app_settings: ^5.0.0
   url_launcher: any
@@ -94,7 +94,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
