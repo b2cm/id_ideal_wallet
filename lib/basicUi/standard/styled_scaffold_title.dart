@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/views/credential_page.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:go_router/go_router.dart';
 
 class StyledScaffoldTitle extends StatelessWidget {
   const StyledScaffoldTitle(
@@ -29,7 +28,7 @@ class StyledScaffoldTitle extends StatelessWidget {
 
         // Swiping in left direction.
         if (useBackSwipe && details.delta.dx < 0) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          context.go('/');
         }
       },
       child: Scaffold(
@@ -67,35 +66,17 @@ class StyledScaffoldTitle extends StatelessWidget {
             switch (index) {
               case 0:
                 if (currentlyActive != 0) {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const CredentialPage(
-                            initialSelection: 'all',
-                          )));
-
-                  // currentlyActive != 2
-                  //     ? Navigator.of(context).pushReplacement(MaterialPageRoute(
-                  //         builder: (context) => const CredentialPage(
-                  //               initialSelection: 'all',
-                  //             )))
-                  //     : Navigator.of(context).push(MaterialPageRoute(
-                  //         builder: (context) => const CredentialPage(
-                  //               initialSelection: 'all',
-                  //             )));
+                  context.go('/credentials?initialSelection=all');
                 }
                 break;
               case 1:
                 if (currentlyActive != 1) {
-                  currentlyActive == 0
-                      ? Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (context) => const QrScanner()))
-                      : Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => const QrScanner()));
+                  context.go('/scanner');
                 }
                 break;
               case 2:
                 if (currentlyActive != 2) {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  context.go('/');
                 }
                 break;
             }

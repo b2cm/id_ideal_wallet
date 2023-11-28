@@ -1042,7 +1042,7 @@ class WalletProvider extends ChangeNotifier {
     var did = await newCredentialDid();
     var storage = getCredential(did);
     var vc = VerifiableCredential(
-        context: ['schema.org'],
+        context: [credentialsV1Iri, 'schema.org'],
         issuer: did,
         issuanceDate: DateTime.now(),
         type: ['HidyContextKundenkarten', 'MemberCard'],

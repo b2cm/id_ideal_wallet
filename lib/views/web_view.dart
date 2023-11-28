@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:go_router/go_router.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
@@ -72,8 +73,7 @@ class WebViewWindowState extends State<WebViewWindow> {
               await webViewController!.canGoBack()) {
             webViewController?.goBack();
           } else {
-            Navigator.of(navigatorKey.currentContext!)
-                .popUntil((route) => route.isFirst);
+            navigatorKey.currentContext!.go('/');
           }
         },
         reloadOnTap: () async {

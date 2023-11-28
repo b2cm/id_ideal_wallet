@@ -1,5 +1,6 @@
 import 'package:barcode_widget/barcode_widget.dart' as barcode;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -7,7 +8,7 @@ import 'package:provider/provider.dart';
 
 class AddMemberCard extends StatefulWidget {
   final String initialNumber;
-  final BarcodeFormat initialBarcodeType;
+  final String initialBarcodeType;
 
   const AddMemberCard(
       {super.key,
@@ -28,29 +29,29 @@ class AddMemberCardState extends State<AddMemberCard> {
   void initState() {
     super.initState();
     numberController.text = widget.initialNumber;
-    if (widget.initialBarcodeType == BarcodeFormat.aztec) {
+    if (widget.initialBarcodeType == BarcodeFormat.aztec.name) {
       currentType = barcode.BarcodeType.Aztec;
-    } else if (widget.initialBarcodeType == BarcodeFormat.dataMatrix) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.dataMatrix.name) {
       currentType = barcode.BarcodeType.DataMatrix;
-    } else if (widget.initialBarcodeType == BarcodeFormat.code39) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.code39.name) {
       currentType = barcode.BarcodeType.Code39;
-    } else if (widget.initialBarcodeType == BarcodeFormat.ean13) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.ean13.name) {
       currentType = barcode.BarcodeType.CodeEAN13;
-    } else if (widget.initialBarcodeType == BarcodeFormat.code128) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.code128.name) {
       currentType = barcode.BarcodeType.Code128;
-    } else if (widget.initialBarcodeType == BarcodeFormat.codebar) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.codebar.name) {
       currentType = barcode.BarcodeType.Codabar;
-    } else if (widget.initialBarcodeType == BarcodeFormat.code93) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.code93.name) {
       currentType = barcode.BarcodeType.Code93;
-    } else if (widget.initialBarcodeType == BarcodeFormat.ean8) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.ean8.name) {
       currentType = barcode.BarcodeType.CodeEAN8;
-    } else if (widget.initialBarcodeType == BarcodeFormat.itf) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.itf.name) {
       currentType = barcode.BarcodeType.Itf;
-    } else if (widget.initialBarcodeType == BarcodeFormat.upcA) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.upcA.name) {
       currentType = barcode.BarcodeType.CodeUPCA;
-    } else if (widget.initialBarcodeType == BarcodeFormat.upcE) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.upcE.name) {
       currentType = barcode.BarcodeType.CodeUPCE;
-    } else if (widget.initialBarcodeType == BarcodeFormat.pdf417) {
+    } else if (widget.initialBarcodeType == BarcodeFormat.pdf417.name) {
       currentType = barcode.BarcodeType.PDF417;
     }
   }
@@ -69,7 +70,7 @@ class AddMemberCardState extends State<AddMemberCard> {
         'barcodeType': currentType.name,
         'number': numberController.text
       });
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      context.go('/');
     }
   }
 

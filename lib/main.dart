@@ -6,6 +6,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
@@ -15,10 +16,12 @@ import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
+import 'package:id_ideal_wallet/views/add_member_card.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_overview.dart';
@@ -38,17 +41,94 @@ void main() async {
   bool isInit = await isOnboard();
   runApp(ChangeNotifierProvider(
     create: (context) => WalletProvider(appDocumentDir.path, isInit),
-    child: const App(),
+    child: App(),
   ));
 }
 
 class App extends StatelessWidget {
-  const App({Key? key}) : super(key: key);
+  App({super.key});
+
+  final router = GoRouter(navigatorKey: navigatorKey, routes: [
+    GoRoute(
+        path: '/welcome', builder: (context, state) => const WelcomeScreen()),
+    GoRoute(
+        path: '/',
+        builder: (context, state) {
+          if (state.uri.queryParameters.containsKey('oob')) {
+            handleDidcommMessage(state.uri.toString());
+          } else if (state.uri.path.contains('invoice')) {
+            var invoice = state.uri.queryParameters['invoice'];
+            if (invoice != null) {
+              payInvoiceInteraction(invoice,
+                  isMainnet: invoice.toLowerCase().startsWith('lnbc'));
+            } else if (state.uri.queryParameters.containsKey('lnurl')) {
+              handleLnurl(state.uri.queryParameters['lnurl']!);
+            }
+          } else if (state.uri.scheme == 'openid-credential-offer') {
+            handleOfferOidc(state.uri.toString());
+          } else if (state.uri.scheme == 'openid-presentation-request') {
+            handlePresentationRequestOidc(state.uri.toString());
+          }
+          return HomeScreen();
+        },
+        redirect: (BuildContext context, GoRouterState state) {
+          if (!Provider.of<WalletProvider>(context, listen: false).onboard) {
+            return '/welcome';
+          } else {
+            return null;
+          }
+        },
+        routes: [
+          GoRoute(
+              path: 'webview',
+              builder: (context, state) {
+                var uriToCall =
+                    '${Uri.parse(state.uri.queryParameters['url']!)}${state.uri.hasFragment ? '#${state.uri.fragment}' : ''}';
+                return Consumer<WalletProvider>(
+                    builder: (context, wallet, child) {
+                  if (wallet.isOpen()) {
+                    logger.d(uriToCall);
+                    return WebViewWindow(
+                        initialUrl: uriToCall
+                            .toString()
+                            .replaceAll('wid=', 'wid=${wallet.lndwId}'),
+                        title: state.uri.queryParameters['title'] ?? '');
+                  } else {
+                    return const Scaffold(
+                      body: SafeArea(
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    );
+                  }
+                });
+              }),
+          GoRoute(
+              path: 'scanner', builder: (context, state) => const QrScanner()),
+          GoRoute(
+              path: 'settings',
+              builder: (context, state) => const SettingsPage()),
+          GoRoute(
+              path: 'credentials',
+              builder: (context, state) => CredentialPage(
+                  initialSelection:
+                      state.uri.queryParameters['initialSelection'] ?? 'all')),
+          GoRoute(
+              path: 'memberCard',
+              builder: (context, state) => AddMemberCard(
+                  initialNumber:
+                      state.uri.queryParameters['initialNumber'] ?? '',
+                  initialBarcodeType:
+                      state.uri.queryParameters['barcodeFormat'] ?? ''))
+        ])
+  ]);
 
   @override
   Widget build(context) {
     var idWalletDesignTheme = IdWalletDesignTheme();
-    return MaterialApp(
+    return MaterialApp.router(
+      routerConfig: router,
       theme: idWalletDesignTheme.theme,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -61,110 +141,14 @@ class App extends StatelessWidget {
         Locale('de'),
         Locale('en'),
       ],
-      navigatorKey: navigatorKey,
-      home: const StartScreen(),
-      onUnknownRoute: (args) =>
-          MaterialPageRoute(builder: (context) => const StartScreen()),
-      onGenerateRoute: (args) {
-        if (!Provider.of<WalletProvider>(context, listen: false).onboard) {
-          return null;
-        }
-        logger.d(args);
-        if (args.name != null && args.name!.contains('oob')) {
-          handleDidcommMessage('https://wallet.bccm.dev${args.name}');
-        } else if (args.name != null && args.name!.contains('webview')) {
-          logger.d(args);
-          var asUri = Uri.parse('https://wallet.bccm.dev${args.name}');
-          logger.d(asUri);
-          logger.d(asUri.queryParameters);
-          var uriToCall =
-              '${Uri.parse(asUri.queryParameters['url']!)}${asUri.hasFragment ? '#${asUri.fragment}' : ''}';
-          logger.d(uriToCall);
-
-          // var newQuery = {'wid': wallet.lndwId};
-          // newQuery.addAll(uriToCall.queryParameters);
-          // var newUriToCall = uriToCall.replace(queryParameters: newQuery);
-          // logger.d(newUriToCall);
-          return MaterialPageRoute(
-              builder: (context) =>
-                  Consumer<WalletProvider>(builder: (context, wallet, child) {
-                    if (wallet.isOpen()) {
-                      logger.d(uriToCall);
-                      return WebViewWindow(
-                          initialUrl: uriToCall
-                              .toString()
-                              .replaceAll('wid=', 'wid=${wallet.lndwId}'),
-                          title: asUri.queryParameters['title'] ?? '');
-                    } else {
-                      return const Scaffold(
-                        body: SafeArea(
-                            child: Center(
-                          child: CircularProgressIndicator(),
-                        )),
-                      );
-                    }
-                  }));
-        } else if (args.name != null && args.name!.contains('invoice')) {
-          var uri = Uri.parse('https://wallet.bccm.dev${args.name}');
-          var invoice = uri.queryParameters['invoice'];
-          if (invoice != null) {
-            payInvoiceInteraction(invoice,
-                isMainnet: invoice.toLowerCase().startsWith('lnbc'));
-          } else if (uri.queryParameters.containsKey('lnurl')) {
-            handleLnurl(uri.queryParameters['lnurl']!);
-          }
-        }
-        return null;
-      },
     );
-  }
-}
-
-class StartScreen extends StatefulWidget {
-  const StartScreen({super.key});
-
-  @override
-  StartScreenState createState() => StartScreenState();
-}
-
-class StartScreenState extends State<StartScreen> {
-  bool init = true;
-  bool showWelcome = false;
-
-  @override
-  initState() {
-    super.initState();
-    checkOnboard();
-  }
-
-  Future<void> checkOnboard() async {
-    var on = await isOnboard();
-    logger.d(on);
-    showWelcome = !on;
-    init = false;
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return init
-        ? const Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          )
-        : showWelcome
-            ? const WelcomeScreen()
-            : HomeScreen();
   }
 }
 
 class HomeScreen extends StatelessWidget {
   final SwiperController controller = SwiperController();
 
-  HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({super.key});
 
   void onTopUpSats(SatoshiAmount amount, String memo,
       VerifiableCredential? paymentCredential) async {
@@ -200,9 +184,7 @@ class HomeScreen extends StatelessWidget {
                 );
               } else {
                 Future.delayed(
-                    const Duration(seconds: 1),
-                    () => Navigator.of(context)
-                        .popUntil((route) => route.isFirst));
+                    const Duration(seconds: 1), () => context.go('/'));
                 return const SizedBox(
                   height: 10,
                 );
@@ -634,18 +616,13 @@ class HomeScreen extends StatelessWidget {
             onTap: (index) {
               switch (index) {
                 case 0:
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const CredentialPage(
-                            initialSelection: 'all',
-                          )));
+                  context.go('/credentials?initialSelection=all');
                   break;
                 case 1:
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const QrScanner()));
+                  context.go('/scanner');
                   break;
                 case 2:
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const SettingsPage()));
+                  context.go('/settings');
                   break;
               }
             },
