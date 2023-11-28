@@ -299,6 +299,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent.shade700,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(45),
                 ),
                 child: Text(AppLocalizations.of(navigatorKey.currentContext!)!
@@ -488,7 +489,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             color: Colors.grey.shade200,
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: RichText(
               text: TextSpan(
                 style: TextStyle(
@@ -866,6 +867,7 @@ class FooterErrorText extends StatelessWidget {
             onPressed: reject,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(45),
             ),
             child: Text(AppLocalizations.of(context)!.cancel))

@@ -290,11 +290,32 @@ class WalletProvider extends ChangeNotifier {
       }
 
       startUri().then(getSharedText);
-      //Checking broadcast stream, if deep link was clicked in opened appication
+      //Checking broadcast stream, if deep link was clicked in opened application
       stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
     }
+  }
+
+  List<String> getAuthorizedApps() {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    return e == null ? [] : jsonDecode(e).cast<String>();
+  }
+
+  void deleteAuthorizedApp(String uri) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.remove(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    notifyListeners();
+  }
+
+  void addAuthorizedApp(String uri) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.add(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    notifyListeners();
   }
 
   Future<void> addToFavorites(String id) async {

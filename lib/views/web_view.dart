@@ -11,8 +11,8 @@ class WebViewWindow extends StatefulWidget {
   final String initialUrl;
   final String title;
 
-  const WebViewWindow({Key? key, required this.initialUrl, required this.title})
-      : super(key: key);
+  const WebViewWindow(
+      {super.key, required this.initialUrl, required this.title});
 
   @override
   State<StatefulWidget> createState() => WebViewWindowState();
@@ -128,7 +128,8 @@ class WebViewWindowState extends State<WebViewWindow> {
                       if ((uri.authority.contains('wallet.id-ideal.de') ||
                               uri.authority.contains('wallet.bccm.dev')) &&
                           uri.query.contains('oob')) {
-                        handleDidcommMessage(uri.toString());
+                        handleDidcommMessage(
+                            '${uri.toString()}&initialWebview=${widget.initialUrl}');
                         return NavigationActionPolicy.CANCEL;
                       }
 

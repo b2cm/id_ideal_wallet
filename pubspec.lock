@@ -212,11 +212,9 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "."
-      ref: didcomm
-      resolved-ref: "972c2da51dcf4e3e392114d9d8019200e1f1e183"
-      url: "https://github.com/b2cm/dart_ssi"
-    source: git
+      path: "../flutter_ssi_wallet"
+      relative: true
+    source: path
     version: "3.1.0"
   ed25519_edwards:
     dependency: transitive

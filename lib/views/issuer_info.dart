@@ -188,6 +188,7 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
     } else {
       iconColor = Colors.red;
       marker = Icons.close;
+      setState(() {});
     }
   }
 

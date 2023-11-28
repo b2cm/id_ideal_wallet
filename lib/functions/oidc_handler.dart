@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
@@ -17,16 +19,30 @@ import 'package:provider/provider.dart';
 
 Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
+  logger.d(offer.credentials.first);
 
-  var res = true;
-  //await showCupertinoModalPopup(
-  //     context: navigatorKey.currentContext!,
-  //     barrierColor: Colors.white,
-  //     builder: (BuildContext context) =>
-  //         buildOfferCredentialDialogOidc(context, offer.credentials));
+  dynamic res = true;
+  res = await Future.delayed(const Duration(seconds: 1), () async {
+    return await showCupertinoModalPopup(
+      context: navigatorKey.currentContext!,
+      barrierColor: Colors.white,
+      builder: (BuildContext context) => CredentialOfferDialog(
+          requestOidcTan:
+              offer.userPinRequired != null && offer.userPinRequired!,
+          credentials: [
+            VerifiableCredential(
+                context: [credentialsV1Iri],
+                type: offer.credentials.first['types']?.cast<String>() ?? [],
+                issuer: {'name': offer.credentialIssuer},
+                credentialSubject: <String, dynamic>{},
+                issuanceDate: DateTime.now())
+          ]),
+    );
+  });
 
-  if (res) {
-    print(offer.credentialIssuer);
+  if (res is String || res) {
+    logger.d(res);
+    logger.d(offer.credentialIssuer);
     logger.d(offer.credentials);
     var issuerMetaReq = await get(
         Uri.parse(
@@ -64,20 +80,18 @@ Future<void> handleOfferOidc(String offerUri) async {
     var jsonBody = jsonDecode(authMetaReq.body);
     var tokenEndpoint = jsonBody['token_endpoint'];
 
-    print(tokenEndpoint);
+    logger.d(tokenEndpoint);
 
     //send token Request
-    var preAuthCode =
-        offer.grants!['urn:ietf:params:oauth:grant-type:pre-authorized_code']
-            ['pre-authorized_code'];
+    var preAuthCode = offer.preAuthCode;
 
-    print(preAuthCode);
+    logger.d(preAuthCode);
     logger.d('Token-Endpoint: $tokenEndpoint');
 
     var tokenRes = await post(Uri.parse(tokenEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body:
-                'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode')
+                'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode${offer.userPinRequired != null && offer.userPinRequired! ? '&user_pin=$res' : ''}')
         .timeout(const Duration(seconds: 20), onTimeout: () {
       return Response('Timeout', 400);
     });
@@ -85,7 +99,7 @@ Future<void> handleOfferOidc(String offerUri) async {
     if (tokenRes.statusCode == 200) {
       var tokenResponse = OidcTokenResponse.fromJson(tokenRes.body);
 
-      print('Access-Token : ${tokenResponse.accessToken}');
+      logger.d('Access-Token : ${tokenResponse.accessToken}');
 
       var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
           listen: false);
@@ -193,7 +207,7 @@ Future<void> handleOfferOidc(String offerUri) async {
               builder: (context) {
                 return ModalDismissWrapper(
                   child: PaymentFinished(
-                    headline: "Credential empfangen",
+                    headline: AppLocalizations.of(context)!.credentialReceived,
                     success: true,
                     amount: CurrencyDisplay(
                         amount: credential['type'].first,
@@ -207,10 +221,14 @@ Future<void> handleOfferOidc(String offerUri) async {
       } else {
         logger.d(credentialResponse.statusCode);
         logger.d(credentialResponse.body);
+
+        showErrorMessage('Credential kann nicht runtergeladen werden');
       }
     } else {
       logger.d(tokenRes.statusCode);
       logger.d(tokenRes.body);
+
+      showErrorMessage('Authentifizierung fehlgeschlagen');
     }
   }
 }
