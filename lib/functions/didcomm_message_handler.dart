@@ -62,8 +62,11 @@ Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
-  var asUri = Uri.parse(message);
-  String? initialWebview = asUri.queryParameters['initialWebview'];
+  String? initialWebview;
+  try {
+    var asUri = Uri.parse(message);
+    initialWebview = asUri.queryParameters['initialWebview'];
+  } catch (_) {}
 
   var plaintext = await getPlaintext(message, wallet);
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {

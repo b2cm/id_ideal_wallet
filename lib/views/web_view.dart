@@ -1,9 +1,11 @@
+import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -110,6 +112,18 @@ class WebViewWindowState extends State<WebViewWindow> {
                     },
                     onWebViewCreated: (controller) {
                       webViewController = controller;
+                      // webViewController?.addJavaScriptHandler(
+                      //     handlerName: 'echoHandler',
+                      //     callback: (args) {
+                      //       logger.d(args);
+                      //       return args;
+                      //     });
+                      // webViewController?.addJavaScriptHandler(
+                      //     handlerName: 'presentationRequestHandler',
+                      //     callback: (args) async {
+                      //       logger.d(args.last['foo']);
+                      //       return {'a': 'b'};
+                      //     });
                     },
                     onLoadStart: (controller, url) {
                       setState(() {
@@ -178,7 +192,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                       });
                     },
                     onConsoleMessage: (controller, consoleMessage) {
-                      print(consoleMessage);
+                      logger.d(consoleMessage);
                     },
                   ),
                   progress < 1.0
@@ -192,4 +206,30 @@ class WebViewWindowState extends State<WebViewWindow> {
       ),
     );
   }
+}
+
+Future<VerifiablePresentation> requestPresentationHandler(
+    Map<String, dynamic> request) async {
+  var presDef =
+      PresentationDefinition.fromJson(request['presentationDefinition']);
+
+  var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!);
+  var allCreds = wallet.allCredentials();
+  List<VerifiableCredential> creds = [];
+  allCreds.forEach((key, value) {
+    if (value.w3cCredential != '') {
+      var vc = VerifiableCredential.fromJson(value.w3cCredential);
+      var type = getTypeToShow(vc.type);
+      if (type != 'PaymentReceipt') {
+        var id = getHolderDidFromCredential(vc.toJson());
+        var status = wallet.revocationState[id];
+        if (status == RevocationState.valid.index ||
+            status == RevocationState.unknown.index) {
+          creds.add(vc);
+        }
+      }
+    }
+  });
+
+  throw UnimplementedError();
 }

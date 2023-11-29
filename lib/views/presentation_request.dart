@@ -529,7 +529,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     return childList;
   }
 
-  Future<void> sendAnswer() async {
+  Future<VerifiablePresentation?> sendAnswer() async {
     setState(() {
       send = true;
     });
@@ -658,6 +658,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
         // Navigator.of(context).pop();
       }
+      return VerifiablePresentation.fromJson(vp);
     } else {
       var vp = await buildPresentation(finalSend, wallet.wallet,
           widget.message!.presentationDefinition.first.challenge,
@@ -716,9 +717,8 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
       }
       // Navigator.of(context).pop();
+      return VerifiablePresentation.fromJson(vp);
     }
-
-    // Navigator.of(context).pop();
   }
 
   void reject() async {
@@ -775,9 +775,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  await Future.delayed(
+                  var vp = await Future.delayed(
                       const Duration(milliseconds: 50), sendAnswer);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(vp);
                 },
               )
           ],

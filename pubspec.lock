@@ -297,10 +297,18 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_inappwebview
-      sha256: "838edeb770c5e6de8f178dbe6821bc31acf081fe9754210a03399b350261a491"
+      sha256: bd62be6aef0662a4bb55a10fd4dc0a5f0070ad92e2c4879f903a355468ca7643
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0-beta.28"
+    version: "6.0.0-beta.30"
+  flutter_inappwebview_android:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_android
+      sha256: c5dbd2ad4b53d13e18085118eef389b4916937c38beded1cfd314675334600a9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   flutter_inappwebview_internal_annotations:
     dependency: transitive
     description:
@@ -309,6 +317,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  flutter_inappwebview_ios:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_ios
+      sha256: "78bbe8e773e0ad0f3ba11f29dd4102451934fc22ec2d70726a810072bfab59ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
+  flutter_inappwebview_macos:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_macos
+      sha256: "22c851a4f4647fc51906566feae8019252c3d198179bf9f1190db6ea158fe98b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
+  flutter_inappwebview_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_platform_interface
+      sha256: "14e7a7fb25fde02e753ed8fd5276f3b8a49f6e7ee2867c20d02ceef9e3091542"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
+  flutter_inappwebview_web:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_web
+      sha256: e276e5417c286d5ba66b833151edb3ec6706fa46b0d1cee04cdfa046595ea797
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -408,10 +448,10 @@ packages:
     dependency: "direct main"
     description:
       name: http
-      sha256: "759d1a329847dd0f39226c688d3e06a6b8679668e350e2891a6474f8b4bb8525"
+      sha256: d4872660c46d929f6b8a9ef4e7a7eff7e49bbf0c4ec3f385ee32df5119175139
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.2"
   http_parser:
     dependency: transitive
     description:
