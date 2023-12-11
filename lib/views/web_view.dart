@@ -1,12 +1,14 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
 
 class WebViewWindow extends StatefulWidget {
@@ -112,18 +114,24 @@ class WebViewWindowState extends State<WebViewWindow> {
                     },
                     onWebViewCreated: (controller) {
                       webViewController = controller;
-                      // webViewController?.addJavaScriptHandler(
-                      //     handlerName: 'echoHandler',
-                      //     callback: (args) {
-                      //       logger.d(args);
-                      //       return args;
-                      //     });
-                      // webViewController?.addJavaScriptHandler(
-                      //     handlerName: 'presentationRequestHandler',
-                      //     callback: (args) async {
-                      //       logger.d(args.last['foo']);
-                      //       return {'a': 'b'};
-                      //     });
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'echoHandlerAsync',
+                          callback: (args) async {
+                            await Future.delayed(const Duration(seconds: 2));
+                            return args;
+                          });
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'echoHandler',
+                          callback: (args) {
+                            return args;
+                          });
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'presentationRequestHandler',
+                          callback: (args) async {
+                            logger.d(args);
+                            return await requestPresentationHandler(args.first,
+                                widget.initialUrl, args[1], args[2]);
+                          });
                     },
                     onLoadStart: (controller, url) {
                       setState(() {
@@ -208,12 +216,13 @@ class WebViewWindowState extends State<WebViewWindow> {
   }
 }
 
-Future<VerifiablePresentation> requestPresentationHandler(
-    Map<String, dynamic> request) async {
-  var presDef =
-      PresentationDefinition.fromJson(request['presentationDefinition']);
+Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
+    String initialUrl, String nonce, bool askForBackground) async {
+  var definition = PresentationDefinition.fromJson(request);
 
-  var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!);
+  var wallet =
+      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+
   var allCreds = wallet.allCredentials();
   List<VerifiableCredential> creds = [];
   allCreds.forEach((key, value) {
@@ -231,5 +240,41 @@ Future<VerifiablePresentation> requestPresentationHandler(
     }
   });
 
-  throw UnimplementedError();
+  try {
+    VerifiablePresentation? vp;
+    var filtered =
+        searchCredentialsForPresentationDefinition(creds, definition);
+    logger.d('successfully filtered');
+
+    var authorizedApps = wallet.getAuthorizedApps();
+    if (authorizedApps.contains(initialUrl)) {
+      logger.d('send with no interaction');
+      var tmp = await buildPresentation(filtered, wallet.wallet, nonce,
+          loadDocumentFunction: loadDocumentFast);
+      vp = VerifiablePresentation.fromJson(tmp);
+    } else {
+      vp = await Navigator.of(navigatorKey.currentContext!).push(
+        MaterialPageRoute(
+          builder: (context) => PresentationRequestDialog(
+            askForBackground: askForBackground,
+            name: definition.name,
+            purpose: definition.purpose,
+            otherEndpoint: initialUrl,
+            receiverDid: '',
+            myDid: '',
+            results: filtered,
+            nonce: nonce,
+          ),
+        ),
+      );
+    }
+
+    return vp;
+  } catch (e, stack) {
+    logger.e(e, stackTrace: stack);
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    return null;
+  }
 }
