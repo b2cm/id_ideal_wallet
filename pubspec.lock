@@ -212,9 +212,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "../flutter_ssi_wallet"
-      relative: true
-    source: path
+      path: "."
+      ref: didcomm
+      resolved-ref: "9a0fc2e26dcd82dca9c34623af0a13cdd625ced9"
+      url: "https://github.com/b2cm/dart_ssi"
+    source: git
     version: "3.1.0"
   ed25519_edwards:
     dependency: transitive
@@ -297,18 +299,18 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_inappwebview
-      sha256: bd62be6aef0662a4bb55a10fd4dc0a5f0070ad92e2c4879f903a355468ca7643
+      sha256: b34fb3b0a8232a5adae1501e4beb6997717e4a17664eab528d4a0b8fd596d417
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0-beta.30"
+    version: "6.0.0-beta.31"
   flutter_inappwebview_android:
     dependency: transitive
     description:
       name: flutter_inappwebview_android
-      sha256: c5dbd2ad4b53d13e18085118eef389b4916937c38beded1cfd314675334600a9
+      sha256: "297ef285b47529332dda074f3bca6dbe103f9e83534b7aca5f081be45da80610"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.7"
   flutter_inappwebview_internal_annotations:
     dependency: transitive
     description:
@@ -321,34 +323,34 @@ packages:
     dependency: transitive
     description:
       name: flutter_inappwebview_ios
-      sha256: "78bbe8e773e0ad0f3ba11f29dd4102451934fc22ec2d70726a810072bfab59ce"
+      sha256: "6b1e3b4f46596700a2393aeb7023379e8a4cd609d2f4d05d358697bcffdcf010"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.8"
   flutter_inappwebview_macos:
     dependency: transitive
     description:
       name: flutter_inappwebview_macos
-      sha256: "22c851a4f4647fc51906566feae8019252c3d198179bf9f1190db6ea158fe98b"
+      sha256: f341d16cf471c072e5424eed748aac90b48a7ff1b4897a254ada189bb551145f
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.0.6"
   flutter_inappwebview_platform_interface:
     dependency: transitive
     description:
       name: flutter_inappwebview_platform_interface
-      sha256: "14e7a7fb25fde02e753ed8fd5276f3b8a49f6e7ee2867c20d02ceef9e3091542"
+      sha256: efc08458cde40f1b2ea213334d02892910c0f5bf2c8a8cd418d0f0522de7e016
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.0.5"
   flutter_inappwebview_web:
     dependency: transitive
     description:
       name: flutter_inappwebview_web
-      sha256: e276e5417c286d5ba66b833151edb3ec6706fa46b0d1cee04cdfa046595ea797
+      sha256: "77ac7a82fec6e7a84ad4ea9d219cc84c8e542fb5791f208614e82620a4c3d7f4"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.0.3"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -737,10 +739,10 @@ packages:
     dependency: "direct main"
     description:
       name: pdf
-      sha256: aa8835fcb9cfaf57ab2f1970e8548ceed3d0cb53eda7da906648f8153eaf37c9
+      sha256: "93cbb2c06de9bab91844550f19896b2373e7a5ce25173995e7e5ec5e1741429d"
       url: "https://pub.dev"
     source: hosted
-    version: "3.10.6"
+    version: "3.10.7"
   pem:
     dependency: transitive
     description:
@@ -1007,10 +1009,10 @@ packages:
     dependency: "direct main"
     description:
       name: url_launcher
-      sha256: b1c9e98774adf8820c96fbc7ae3601231d324a7d5ebd8babe27b6dfac91357ba
+      sha256: e9aa5ea75c84cf46b3db4eea212523591211c3cf2e13099ee4ec147f54201c86
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.1"
+    version: "6.2.2"
   url_launcher_android:
     dependency: transitive
     description:
@@ -1055,10 +1057,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_web
-      sha256: "138bd45b3a456dcfafc46d1a146787424f8d2edfbf2809c9324361e58f851cf7"
+      sha256: "7286aec002c8feecc338cc33269e96b73955ab227456e9fb2a91f7fab8a358e9"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "2.2.2"
   url_launcher_windows:
     dependency: transitive
     description:
@@ -1127,10 +1129,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "7c99c0e1e2fa190b48d25c81ca5e42036d5cac81430ef249027d97b0935c553f"
+      sha256: b0f37db61ba2f2e9b7a78a1caece0052564d1bc70668156cf3a29d676fe4e574
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.0"
+    version: "5.1.1"
   x25519:
     dependency: transitive
     description:
