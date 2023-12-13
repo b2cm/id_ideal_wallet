@@ -117,6 +117,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final String myDid;
   final String otherEndpoint;
   final String receiverDid;
+  final String definitionHash;
   final RequestPresentation? message;
   final bool isOidc, askForBackground;
   final String? nonce;
@@ -125,11 +126,12 @@ class PresentationRequestDialog extends StatefulWidget {
   final List<VerifiableCredential>? paymentCards;
 
   const PresentationRequestDialog(
-      {Key? key,
+      {super.key,
       required this.results,
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
+      required this.definitionHash,
       this.askForBackground = false,
       this.name,
       this.purpose,
@@ -138,8 +140,7 @@ class PresentationRequestDialog extends StatefulWidget {
       this.nonce,
       this.lnInvoice,
       this.lnInvoiceRequest,
-      this.paymentCards})
-      : super(key: key);
+      this.paymentCards});
 
   @override
   _PresentationRequestDialogState createState() =>
@@ -554,7 +555,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     });
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     if (widget.askForBackground && backgroundAllow) {
-      wallet.addAuthorizedApp(widget.otherEndpoint);
+      wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
     }
     List<dynamic> finalSend = [];
     Set<String> issuerDids = {};

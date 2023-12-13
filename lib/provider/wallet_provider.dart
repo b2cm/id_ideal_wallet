@@ -307,15 +307,27 @@ class WalletProvider extends ChangeNotifier {
     List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
     old.remove(uri);
     await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    await _wallet.deleteConfigEntry('hash_$uri');
     notifyListeners();
   }
 
-  void addAuthorizedApp(String uri) async {
+  void addAuthorizedApp(String uri, String hash) async {
     var e = _wallet.getConfigEntry('authorizedApps');
     List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
     old.add(uri);
     await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+
+    var h = _wallet.getConfigEntry('hash_$uri');
+    List<String> hashes = h == null ? <String>[] : jsonDecode(h).cast<String>();
+    hashes.add(hash);
+    await _wallet.storeConfigEntry('hash_$uri', jsonEncode(hashes));
+
     notifyListeners();
+  }
+
+  List<String> getHashesForAuthorizedApp(String uri) {
+    var e = _wallet.getConfigEntry('hash_$uri');
+    return e == null ? [] : jsonDecode(e).cast<String>();
   }
 
   Future<void> addToFavorites(String id) async {

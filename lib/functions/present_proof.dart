@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
@@ -87,6 +90,8 @@ Future<bool> handleRequestPresentation(
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
   logger.d(definition.toJson());
+  var definitionHash = sha256.convert(utf8.encode(definition.toString()));
+  logger.d(definitionHash);
 
   List<VerifiableCredential>? paymentCards;
   String? invoice;
@@ -152,6 +157,7 @@ Future<bool> handleRequestPresentation(
       Navigator.of(navigatorKey.currentContext!).push(
         MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
+            definitionHash: definitionHash.toString(),
             name: definition.name,
             purpose: definition.purpose,
             message: message,

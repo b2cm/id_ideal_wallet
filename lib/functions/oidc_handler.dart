@@ -20,6 +20,14 @@ import 'package:provider/provider.dart';
 Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
   logger.d(offer.credentials.first);
+  List<String> credentialToRequest = [];
+  for (var c in offer.credentials) {
+    if (c is String) {
+      credentialToRequest.add(c);
+    } else {
+      credentialToRequest.addAll(c['types']?.cast<String>() ?? []);
+    }
+  }
 
   dynamic res = true;
   res = await Future.delayed(const Duration(seconds: 1), () async {
@@ -32,7 +40,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           credentials: [
             VerifiableCredential(
                 context: [credentialsV1Iri],
-                type: offer.credentials.first['types']?.cast<String>() ?? [],
+                type: credentialToRequest,
                 issuer: {'name': offer.credentialIssuer},
                 credentialSubject: <String, dynamic>{},
                 issuanceDate: DateTime.now())
@@ -60,7 +68,7 @@ Future<void> handleOfferOidc(String offerUri) async {
 
     logger.d(issuerMetaReq.body);
 
-    var metaData = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
+    var metaData = jsonDecode(issuerMetaReq.body);
 
     var authMetaReq = await get(
         Uri.parse(
@@ -130,10 +138,6 @@ Future<void> handleOfferOidc(String offerUri) async {
       //end JWT creation
 
       // create VP
-      var signed = await buildPresentation(
-          [], wallet.wallet, tokenResponse.cNonce!,
-          holder: credentialDid, domain: offer.credentialIssuer);
-
       var presentation = VerifiablePresentation(
           context: [credentialsV1Iri, ed25519ContextIri],
           type: ['VerifiablePresentation'],
@@ -141,7 +145,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       var signer = EdDsaSigner(loadDocumentFast);
       var p = await signer.buildProof(
           presentation.toJson(), wallet.wallet, credentialDid,
-          challenge: tokenResponse.cNonce!,
+          challenge: tokenResponse.cNonce,
           domain: offer.credentialIssuer,
           proofPurpose: 'authentication');
       presentation.proof = [LinkedDataProof.fromJson(p)];
@@ -149,15 +153,13 @@ Future<void> handleOfferOidc(String offerUri) async {
 
       var credentialRequest = {
         'format': 'ldp_vc',
-        'types':
-            offer.credentials.first['type'] ?? offer.credentials.first['types'],
+        'types': credentialToRequest,
         'proof': {'proof_type': 'jwt', 'jwt': jwt}
       };
 
       var credentialRequestLdp = {
         'format': 'ldp_vc',
-        'types':
-            offer.credentials.first['type'] ?? offer.credentials.first['types'],
+        'types': credentialToRequest,
         'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
       };
 
@@ -165,12 +167,12 @@ Future<void> handleOfferOidc(String offerUri) async {
       logger.d(credentialRequestLdp);
 
       var credentialResponse =
-          await post(Uri.parse(metaData.credentialEndpoint),
+          await post(Uri.parse(metaData['credential_endpoint']),
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequestLdp))
+                  body: jsonEncode(credentialRequest))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
@@ -288,6 +290,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
         builder: (context) => PresentationRequestDialog(
+          definitionHash: '',
           otherEndpoint: clientId,
           receiverDid: clientId,
           myDid: 'myDid',

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -219,6 +222,7 @@ class WebViewWindowState extends State<WebViewWindow> {
 Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
     String initialUrl, String nonce, bool askForBackground) async {
   var definition = PresentationDefinition.fromJson(request);
+  var definitionHash = sha256.convert(utf8.encode(definition.toString()));
 
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
@@ -247,7 +251,11 @@ Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
     logger.d('successfully filtered');
 
     var authorizedApps = wallet.getAuthorizedApps();
-    if (authorizedApps.contains(initialUrl)) {
+    var authorizedHashes = wallet.getHashesForAuthorizedApp(initialUrl);
+    logger.d(authorizedHashes);
+    logger.d(definitionHash.toString());
+    if (authorizedApps.contains(initialUrl) &&
+        authorizedHashes.contains(definitionHash.toString())) {
       logger.d('send with no interaction');
       var tmp = await buildPresentation(filtered, wallet.wallet, nonce,
           loadDocumentFunction: loadDocumentFast);
@@ -256,6 +264,7 @@ Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
       vp = await Navigator.of(navigatorKey.currentContext!).push(
         MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
+            definitionHash: definitionHash.toString(),
             askForBackground: askForBackground,
             name: definition.name,
             purpose: definition.purpose,
