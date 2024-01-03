@@ -222,7 +222,29 @@ class WebViewWindowState extends State<WebViewWindow> {
 Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
     String initialUrl, String nonce, bool askForBackground) async {
   var definition = PresentationDefinition.fromJson(request);
-  var definitionHash = sha256.convert(utf8.encode(definition.toString()));
+  var definitionToHash = PresentationDefinition(
+      inputDescriptors: definition.inputDescriptors
+          .map((e) => InputDescriptor(
+                id: '',
+                constraints: InputDescriptorConstraints(
+                  subjectIsIssuer: e.constraints?.subjectIsIssuer,
+                  fields: e.constraints?.fields
+                      ?.map((eIn) => InputDescriptorField(
+                          path: eIn.path, id: '', filter: eIn.filter))
+                      .toList(),
+                ),
+              ))
+          .toList(),
+      submissionRequirement: definition.submissionRequirement
+          ?.map((e) => SubmissionRequirement(
+              rule: e.rule,
+              count: e.count,
+              from: e.from,
+              max: e.max,
+              min: e.min))
+          .toList(),
+      id: '');
+  var definitionHash = sha256.convert(utf8.encode(definitionToHash.toString()));
 
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);

@@ -605,6 +605,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       logger.d(await verifyPresentation(vp, widget.nonce!,
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
+      logger.d('send presentation to ${widget.otherEndpoint}');
       var res = await post(Uri.parse(widget.otherEndpoint),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body:

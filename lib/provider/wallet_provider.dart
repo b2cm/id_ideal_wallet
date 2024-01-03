@@ -61,7 +61,7 @@ class WalletProvider extends ChangeNotifier {
 
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
-    t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+    // t = Timer.periodic(const Duration(seconds: 10), checkRelay);
   }
 
   Future<List<int>?> startUri() async {
@@ -1054,7 +1054,7 @@ class WalletProvider extends ChangeNotifier {
     var did = await newCredentialDid();
     var storage = getCredential(did);
     var vc = VerifiableCredential(
-        context: ['schema.org'],
+        context: [credentialsV1Iri, schemaOrgIri],
         issuer: did,
         issuanceDate: DateTime.now(),
         type: ['HidyContextKundenkarten', 'MemberCard'],
