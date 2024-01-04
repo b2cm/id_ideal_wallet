@@ -54,7 +54,7 @@ class SettingsPageState extends State<SettingsPage> {
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (builder) => AuthorizedAppsManger())),
+                      builder: (builder) => const AuthorizedAppsManger())),
             )
           ],
         ));

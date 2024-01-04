@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
@@ -88,6 +91,31 @@ Future<bool> handleRequestPresentation(
   var definition = message.presentationDefinition.first.presentationDefinition;
   logger.d(definition.toJson());
 
+  var definitionToHash = PresentationDefinition(
+      inputDescriptors: definition.inputDescriptors
+          .map((e) => InputDescriptor(
+                id: '',
+                constraints: InputDescriptorConstraints(
+                  subjectIsIssuer: e.constraints?.subjectIsIssuer,
+                  fields: e.constraints?.fields
+                      ?.map((eIn) => InputDescriptorField(
+                          path: eIn.path, id: '', filter: eIn.filter))
+                      .toList(),
+                ),
+              ))
+          .toList(),
+      submissionRequirement: definition.submissionRequirement
+          ?.map((e) => SubmissionRequirement(
+              rule: e.rule,
+              count: e.count,
+              from: e.from,
+              max: e.max,
+              min: e.min))
+          .toList(),
+      id: '');
+  var definitionHash = sha256.convert(utf8.encode(definitionToHash.toString()));
+  logger.d(definitionHash);
+
   List<VerifiableCredential>? paymentCards;
   String? invoice;
   var paymentReq = message.attachments!.where(
@@ -152,6 +180,7 @@ Future<bool> handleRequestPresentation(
       Navigator.of(navigatorKey.currentContext!).push(
         MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
+            definitionHash: definitionHash.toString(),
             name: definition.name,
             purpose: definition.purpose,
             message: message,

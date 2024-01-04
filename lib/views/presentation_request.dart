@@ -117,19 +117,22 @@ class PresentationRequestDialog extends StatefulWidget {
   final String myDid;
   final String otherEndpoint;
   final String receiverDid;
+  final String definitionHash;
   final RequestPresentation? message;
-  final bool isOidc;
+  final bool isOidc, askForBackground;
   final String? nonce;
   final String? lnInvoice;
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
 
   const PresentationRequestDialog(
-      {Key? key,
+      {super.key,
       required this.results,
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
+      required this.definitionHash,
+      this.askForBackground = false,
       this.name,
       this.purpose,
       this.message,
@@ -137,8 +140,7 @@ class PresentationRequestDialog extends StatefulWidget {
       this.nonce,
       this.lnInvoice,
       this.lnInvoiceRequest,
-      this.paymentCards})
-      : super(key: key);
+      this.paymentCards});
 
   @override
   _PresentationRequestDialogState createState() =>
@@ -151,6 +153,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
   bool dataEntered = true;
   bool send = false;
   bool fulfillable = true;
+  bool backgroundAllow = true;
   String amount = '';
 
   @override
@@ -229,6 +232,23 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     childList.add(const SizedBox(
       height: 10,
     ));
+
+    if (widget.askForBackground) {
+      childList.add(CheckboxListTile(
+          title: Text('Hintergrundabfragen'),
+          subtitle: Text(
+              'Hiermit erlaube ich ${widget.otherEndpoint}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen'),
+          value: backgroundAllow,
+          onChanged: (newValue) {
+            if (newValue != null) {
+              backgroundAllow = newValue;
+              setState(() {});
+            }
+          }));
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+    }
 
     for (var result in widget.results) {
       bool all = false;
@@ -529,11 +549,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     return childList;
   }
 
-  Future<void> sendAnswer() async {
+  Future<VerifiablePresentation?> sendAnswer() async {
     setState(() {
       send = true;
     });
     var wallet = Provider.of<WalletProvider>(context, listen: false);
+    if (widget.askForBackground && backgroundAllow) {
+      wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
+    }
     List<dynamic> finalSend = [];
     Set<String> issuerDids = {};
     int outerPos = 0;
@@ -582,6 +605,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       logger.d(await verifyPresentation(vp, widget.nonce!,
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
+      logger.d('send presentation to ${widget.otherEndpoint}');
       var res = await post(Uri.parse(widget.otherEndpoint),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body:
@@ -658,67 +682,74 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
         // Navigator.of(context).pop();
       }
+      return VerifiablePresentation.fromJson(vp);
     } else {
-      var vp = await buildPresentation(finalSend, wallet.wallet,
-          widget.message!.presentationDefinition.first.challenge,
+      var vp = await buildPresentation(
+          finalSend,
+          wallet.wallet,
+          widget.message?.presentationDefinition.first.challenge ??
+              widget.nonce ??
+              '',
           loadDocumentFunction: loadDocumentKaprion);
-      var presentationMessage = Presentation(
-          replyUrl: '$relay/buffer/${widget.myDid}',
-          returnRoute: ReturnRouteValue.thread,
-          to: [widget.receiverDid],
-          from: widget.myDid,
-          verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
-          threadId: widget.message!.threadId ?? widget.message!.id,
-          parentThreadId: widget.message!.parentThreadId);
-      logger.d(widget.lnInvoiceRequest);
-      logger.d(widget.paymentCards);
-      if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
-        logger.d('generate invoice');
-        var paymentId = widget.paymentCards!.first.id!;
-        var lnInKey = wallet.getLnInKey(paymentId);
-        var paymentType =
-            widget.paymentCards!.first.credentialSubject['paymentType'];
-        var invoice = await createInvoice(
-            lnInKey!,
+      if (widget.message != null) {
+        var presentationMessage = Presentation(
+            replyUrl: '$relay/buffer/${widget.myDid}',
+            returnRoute: ReturnRouteValue.thread,
+            to: [widget.receiverDid],
+            from: widget.myDid,
+            verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+            threadId: widget.message!.threadId ?? widget.message!.id,
+            parentThreadId: widget.message!.parentThreadId);
+        logger.d(widget.lnInvoiceRequest);
+        logger.d(widget.paymentCards);
+        if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
+          logger.d('generate invoice');
+          var paymentId = widget.paymentCards!.first.id!;
+          var lnInKey = wallet.getLnInKey(paymentId);
+          var paymentType =
+              widget.paymentCards!.first.credentialSubject['paymentType'];
+          var invoice = await createInvoice(
+              lnInKey!,
+              SatoshiAmount.fromUnitAndValue(
+                  widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+              memo: widget.lnInvoiceRequest!['memo'] ?? '',
+              isMainnet: paymentType == 'LightningMainnetPayment');
+          var index = invoice['checking_id'];
+          logger.d(index);
+          wallet.newPayment(
+            paymentId,
+            index,
+            widget.lnInvoiceRequest!['memo'] ?? '',
             SatoshiAmount.fromUnitAndValue(
                 widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
-            memo: widget.lnInvoiceRequest!['memo'] ?? '',
-            isMainnet: paymentType == 'LightningMainnetPayment');
-        var index = invoice['checking_id'];
-        logger.d(index);
-        wallet.newPayment(
-          paymentId,
-          index,
-          widget.lnInvoiceRequest!['memo'] ?? '',
-          SatoshiAmount.fromUnitAndValue(
-              widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
-        );
+          );
 
-        var paymentAtt = Attachment(
-            format: 'lnInvoice',
-            data: AttachmentData(json: {
-              'type': 'lnInvoice',
-              'lnInvoice': invoice['payment_request']
-            }));
+          var paymentAtt = Attachment(
+              format: 'lnInvoice',
+              data: AttachmentData(json: {
+                'type': 'lnInvoice',
+                'lnInvoice': invoice['payment_request']
+              }));
 
-        presentationMessage.attachments?.add(paymentAtt);
-      }
-      sendMessage(widget.myDid, widget.otherEndpoint, wallet,
-          presentationMessage, widget.receiverDid,
-          lnInvoice: widget.lnInvoice, paymentCards: widget.paymentCards);
-      for (var pres in presentationMessage.verifiablePresentation) {
-        for (var cred in pres.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present',
-              widget.receiverDid);
+          presentationMessage.attachments?.add(paymentAtt);
         }
+        sendMessage(widget.myDid, widget.otherEndpoint, wallet,
+            presentationMessage, widget.receiverDid,
+            lnInvoice: widget.lnInvoice, paymentCards: widget.paymentCards);
       }
-      // Navigator.of(context).pop();
-    }
 
-    // Navigator.of(context).pop();
+      for (var cred
+          in VerifiablePresentation.fromJson(vp).verifiableCredential ?? []) {
+        wallet.storeExchangeHistoryEntry(
+            getHolderDidFromCredential(cred.toJson()),
+            DateTime.now(),
+            'present',
+            widget.receiverDid);
+      }
+
+      // Navigator.of(context).pop();
+      return VerifiablePresentation.fromJson(vp);
+    }
   }
 
   void reject() async {
@@ -775,9 +806,9 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  await Future.delayed(
+                  var vp = await Future.delayed(
                       const Duration(milliseconds: 50), sendAnswer);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(vp);
                 },
               )
           ],
