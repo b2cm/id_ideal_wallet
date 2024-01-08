@@ -21,6 +21,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
+import 'package:id_ideal_wallet/views/payment_card_overview.dart';
 import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/settings_page.dart';
@@ -617,18 +618,21 @@ class HomeScreen extends StatelessWidget {
           bottomNavigationBar: BottomNavigationBar(
             selectedItemColor: Colors.black,
             unselectedItemColor: Colors.black,
+            showUnselectedLabels: true,
             items: [
               const BottomNavigationBarItem(
                   icon: Icon(Icons.co_present), label: 'Credentials'),
               BottomNavigationBarItem(
                   icon: const Icon(
                     Icons.qr_code_scanner_sharp,
-                    size: 30,
+                    //size: 30,
                   ),
                   label: AppLocalizations.of(context)!.scan),
               BottomNavigationBarItem(
                   icon: const Icon(Icons.settings),
                   label: AppLocalizations.of(context)!.settings),
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.credit_card), label: 'Zahlung'),
             ],
             currentIndex: 1,
             onTap: (index) {
@@ -646,6 +650,10 @@ class HomeScreen extends StatelessWidget {
                 case 2:
                   Navigator.of(context).push(MaterialPageRoute(
                       builder: (context) => const SettingsPage()));
+                  break;
+                case 3:
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const PaymentCardOverview()));
                   break;
               }
             },

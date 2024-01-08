@@ -24,8 +24,7 @@ import 'package:provider/provider.dart';
 class CredentialPage extends StatefulWidget {
   final String initialSelection;
 
-  const CredentialPage({Key? key, required this.initialSelection})
-      : super(key: key);
+  const CredentialPage({super.key, required this.initialSelection});
 
   @override
   CredentialPageState createState() => CredentialPageState();
