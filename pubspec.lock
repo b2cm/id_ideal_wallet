@@ -802,10 +802,11 @@ packages:
   printing:
     dependency: "direct main"
     description:
-      name: printing
-      sha256: ad39a42a5f83125952457dfd94f395c8cf0eb1f7759583dadb769be5c7f99d24
-      url: "https://pub.dev"
-    source: hosted
+      path: printing
+      ref: patch-1
+      resolved-ref: "9dfbd52c5af65e6c4eb111614115ebcde26f8681"
+      url: "https://github.com/Gustl22/dart_pdf.git"
+    source: git
     version: "5.11.1"
   provider:
     dependency: "direct main"
@@ -1160,4 +1161,4 @@ packages:
     version: "6.3.0"
 sdks:
   dart: ">=3.2.0 <4.0.0"
-  flutter: ">=3.16.0"
+  flutter: ">=3.17.0-19.0.pre"

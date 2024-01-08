@@ -179,7 +179,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequest))
+                  body: jsonEncode(credentialRequestLdp))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
