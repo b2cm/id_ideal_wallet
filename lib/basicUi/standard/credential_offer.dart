@@ -9,20 +9,28 @@ import 'package:id_ideal_wallet/views/issuer_info.dart';
 
 import 'receipt.dart';
 
-class CredentialOfferDialog extends StatelessWidget {
-  const CredentialOfferDialog({
-    super.key,
-    required this.credentials,
-    this.toPay,
-  });
+class CredentialOfferDialog extends StatefulWidget {
+  const CredentialOfferDialog(
+      {super.key,
+      required this.credentials,
+      this.toPay,
+      this.requestOidcTan = false});
 
   final List<VerifiableCredential> credentials;
   final String? toPay;
+  final bool requestOidcTan;
+
+  @override
+  CredentialOfferDialogState createState() => CredentialOfferDialogState();
+}
+
+class CredentialOfferDialogState extends State<CredentialOfferDialog> {
+  final TextEditingController controller = TextEditingController();
 
   List<Widget> buildContent() {
     List<Widget> contentData = [];
 
-    for (var credential in credentials) {
+    for (var credential in widget.credentials) {
       var type = getTypeToShow(credential.type);
       if (type != 'PaymentReceipt' && type != 'PublicKeyCertificate') {
         var title = Text(
@@ -37,7 +45,7 @@ class CredentialOfferDialog extends StatelessWidget {
         var subject = buildCredSubject(credential.credentialSubject);
         VerifiableCredential? issuerCertCredential;
         try {
-          issuerCertCredential = credentials.firstWhere(
+          issuerCertCredential = widget.credentials.firstWhere(
               (element) => element.type.contains('PublicKeyCertificate'));
         } catch (_) {}
 
@@ -50,10 +58,15 @@ class CredentialOfferDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: IssuerInfoText(
-                      issuer: issuerCertCredential ?? credential.issuer),
-                ),
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: MediaQuery.of(navigatorKey.currentContext!)
+                              .size
+                              .width *
+                          0.6,
+                      child: IssuerInfoText(
+                          issuer: issuerCertCredential ?? credential.issuer),
+                    )),
                 IssuerInfoIcon(
                     issuer: issuerCertCredential ?? credential.issuer)
               ],
@@ -62,6 +75,43 @@ class CredentialOfferDialog extends StatelessWidget {
           ),
         );
       }
+    }
+
+    if (widget.requestOidcTan) {
+      contentData.add(SizedBox(
+        height: 5,
+      ));
+      contentData.add(ExpansionTile(
+        initiallyExpanded: true,
+        title: Text(
+          'Vorgangsnummer',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+            'Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.',
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            )),
+        children: [
+          TextField(
+            onChanged: (text) {
+              controller.text = text;
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderSide: BorderSide(width: 2, color: Colors.grey),
+              ),
+            ),
+            controller: controller,
+          ),
+          SizedBox(
+            height: 2,
+          )
+        ],
+      ));
     }
     return contentData;
   }
@@ -94,22 +144,22 @@ class CredentialOfferDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    toPay != null
+                    widget.toPay != null
                         ? Receipt(
                             title: AppLocalizations.of(context)!.invoice,
                             items: [
                               ReceiptItem(
                                 label: "Credential",
                                 amount: CurrencyDisplay(
-                                  amount: toPay!,
+                                  amount: widget.toPay!,
                                   symbol: "€",
                                 ),
                               ),
                             ],
                             total: ReceiptItem(
                               label: AppLocalizations.of(context)!.total,
-                              amount:
-                                  CurrencyDisplay(amount: toPay, symbol: "€"),
+                              amount: CurrencyDisplay(
+                                  amount: widget.toPay, symbol: "€"),
                             ),
                           )
                         : const SizedBox(
@@ -124,9 +174,11 @@ class CredentialOfferDialog extends StatelessWidget {
       ),
       persistentFooterButtons: [
         FooterButtons(
-            positiveText: toPay != null
+            positiveText: widget.toPay != null
                 ? AppLocalizations.of(context)!.orderWithPayment
-                : AppLocalizations.of(context)!.accept),
+                : AppLocalizations.of(context)!.accept,
+            positiveFunction: () => Navigator.of(context)
+                .pop(widget.requestOidcTan ? controller.text : true)),
       ],
     );
   }
@@ -151,6 +203,7 @@ class FooterButtons extends StatelessWidget {
           onPressed: positiveFunction ?? () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.greenAccent.shade700,
+            foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(45),
           ),
           child: Text(positiveText ?? AppLocalizations.of(context)!.accept),
@@ -162,6 +215,7 @@ class FooterButtons extends StatelessWidget {
           onPressed: negativeFunction ?? () => Navigator.of(context).pop(false),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(45),
           ),
           child: Text(negativeText ?? AppLocalizations.of(context)!.reject),

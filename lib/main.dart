@@ -30,7 +30,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-  HttpOverrides.global = DevHttpOverrides();
+  if (testBuild) {
+    HttpOverrides.global = DevHttpOverrides();
+  }
   WidgetsFlutterBinding.ensureInitialized();
   final appDocumentDir = await getApplicationDocumentsDirectory();
   bool isInit = await isOnboard();

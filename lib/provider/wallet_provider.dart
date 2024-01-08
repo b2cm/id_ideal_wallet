@@ -61,7 +61,7 @@ class WalletProvider extends ChangeNotifier {
 
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
-    t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+    // t = Timer.periodic(const Duration(seconds: 10), checkRelay);
   }
 
   Future<List<int>?> startUri() async {
@@ -290,11 +290,44 @@ class WalletProvider extends ChangeNotifier {
       }
 
       startUri().then(getSharedText);
-      //Checking broadcast stream, if deep link was clicked in opened appication
+      //Checking broadcast stream, if deep link was clicked in opened application
       stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
     }
+  }
+
+  List<String> getAuthorizedApps() {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    return e == null ? [] : jsonDecode(e).cast<String>();
+  }
+
+  void deleteAuthorizedApp(String uri) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.remove(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    await _wallet.deleteConfigEntry('hash_$uri');
+    notifyListeners();
+  }
+
+  void addAuthorizedApp(String uri, String hash) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.add(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+
+    var h = _wallet.getConfigEntry('hash_$uri');
+    List<String> hashes = h == null ? <String>[] : jsonDecode(h).cast<String>();
+    hashes.add(hash);
+    await _wallet.storeConfigEntry('hash_$uri', jsonEncode(hashes));
+
+    notifyListeners();
+  }
+
+  List<String> getHashesForAuthorizedApp(String uri) {
+    var e = _wallet.getConfigEntry('hash_$uri');
+    return e == null ? [] : jsonDecode(e).cast<String>();
   }
 
   Future<void> addToFavorites(String id) async {
@@ -1021,7 +1054,7 @@ class WalletProvider extends ChangeNotifier {
     var did = await newCredentialDid();
     var storage = getCredential(did);
     var vc = VerifiableCredential(
-        context: ['schema.org'],
+        context: [credentialsV1Iri, schemaOrgIri],
         issuer: did,
         issuanceDate: DateTime.now(),
         type: ['HidyContextKundenkarten', 'MemberCard'],

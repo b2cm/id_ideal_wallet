@@ -1,18 +1,25 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
 
 class WebViewWindow extends StatefulWidget {
   final String initialUrl;
   final String title;
 
-  const WebViewWindow({Key? key, required this.initialUrl, required this.title})
-      : super(key: key);
+  const WebViewWindow(
+      {super.key, required this.initialUrl, required this.title});
 
   @override
   State<StatefulWidget> createState() => WebViewWindowState();
@@ -110,6 +117,24 @@ class WebViewWindowState extends State<WebViewWindow> {
                     },
                     onWebViewCreated: (controller) {
                       webViewController = controller;
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'echoHandlerAsync',
+                          callback: (args) async {
+                            await Future.delayed(const Duration(seconds: 2));
+                            return args;
+                          });
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'echoHandler',
+                          callback: (args) {
+                            return args;
+                          });
+                      webViewController?.addJavaScriptHandler(
+                          handlerName: 'presentationRequestHandler',
+                          callback: (args) async {
+                            logger.d(args);
+                            return await requestPresentationHandler(args.first,
+                                widget.initialUrl, args[1], args[2]);
+                          });
                     },
                     onLoadStart: (controller, url) {
                       setState(() {
@@ -128,7 +153,8 @@ class WebViewWindowState extends State<WebViewWindow> {
                       if ((uri.authority.contains('wallet.id-ideal.de') ||
                               uri.authority.contains('wallet.bccm.dev')) &&
                           uri.query.contains('oob')) {
-                        handleDidcommMessage(uri.toString());
+                        handleDidcommMessage(
+                            '${uri.toString()}&initialWebview=${widget.initialUrl}');
                         return NavigationActionPolicy.CANCEL;
                       }
 
@@ -177,7 +203,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                       });
                     },
                     onConsoleMessage: (controller, consoleMessage) {
-                      print(consoleMessage);
+                      logger.d(consoleMessage);
                     },
                   ),
                   progress < 1.0
@@ -190,5 +216,96 @@ class WebViewWindowState extends State<WebViewWindow> {
         ),
       ),
     );
+  }
+}
+
+Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
+    String initialUrl, String nonce, bool askForBackground) async {
+  var definition = PresentationDefinition.fromJson(request);
+  var definitionToHash = PresentationDefinition(
+      inputDescriptors: definition.inputDescriptors
+          .map((e) => InputDescriptor(
+                id: '',
+                constraints: InputDescriptorConstraints(
+                  subjectIsIssuer: e.constraints?.subjectIsIssuer,
+                  fields: e.constraints?.fields
+                      ?.map((eIn) => InputDescriptorField(
+                          path: eIn.path, id: '', filter: eIn.filter))
+                      .toList(),
+                ),
+              ))
+          .toList(),
+      submissionRequirement: definition.submissionRequirement
+          ?.map((e) => SubmissionRequirement(
+              rule: e.rule,
+              count: e.count,
+              from: e.from,
+              max: e.max,
+              min: e.min))
+          .toList(),
+      id: '');
+  var definitionHash = sha256.convert(utf8.encode(definitionToHash.toString()));
+
+  var wallet =
+      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+
+  var allCreds = wallet.allCredentials();
+  List<VerifiableCredential> creds = [];
+  allCreds.forEach((key, value) {
+    if (value.w3cCredential != '') {
+      var vc = VerifiableCredential.fromJson(value.w3cCredential);
+      var type = getTypeToShow(vc.type);
+      if (type != 'PaymentReceipt') {
+        var id = getHolderDidFromCredential(vc.toJson());
+        var status = wallet.revocationState[id];
+        if (status == RevocationState.valid.index ||
+            status == RevocationState.unknown.index) {
+          creds.add(vc);
+        }
+      }
+    }
+  });
+
+  try {
+    VerifiablePresentation? vp;
+    var filtered =
+        searchCredentialsForPresentationDefinition(creds, definition);
+    logger.d('successfully filtered');
+
+    var authorizedApps = wallet.getAuthorizedApps();
+    var authorizedHashes = wallet.getHashesForAuthorizedApp(initialUrl);
+    logger.d(authorizedHashes);
+    logger.d(definitionHash.toString());
+    if (authorizedApps.contains(initialUrl) &&
+        authorizedHashes.contains(definitionHash.toString())) {
+      logger.d('send with no interaction');
+      var tmp = await buildPresentation(filtered, wallet.wallet, nonce,
+          loadDocumentFunction: loadDocumentFast);
+      vp = VerifiablePresentation.fromJson(tmp);
+    } else {
+      vp = await Navigator.of(navigatorKey.currentContext!).push(
+        MaterialPageRoute(
+          builder: (context) => PresentationRequestDialog(
+            definitionHash: definitionHash.toString(),
+            askForBackground: askForBackground,
+            name: definition.name,
+            purpose: definition.purpose,
+            otherEndpoint: initialUrl,
+            receiverDid: '',
+            myDid: '',
+            results: filtered,
+            nonce: nonce,
+          ),
+        ),
+      );
+    }
+
+    return vp;
+  } catch (e, stack) {
+    logger.e(e, stackTrace: stack);
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    return null;
   }
 }

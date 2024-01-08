@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +52,9 @@ Future<bool> handleProposePresentation(
 }
 
 Future<bool> handleRequestPresentation(
-    RequestPresentation message, WalletProvider wallet) async {
-  logger.d('Request Presentation message received');
+    RequestPresentation message, WalletProvider wallet,
+    [String? initialWebview]) async {
+  logger.d('Request Presentation message received: $initialWebview');
 
   String threadId;
   if (message.threadId != null) {
@@ -58,6 +62,7 @@ Future<bool> handleRequestPresentation(
   } else {
     threadId = message.id;
   }
+
   //Are there any previous messages?
   var entry = wallet.getConversation(threadId);
   String myDid;
@@ -85,6 +90,31 @@ Future<bool> handleRequestPresentation(
   });
   var definition = message.presentationDefinition.first.presentationDefinition;
   logger.d(definition.toJson());
+
+  var definitionToHash = PresentationDefinition(
+      inputDescriptors: definition.inputDescriptors
+          .map((e) => InputDescriptor(
+                id: '',
+                constraints: InputDescriptorConstraints(
+                  subjectIsIssuer: e.constraints?.subjectIsIssuer,
+                  fields: e.constraints?.fields
+                      ?.map((eIn) => InputDescriptorField(
+                          path: eIn.path, id: '', filter: eIn.filter))
+                      .toList(),
+                ),
+              ))
+          .toList(),
+      submissionRequirement: definition.submissionRequirement
+          ?.map((e) => SubmissionRequirement(
+              rule: e.rule,
+              count: e.count,
+              from: e.from,
+              max: e.max,
+              min: e.min))
+          .toList(),
+      id: '');
+  var definitionHash = sha256.convert(utf8.encode(definitionToHash.toString()));
+  logger.d(definitionHash);
 
   List<VerifiableCredential>? paymentCards;
   String? invoice;
@@ -122,23 +152,49 @@ Future<bool> handleRequestPresentation(
     var filtered =
         searchCredentialsForPresentationDefinition(creds, definition);
     logger.d('successfully filtered');
-    Navigator.of(navigatorKey.currentContext!).push(
-      MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
-          name: definition.name,
-          purpose: definition.purpose,
-          message: message,
-          otherEndpoint:
-              determineReplyUrl(message.replyUrl, message.replyTo, myDid) ?? '',
-          receiverDid: message.from!,
-          myDid: myDid,
-          results: filtered,
-          lnInvoice: invoice,
-          paymentCards: paymentCards,
-          lnInvoiceRequest: invoiceReq,
+
+    var authorizedApps = wallet.getAuthorizedApps();
+    logger.d(authorizedApps);
+
+    var requester =
+        determineReplyUrl(message.replyUrl, message.replyTo, myDid) ?? '';
+    logger.d(requester);
+
+    if (initialWebview != null && authorizedApps.contains(initialWebview)) {
+      logger.d('send with no interaction');
+      var vp = await buildPresentation(filtered, wallet.wallet,
+          message.presentationDefinition.first.challenge,
+          loadDocumentFunction: loadDocumentFast);
+      var presentationMessage = Presentation(
+          replyUrl: '$relay/buffer/$myDid',
+          returnRoute: ReturnRouteValue.thread,
+          to: [message.from!],
+          from: myDid,
+          verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+          threadId: message.threadId ?? message.id,
+          parentThreadId: message.parentThreadId);
+
+      sendMessage(myDid, requester, wallet, presentationMessage, message.from!,
+          silent: true);
+    } else {
+      Navigator.of(navigatorKey.currentContext!).push(
+        MaterialPageRoute(
+          builder: (context) => PresentationRequestDialog(
+            definitionHash: definitionHash.toString(),
+            name: definition.name,
+            purpose: definition.purpose,
+            message: message,
+            otherEndpoint: requester,
+            receiverDid: message.from!,
+            myDid: myDid,
+            results: filtered,
+            lnInvoice: invoice,
+            paymentCards: paymentCards,
+            lnInvoiceRequest: invoiceReq,
+          ),
         ),
-      ),
-    );
+      );
+    }
   } catch (e, stack) {
     logger.e(e, stackTrace: stack);
     showErrorMessage(

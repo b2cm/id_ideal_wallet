@@ -62,6 +62,12 @@ Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
+  String? initialWebview;
+  try {
+    var asUri = Uri.parse(message);
+    initialWebview = asUri.queryParameters['initialWebview'];
+  } catch (_) {}
+
   var plaintext = await getPlaintext(message, wallet);
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {
     for (var a in plaintext.attachments!) {
@@ -103,7 +109,9 @@ Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
 
     case DidcommMessages.requestPresentation:
       return handleRequestPresentation(
-          RequestPresentation.fromJson(plaintext.toJson()), wallet);
+          RequestPresentation.fromJson(plaintext.toJson()),
+          wallet,
+          initialWebview);
 
     case DidcommMessages.presentation:
       return handlePresentation(
@@ -383,7 +391,9 @@ String? determineReplyUrl(String? replyUrl, List<String>? replyTo,
 
 sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
     DidcommPlaintextMessage message, String receiverDid,
-    {String? lnInvoice, List<VerifiableCredential>? paymentCards}) async {
+    {String? lnInvoice,
+    List<VerifiableCredential>? paymentCards,
+    bool silent = false}) async {
   if (otherEndpoint == null) {
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
@@ -455,26 +465,29 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
         }
         type = type.substring(0, type.length - 3);
 
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline:
-                      AppLocalizations.of(context)!.presentationSuccessful,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: type,
-                      symbol: '',
-                      mainFontSize: 18,
-                      centered: true),
-                ),
-              );
-            });
+        if (!silent) {
+          showModalBottomSheet(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline:
+                        AppLocalizations.of(context)!.presentationSuccessful,
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: type,
+                        symbol: '',
+                        mainFontSize: 18,
+                        centered: true),
+                  ),
+                );
+              });
+        }
 
         if (lnInvoice != null && paymentCards != null) {
           logger.d('have to pay invoice');
@@ -532,8 +545,10 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
             }
           }
         }
-        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
-            .presentationFailed);
+        if (!silent) {
+          showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+              .presentationFailed);
+        }
       }
 
       logger.d(res.statusCode);

@@ -380,7 +380,7 @@ class Invoice {
   SatoshiAmount amount;
   String? description;
   DateTime date;
-  int expirySeconds;
+  int? expirySeconds;
 
   Invoice(this.amount, this.description, this.date, this.expirySeconds,
       this.paymentHash,

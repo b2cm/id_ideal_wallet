@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/views/authorized_apps.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -48,6 +49,13 @@ class SettingsPageState extends State<SettingsPage> {
                     mode: LaunchMode.externalApplication);
               },
             ),
+            ListTile(
+              title: Text('Vertrauenswürdige Anwendungen'),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (builder) => const AuthorizedAppsManger())),
+            )
           ],
         ));
   }
