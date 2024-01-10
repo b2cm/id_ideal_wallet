@@ -50,6 +50,8 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
 
+  Map<String, List<String>> aboGroups = {};
+
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
@@ -232,6 +234,8 @@ class WalletProvider extends ChangeNotifier {
 
       _buildCredentialList();
 
+      generateAboGroups();
+
       // if (contextCredentials.isEmpty) {
       //   //await issueLNDWContextMittweida(this);
       //   await issueLNDWContextDresden(this);
@@ -294,6 +298,44 @@ class WalletProvider extends ChangeNotifier {
       stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
+    }
+  }
+
+  void generateAboGroups() {
+    var e = _wallet.getConfigEntry('aboGroups');
+    if (e == null) {
+      // generate from contextCredentials
+      for (var vc in contextCredentials) {
+        List services = vc.credentialSubject['buttons'] ??
+            vc.credentialSubject['services'] ??
+            [];
+
+        List<String> aboData = [];
+        if (services.isNotEmpty) {
+          for (Map entry in services) {
+            var id = const Uuid().v4();
+            aboData.add('abo_$id');
+            entry['bgcolor'] = vc.credentialSubject['backsidecolor'];
+            entry['textcolor'] = vc.credentialSubject['overlaycolor'];
+            _wallet.storeConfigEntry('abo_$id', jsonEncode(entry));
+          }
+
+          aboGroups[vc.credentialSubject['name']] = aboData;
+        }
+      }
+    } else {
+      Map<String, dynamic> dec = jsonDecode(e);
+      aboGroups = dec
+          .map((key, value) => MapEntry(key, (value as List).cast<String>()));
+    }
+  }
+
+  Map<String, dynamic> getAboData(String id) {
+    var e = _wallet.getConfigEntry(id);
+    if (e != null) {
+      return jsonDecode(e) as Map<String, dynamic>;
+    } else {
+      return {};
     }
   }
 

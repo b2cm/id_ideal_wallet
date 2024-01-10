@@ -89,6 +89,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   card_swiper: ^3.0.1
 
+  local_auth_android: any
+  local_auth_ios: any
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

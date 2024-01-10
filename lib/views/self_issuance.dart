@@ -48,7 +48,7 @@ final socialMediaSchema = JsonSchema.create({
 });
 
 class SelfIssueList extends StatelessWidget {
-  const SelfIssueList({Key? key}) : super(key: key);
+  const SelfIssueList({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +124,7 @@ class FixedSelfIssue extends StatelessWidget {
   final JsonSchema schema;
   final String type;
 
-  const FixedSelfIssue({Key? key, required this.schema, required this.type})
-      : super(key: key);
+  const FixedSelfIssue({super.key, required this.schema, required this.type});
 
   void afterValidation(Map<dynamic, dynamic> result) async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
@@ -196,8 +195,7 @@ class CredentialSelfIssue extends StatefulWidget {
   final int outerPos;
 
   const CredentialSelfIssue(
-      {Key? key, required this.input, required this.outerPos})
-      : super(key: key);
+      {super.key, required this.input, required this.outerPos});
 
   @override
   State<StatefulWidget> createState() => CredentialSelfIssueState();

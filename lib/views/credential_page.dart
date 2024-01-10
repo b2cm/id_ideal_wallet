@@ -204,8 +204,7 @@ dynamic uriDecode(dynamic value) {
 class Base64ImagePreview extends StatelessWidget {
   final String imageDataUri;
 
-  const Base64ImagePreview({Key? key, required this.imageDataUri})
-      : super(key: key);
+  const Base64ImagePreview({super.key, required this.imageDataUri});
 
   @override
   Widget build(BuildContext context) {
@@ -220,8 +219,7 @@ class Base64ImagePreview extends StatelessWidget {
 class Base64PdfPreview extends StatelessWidget {
   final String pdfDataUri;
 
-  const Base64PdfPreview({Key? key, required this.pdfDataUri})
-      : super(key: key);
+  const Base64PdfPreview({super.key, required this.pdfDataUri});
 
   FutureOr<Uint8List> _makePdf() {
     var base64 = pdfDataUri.split(',').last;
@@ -455,11 +453,10 @@ class CredentialCard extends StatefulWidget {
   final bool clickable;
 
   const CredentialCard(
-      {Key? key,
+      {super.key,
       required this.credential,
       this.background,
-      this.clickable = true})
-      : super(key: key);
+      this.clickable = true});
 
   @override
   State<StatefulWidget> createState() => CredentialCardState();

@@ -378,6 +378,7 @@ class ContextCredentialCard extends IdCard {
       required super.subjectName,
       required super.bottomLeftText,
       required super.bottomRightText,
+      super.backgroundColor,
       super.cardTitleColor,
       super.backgroundImage,
       this.onReturnTap,

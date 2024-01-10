@@ -26,8 +26,7 @@ class RequesterInfo extends StatefulWidget {
   final String followingText;
 
   const RequesterInfo(
-      {Key? key, required this.requesterUrl, required this.followingText})
-      : super(key: key);
+      {super.key, required this.requesterUrl, required this.followingText});
 
   @override
   State<StatefulWidget> createState() => RequesterInfoState();
@@ -235,7 +234,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
     if (widget.askForBackground) {
       childList.add(CheckboxListTile(
-          title: Text('Hintergrundabfragen'),
+          title: const Text('Hintergrundabfragen'),
           subtitle: Text(
               'Hiermit erlaube ich ${widget.otherEndpoint}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen'),
           value: backgroundAllow,
@@ -451,7 +450,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             color: Colors.grey.shade200,
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: RichText(
               text: TextSpan(
                 style: TextStyle(

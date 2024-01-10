@@ -17,7 +17,7 @@ class AuthorizedAppsMangerState extends State<AuthorizedAppsManger> {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
       return StyledScaffoldTitle(
         useBackSwipe: false,
-        title: Text('Vertrauenswürdige Apps'),
+        title: const Text('Vertrauenswürdige Apps'),
         child: ListView.builder(
             itemCount: wallet.getAuthorizedApps().length,
             itemBuilder: (context, index) {
@@ -28,7 +28,7 @@ class AuthorizedAppsMangerState extends State<AuthorizedAppsManger> {
                       wallet.deleteAuthorizedApp(
                           wallet.getAuthorizedApps()[index]);
                     },
-                    child: Icon(Icons.delete)),
+                    child: const Icon(Icons.delete)),
               );
             }),
       );
@@ -55,7 +55,7 @@ class TextInputDialogState extends State<TextInputDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Vertrauenswürde App hinzufügen',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -81,7 +81,7 @@ class TextInputDialogState extends State<TextInputDialog> {
                     onPressed: () {
                       Navigator.of(context).pop(null);
                     },
-                    child: Text('Abbrechen')),
+                    child: const Text('Abbrechen')),
                 const SizedBox(
                   width: 5,
                 ),
@@ -89,7 +89,7 @@ class TextInputDialogState extends State<TextInputDialog> {
                     onPressed: () {
                       Navigator.of(context).pop(controller.text);
                     },
-                    child: Text('Hinzufügen'))
+                    child: const Text('Hinzufügen'))
               ],
             )
           ],

@@ -11,7 +11,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 class QrScanner extends StatelessWidget {
-  const QrScanner({Key? key}) : super(key: key);
+  const QrScanner({super.key});
 
   @override
   Widget build(BuildContext context) {

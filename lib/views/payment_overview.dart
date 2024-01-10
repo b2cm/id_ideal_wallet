@@ -11,8 +11,7 @@ import 'package:provider/provider.dart';
 class PaymentOverview extends StatelessWidget {
   final VerifiableCredential paymentContext;
 
-  const PaymentOverview({Key? key, required this.paymentContext})
-      : super(key: key);
+  const PaymentOverview({super.key, required this.paymentContext});
 
   @override
   Widget build(BuildContext context) {

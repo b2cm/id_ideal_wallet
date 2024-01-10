@@ -50,7 +50,7 @@ class SettingsPageState extends State<SettingsPage> {
               },
             ),
             ListTile(
-              title: Text('Vertrauenswürdige Anwendungen'),
+              title: const Text('Vertrauenswürdige Anwendungen'),
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(

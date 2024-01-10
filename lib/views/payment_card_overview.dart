@@ -108,7 +108,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
       return StyledScaffoldTitle(
         useBackSwipe: false,
         title: wallet.paymentCredentials.isEmpty
-            ? Text('Zahlkarten')
+            ? const Text('Zahlkarten')
             : DropdownButton(
                 isExpanded: true,
                 value: currentSelection,
@@ -131,7 +131,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
         child: wallet.paymentCredentials.isEmpty
             ? Column(
                 children: [
-                  Text('Keine Karten vorhanden'),
+                  const Text('Keine Karten vorhanden'),
                   ElevatedButton(
                       onPressed: () {},
                       child: Text(AppLocalizations.of(context)!.add))

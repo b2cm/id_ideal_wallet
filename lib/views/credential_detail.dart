@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 
 class HistoryEntries extends StatelessWidget {
-  const HistoryEntries({Key? key, required this.credential}) : super(key: key);
+  const HistoryEntries({super.key, required this.credential});
   final VerifiableCredential credential;
 
   @override
@@ -67,8 +67,7 @@ class HistoryEntries extends StatelessWidget {
 class CredentialDetailView extends StatefulWidget {
   final VerifiableCredential credential;
 
-  const CredentialDetailView({Key? key, required this.credential})
-      : super(key: key);
+  const CredentialDetailView({super.key, required this.credential});
 
   @override
   CredentialDetailState createState() => CredentialDetailState();

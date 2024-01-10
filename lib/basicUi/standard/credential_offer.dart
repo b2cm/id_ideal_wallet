@@ -78,18 +78,18 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
     }
 
     if (widget.requestOidcTan) {
-      contentData.add(SizedBox(
+      contentData.add(const SizedBox(
         height: 5,
       ));
       contentData.add(ExpansionTile(
         initiallyExpanded: true,
-        title: Text(
+        title: const Text(
           'Vorgangsnummer',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
+        subtitle: const Text(
             'Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.black54,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -100,14 +100,14 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
               controller.text = text;
               setState(() {});
             },
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               border: OutlineInputBorder(
                 borderSide: BorderSide(width: 2, color: Colors.grey),
               ),
             ),
             controller: controller,
           ),
-          SizedBox(
+          const SizedBox(
             height: 2,
           )
         ],

@@ -12,8 +12,7 @@ class IssuerInfoText extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoText(
-      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
-      : super(key: key);
+      {super.key, required this.issuer, this.selfIssued = false, this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoTextState();
@@ -107,8 +106,7 @@ class IssuerInfoIcon extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoIcon(
-      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
-      : super(key: key);
+      {super.key, required this.issuer, this.selfIssued = false, this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoIconState();
