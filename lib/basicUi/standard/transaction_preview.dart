@@ -28,7 +28,7 @@ class TransactionPreview extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             child: Text(
               title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              style: Theme.of(context).primaryTextTheme.bodyMedium,
             ),
           ),
           // amount

@@ -88,11 +88,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
                   builder: (context) =>
                       PaymentOverview(paymentContext: toShow))),
               child: Text(AppLocalizations.of(context)!.showMore,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  )));
+                  style: Theme.of(context).primaryTextTheme.titleMedium));
           content.add(additional);
         }
       } else {

@@ -165,5 +165,7 @@
   "paymentInformation": "Zahlungsinformation",
   "paymentInformationDetail": "Für die Weiterverarbeitung der Daten fallen folgende Kosten an: ",
   "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
-  "funding2": "gutgeschrieben"
+  "funding2": "gutgeschrieben",
+  "oidcTan": "Vorgangsnummer",
+  "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein."
 }

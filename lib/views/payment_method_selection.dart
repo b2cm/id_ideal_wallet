@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../basicUi/standard/credential_offer.dart';
 import '../provider/wallet_provider.dart';
+import 'credential_offer.dart';
 
 class PaymentMethodSelector extends StatefulWidget {
   final List<VerifiableCredential> paymentMethods;

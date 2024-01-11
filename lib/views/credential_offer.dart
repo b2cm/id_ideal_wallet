@@ -2,12 +2,12 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
-import 'package:id_ideal_wallet/views/issuer_info.dart';
 
-import 'receipt.dart';
+import '../basicUi/standard/receipt.dart';
 
 class CredentialOfferDialog extends StatefulWidget {
   const CredentialOfferDialog(
@@ -83,17 +83,12 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
       ));
       contentData.add(ExpansionTile(
         initiallyExpanded: true,
-        title: const Text(
-          'Vorgangsnummer',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)!.oidcTan,
+          style: Theme.of(context).primaryTextTheme.titleLarge,
         ),
-        subtitle: const Text(
-            'Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.',
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            )),
+        subtitle: Text(AppLocalizations.of(context)!.oidcTanInfo,
+            style: Theme.of(context).primaryTextTheme.titleMedium),
         children: [
           TextField(
             onChanged: (text) {
@@ -134,8 +129,7 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
                     const SizedBox(height: 20),
                     Text(
                       AppLocalizations.of(context)!.credentialOffer,
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                      style: Theme.of(context).primaryTextTheme.headlineLarge,
                     ),
                     const SizedBox(height: 20),
                     SingleChildScrollView(
@@ -152,14 +146,14 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
                                 label: "Credential",
                                 amount: CurrencyDisplay(
                                   amount: widget.toPay!,
-                                  symbol: "€",
+                                  symbol: "sat",
                                 ),
                               ),
                             ],
                             total: ReceiptItem(
                               label: AppLocalizations.of(context)!.total,
                               amount: CurrencyDisplay(
-                                  amount: widget.toPay, symbol: "€"),
+                                  amount: widget.toPay, symbol: "sat"),
                             ),
                           )
                         : const SizedBox(

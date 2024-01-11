@@ -10,11 +10,11 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/abo_overview.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_card_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/settings_page.dart';
+import 'package:id_ideal_wallet/views/swiper_view.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:id_ideal_wallet/views/welcome_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -183,7 +183,7 @@ class HomeScreen extends StatelessWidget {
                 )
               ],
             ),
-            const AboOverview(),
+            SwiperView(),
           ]),
           bottomNavigationBar: BottomNavigationBar(
             selectedItemColor: Colors.black,

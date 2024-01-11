@@ -30,11 +30,7 @@ class Receipt extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-              ),
+              style: Theme.of(context).primaryTextTheme.headlineLarge,
             ),
           ),
           const SizedBox(height: 20),
@@ -65,12 +61,7 @@ class ReceiptItem extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Colors.black,
-              overflow: TextOverflow.ellipsis,
-            ),
+            style: Theme.of(context).primaryTextTheme.bodySmall,
           ),
         ),
         Padding(padding: const EdgeInsets.only(right: 10), child: amount),

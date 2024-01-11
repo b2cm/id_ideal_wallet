@@ -12,7 +12,10 @@ class IssuerInfoText extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoText(
-      {super.key, required this.issuer, this.selfIssued = false, this.endpoint});
+      {super.key,
+      required this.issuer,
+      this.selfIssued = false,
+      this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoTextState();
@@ -92,11 +95,7 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
   @override
   Widget build(BuildContext context) {
     return Text(issuerName,
-        style: const TextStyle(
-          color: Colors.black54,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ));
+        style: Theme.of(context).primaryTextTheme.titleMedium);
   }
 }
 
@@ -106,7 +105,10 @@ class IssuerInfoIcon extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoIcon(
-      {super.key, required this.issuer, this.selfIssued = false, this.endpoint});
+      {super.key,
+      required this.issuer,
+      this.selfIssued = false,
+      this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoIconState();

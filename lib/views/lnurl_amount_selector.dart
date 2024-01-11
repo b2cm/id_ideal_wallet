@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
+import 'package:id_ideal_wallet/views/credential_offer.dart';
 
 class AmountSelection extends StatefulWidget {
   final int minAmount, maxAmount;
@@ -32,14 +32,6 @@ class AmountSelectionState extends State<AmountSelection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            AppLocalizations.of(context)!.enterAmount,
-            style: const TextStyle(color: Colors.black),
-          ),
-          backgroundColor: Colors.white,
-        ),
         body: SafeArea(
             child: Form(
           key: _formKey,
@@ -47,15 +39,22 @@ class AmountSelectionState extends State<AmountSelection> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
+                AppLocalizations.of(context)!.enterAmount,
+                style: Theme.of(context).primaryTextTheme.headlineLarge,
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Text(
                 '${AppLocalizations.of(context)!.description}: ${widget.description}',
-                style: const TextStyle(fontSize: 16),
+                style: Theme.of(context).primaryTextTheme.titleLarge,
               ),
               const SizedBox(
                 height: 20,
               ),
               Text(
                 '${AppLocalizations.of(context)!.amount}: ${widget.minAmount} - ${widget.maxAmount} mSat',
-                style: const TextStyle(fontSize: 14),
+                style: Theme.of(context).primaryTextTheme.bodySmall,
               ),
               const SizedBox(
                 height: 20,

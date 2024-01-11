@@ -165,5 +165,7 @@
   "paymentInformation": "Payment information",
   "paymentInformationDetail": "The following costs are incurred for the further processing of the data: ",
   "funding1": "You will be credited with ",
-  "funding2": "for releasing your data"
+  "funding2": "for releasing your data",
+  "oidcTan": "Transaction number",
+  "oidcTanInfo": "The issuer has sent you a transaction number for this transaction. Please enter it here."
 }

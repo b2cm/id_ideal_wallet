@@ -2,113 +2,24 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/basicUi/standard/requester_info.dart';
+import 'package:id_ideal_wallet/constants/kaprion_context.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:provider/provider.dart';
 
-import '../constants/kaprionContext.dart';
 import '../functions/didcomm_message_handler.dart';
-
-class RequesterInfo extends StatefulWidget {
-  final String requesterUrl;
-  final String followingText;
-
-  const RequesterInfo(
-      {super.key, required this.requesterUrl, required this.followingText});
-
-  @override
-  State<StatefulWidget> createState() => RequesterInfoState();
-}
-
-class RequesterInfoState extends State<RequesterInfo> {
-  String info =
-      AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
-  bool isLoading = true;
-  bool isVerified = false;
-
-  @override
-  void initState() {
-    super.initState();
-    getInfo();
-  }
-
-  void getInfo() async {
-    try {
-      var certInfo = await getCertificateInfoFromUrl(widget.requesterUrl);
-      info = certInfo?.subjectOrganization ??
-          certInfo?.subjectCommonName ??
-          AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
-      if (certInfo != null) {
-        isVerified = true;
-      }
-      setState(() {});
-    } catch (e) {
-      AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
-      logger.d('Problem bei Zertifikatsabfrage: $e');
-    }
-    isLoading = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(
-            fontSize: 17,
-            color: Colors.grey.shade700,
-            fontWeight: FontWeight.w500,
-          ),
-          children: [
-            TextSpan(
-              text: info,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            WidgetSpan(
-              child: Container(
-                padding: const EdgeInsets.only(
-                  left: 1,
-                  bottom: 5,
-                ),
-                child: Icon(
-                  isLoading
-                      ? Icons.refresh
-                      : isVerified
-                          ? Icons.check_circle
-                          : Icons.close,
-                  size: 14,
-                  color: isLoading
-                      ? Colors.grey
-                      : isVerified
-                          ? Colors.greenAccent.shade700
-                          : Colors.redAccent.shade700,
-                ),
-              ),
-            ),
-            TextSpan(
-                text: widget.followingText,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.normal)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -142,11 +53,11 @@ class PresentationRequestDialog extends StatefulWidget {
       this.paymentCards});
 
   @override
-  _PresentationRequestDialogState createState() =>
-      _PresentationRequestDialogState();
+  PresentationRequestDialogState createState() =>
+      PresentationRequestDialogState();
 }
 
-class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
+class PresentationRequestDialogState extends State<PresentationRequestDialog> {
   //'Database' for Checkboxes
   Map<String, bool> selectedCredsPerResult = {};
   bool dataEntered = true;
@@ -162,7 +73,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int innerPos = 0;
     for (var res in widget.results) {
       innerPos = 0;
-      for (var c in res.credentials) {
+      for (var _ in res.credentials) {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
@@ -205,11 +116,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       childList.add(
         Text(
           widget.name!,
-          style: const TextStyle(
-            fontSize: 26,
-            color: Color(0xFF3b3b3b),
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).primaryTextTheme.headlineLarge,
         ),
       );
       childList.add(const SizedBox(
@@ -250,8 +157,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     }
 
     for (var result in widget.results) {
-      bool all = false;
-
       var outerTileChildList = <Widget>[];
       var outerTileExpanded = false;
 
@@ -382,22 +287,19 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         title: SizedBox(
           child: RichText(
             text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 21,
-                  color: Color(0xFF3b3b3b),
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).primaryTextTheme.bodyMedium,
                 children: [
                   TextSpan(
                       text:
                           '${credCount - (result.selfIssuable?.length ?? 0)} / $minCount ',
-                      style: TextStyle(
-                        fontSize: 21,
-                        color: result.fulfilled
-                            ? Colors.greenAccent.shade700
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      )),
+                      style: Theme.of(context)
+                          .primaryTextTheme
+                          .bodyMedium!
+                          .copyWith(
+                            color: result.fulfilled
+                                ? Colors.greenAccent.shade700
+                                : Colors.red,
+                          )),
                   TextSpan(
                       text: result.submissionRequirement?.name ??
                           selectedCredNames.toSet().join(', '))
@@ -407,7 +309,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         subtitle: result.submissionRequirement?.purpose != null
             ? Text(
                 result.submissionRequirement!.purpose!,
-                style: const TextStyle(color: Colors.black),
+                style: Theme.of(context).primaryTextTheme.bodySmall,
               )
             : null,
         children: outerTileChildList,
@@ -453,11 +355,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: RichText(
               text: TextSpan(
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).primaryTextTheme.titleMedium,
                 children: [
                   TextSpan(
                     text: AppLocalizations.of(navigatorKey.currentContext!)!
@@ -482,12 +380,10 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   TextSpan(
                       text:
                           '\n${AppLocalizations.of(navigatorKey.currentContext!)!.paymentInformationDetail}',
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.normal)),
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
                   TextSpan(
                       text: '$amount sat',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: Theme.of(context).primaryTextTheme.titleLarge),
                 ],
               ),
             ),
@@ -511,11 +407,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: RichText(
               text: TextSpan(
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).primaryTextTheme.titleMedium,
                 children: [
                   const TextSpan(
                     text: 'Information',
@@ -526,17 +418,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   TextSpan(
                       text:
                           '\n${AppLocalizations.of(navigatorKey.currentContext!)!.funding1}',
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.normal)),
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
                   TextSpan(
                       text: ' ${widget.lnInvoiceRequest?['amount']} sat ',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: Theme.of(context).primaryTextTheme.titleLarge),
                   TextSpan(
                       text: AppLocalizations.of(navigatorKey.currentContext!)!
                           .funding2,
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.normal)),
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
                 ],
               ),
             ),
@@ -775,7 +664,6 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    bool error = fulfillable && dataEntered;
     return Stack(
       children: [
         Scaffold(
@@ -857,11 +745,7 @@ class FooterErrorText extends StatelessWidget {
         SizedBox(
           child: RichText(
             text: TextSpan(
-              style: TextStyle(
-                fontSize: 17,
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).primaryTextTheme.titleMedium,
               children: [
                 TextSpan(
                   text: AppLocalizations.of(context)!.attention,
@@ -884,8 +768,7 @@ class FooterErrorText extends StatelessWidget {
                 ),
                 TextSpan(
                     text: '\n$errorMessage',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.normal)),
+                    style: Theme.of(context).primaryTextTheme.bodySmall),
               ],
             ),
           ),

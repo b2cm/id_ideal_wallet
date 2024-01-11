@@ -4,13 +4,13 @@ import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
-import 'package:id_ideal_wallet/constants/kaprionContext.dart';
+import 'package:id_ideal_wallet/constants/kaprion_context.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:uuid/uuid.dart';
 

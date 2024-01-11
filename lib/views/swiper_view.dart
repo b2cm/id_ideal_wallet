@@ -229,11 +229,9 @@ class SwiperView extends StatelessWidget {
                                 builder: (context) => PaymentOverview(
                                     paymentContext: contextCred))),
                         child: Text(AppLocalizations.of(context)!.showMore,
-                            style: const TextStyle(
-                              color: Colors.black54,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            )));
+                            style: Theme.of(context)
+                                .primaryTextTheme
+                                .titleMedium));
                     buttons.add(additional);
                   }
                 } else {
@@ -256,7 +254,7 @@ class SwiperView extends StatelessWidget {
                       children: [
                         Text(
                           AppLocalizations.of(context)!.addCardExplanation,
-                          style: const TextStyle(color: Colors.black54),
+                          style: Theme.of(context).primaryTextTheme.titleMedium,
                         ),
                         const Icon(
                           Icons.arrow_downward_rounded,
@@ -291,9 +289,9 @@ class SwiperView extends StatelessWidget {
                                 Text(
                                   textAlign: TextAlign.center,
                                   AppLocalizations.of(context)!.favorites,
-                                  style: const TextStyle(
-                                      fontSize: 25,
-                                      fontWeight: FontWeight.bold),
+                                  style: Theme.of(context)
+                                      .primaryTextTheme
+                                      .headlineLarge,
                                 ),
                                 const SizedBox(
                                   height: 10,
@@ -309,9 +307,9 @@ class SwiperView extends StatelessWidget {
                                       child: Text(
                                         textAlign: TextAlign.center,
                                         AppLocalizations.of(context)!.favorites,
-                                        style: const TextStyle(
-                                            fontSize: 25,
-                                            fontWeight: FontWeight.bold),
+                                        style: Theme.of(context)
+                                            .primaryTextTheme
+                                            .headlineLarge,
                                       ))),
                               for (int i = 0;
                                   i < wallet.contextCredentials.length;
@@ -378,8 +376,9 @@ class SwiperView extends StatelessWidget {
                                 ),
                                 Text(
                                   AppLocalizations.of(context)!.addNewApp,
-                                  style: const TextStyle(
-                                      color: Colors.black54, fontSize: 18),
+                                  style: Theme.of(context)
+                                      .primaryTextTheme
+                                      .titleMedium,
                                 )
                               ]))
                           : //count == 1

@@ -1,7 +1,7 @@
 import 'package:barcode_widget/barcode_widget.dart' as barcode;
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 

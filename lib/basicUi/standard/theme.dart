@@ -5,8 +5,20 @@ class IdWalletDesignTheme {
       colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
       fontFamily: 'Outfit',
       primaryTextTheme: const TextTheme(
-        headlineLarge: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-      ),
+          headlineLarge: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(
+              color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+          titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          titleMedium: TextStyle(
+            color: Colors.black54,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          bodySmall: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Colors.black,
+              overflow: TextOverflow.ellipsis)),
       primaryColor: Colors.white,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,

@@ -10,8 +10,6 @@ import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'imageData.dart';
-
 class AddContextCredential extends StatefulWidget {
   const AddContextCredential({super.key});
 
@@ -117,7 +115,7 @@ class AddContextCredentialState extends State<AddContextCredential> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(
                     AppLocalizations.of(context)!.termsOfService,
-                    style: const TextStyle(fontSize: 20),
+                    style: Theme.of(context).primaryTextTheme.bodyMedium,
                   ),
                   const SizedBox(
                     height: 10,
@@ -271,84 +269,6 @@ Future<void> issueContext(
       did, DateTime.now(), update ? 'update' : 'issue', did);
   wallet.addContextIds([id]);
   wallet.removeIdFromUpdateList(id);
-}
-
-Future<void> issueLNDWContextDresden(WalletProvider wallet) async {
-  var did = await wallet.newCredentialDid();
-
-  var contextCred = VerifiableCredential(
-      context: [credentialsV1Iri, schemaOrgIri],
-      type: ['VerifiableCredential', 'ContextCredential'],
-      issuer: did,
-      id: did,
-      credentialSubject: {
-        'id': did,
-        'name': 'Lange Nacht der Wissenschaften - Dresden',
-        'groupedTypes': [
-          'ChallengeSolvedCredential',
-          'JuniorDiplom',
-          'Losticket'
-        ],
-        'backgroundImage': backgroundDD,
-        'buttons': [
-          {
-            'buttonText': 'Rallye absolvieren ',
-            'webViewTitle': 'Rallye',
-            'url': 'https://lndw84b9dcfb0e65.id-ideal.de/lndw/#/',
-            'backgroundColor': '#00B200'
-          }
-        ]
-      },
-      issuanceDate: DateTime.now());
-
-  var signed = await signCredential(wallet.wallet, contextCred.toJson());
-
-  var storageCred = wallet.getCredential(did);
-
-  wallet.storeCredential(signed, storageCred!.hdPath);
-  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
-}
-
-Future<void> issueLNDWContextMittweida(WalletProvider wallet) async {
-  var did = await wallet.newCredentialDid();
-  var contextCred = VerifiableCredential(
-      context: [credentialsV1Iri, schemaOrgIri],
-      type: ['VerifiableCredential', 'ContextCredential'],
-      issuer: did,
-      id: did,
-      credentialSubject: {
-        'id': did,
-        'name': 'Lange Nacht der Wissenschaften - Mittweida',
-        'groupedTypes': ['ChallengeSolvedCredentialMW'],
-        'buttons': [
-          {
-            'buttonText': 'Karte anzeigen',
-            'webViewTitle': 'Karte',
-            'url': 'maps.google.com',
-            'backgroundColor': '#4C4CFF'
-          },
-          {
-            'buttonText': 'Fragen beantworten',
-            'webViewTitle': 'Quiz',
-            'url': 'maps.google.com',
-            'backgroundColor': '#00B200'
-          },
-          {
-            'buttonText': 'Verlosung',
-            'webViewTitle': 'Verlosung',
-            'url': 'maps.google.com',
-            'backgroundColor': '#00B200'
-          }
-        ]
-      },
-      issuanceDate: DateTime.now());
-
-  var signed = await signCredential(wallet.wallet, contextCred.toJson());
-
-  var storageCred = wallet.getCredential(did);
-
-  wallet.storeCredential(signed, storageCred!.hdPath);
-  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }
 
 Future<void> issueLNTestNetContext(
