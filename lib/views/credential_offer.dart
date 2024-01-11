@@ -14,10 +14,11 @@ class CredentialOfferDialog extends StatefulWidget {
       {super.key,
       required this.credentials,
       this.toPay,
+      this.oidcIssuer,
       this.requestOidcTan = false});
 
   final List<VerifiableCredential> credentials;
-  final String? toPay;
+  final String? toPay, oidcIssuer;
   final bool requestOidcTan;
 
   @override
@@ -65,10 +66,14 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
                               .width *
                           0.6,
                       child: IssuerInfoText(
-                          issuer: issuerCertCredential ?? credential.issuer),
+                        issuer: issuerCertCredential ?? credential.issuer,
+                        endpoint: widget.oidcIssuer,
+                      ),
                     )),
                 IssuerInfoIcon(
-                    issuer: issuerCertCredential ?? credential.issuer)
+                  issuer: issuerCertCredential ?? credential.issuer,
+                  endpoint: widget.oidcIssuer,
+                )
               ],
             ),
             children: subject,

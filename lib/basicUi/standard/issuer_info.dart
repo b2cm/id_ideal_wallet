@@ -1,4 +1,5 @@
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -74,6 +75,18 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName = certInfo?.subjectOrganization ??
             certInfo?.subjectCommonName ??
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+
+        setState(() {});
+      } else if (widget.issuer.containsKey('id') &&
+          widget.issuer['id'].startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        issuerName = certInfo?.subjectOrganization ??
+            certInfo?.subjectCommonName ??
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+        if (widget.issuer.containsKey('name')) {
+          issuerName = '${widget.issuer['name']} ($issuerName)';
+        }
         setState(() {});
       } else if (widget.issuer.containsKey('name')) {
         issuerName =
@@ -87,8 +100,17 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
       issuerName =
           widget.issuer.credentialSubject['companyInformation']['legalName'];
     } else {
-      issuerName =
-          AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+      if (widget.issuer.startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        issuerName = certInfo?.subjectOrganization ??
+            certInfo?.subjectCommonName ??
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+        setState(() {});
+      } else {
+        issuerName =
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+      }
     }
   }
 
@@ -170,6 +192,22 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
           widget.issuer.containsKey('issuer')) {
         marker = Icons.verified_outlined;
         iconColor = Colors.green;
+      } else if (widget.issuer.containsKey('id') &&
+          widget.issuer['id'].startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        if (certInfo != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+        }
+        setState(() {});
+      } else if (widget.endpoint != null) {
+        var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+        if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+          setState(() {});
+        }
       } else if (widget.issuer.containsKey('name')) {
         marker = Icons.question_mark;
         iconColor = Colors.black54;
@@ -184,11 +222,22 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
       if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
         marker = Icons.verified_outlined;
         iconColor = Colors.green;
+        setState(() {});
       }
     } else {
-      iconColor = Colors.red;
-      marker = Icons.close;
-      setState(() {});
+      if (widget.issuer.startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        if (certInfo != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+        }
+        setState(() {});
+      } else {
+        iconColor = Colors.red;
+        marker = Icons.close;
+        setState(() {});
+      }
     }
   }
 

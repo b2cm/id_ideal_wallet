@@ -44,6 +44,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       context: navigatorKey.currentContext!,
       barrierColor: Colors.white,
       builder: (BuildContext context) => CredentialOfferDialog(
+          oidcIssuer: issuerString,
           requestOidcTan:
               offer.userPinRequired != null && offer.userPinRequired!,
           credentials: [

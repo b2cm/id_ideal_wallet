@@ -214,7 +214,7 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: "9a0fc2e26dcd82dca9c34623af0a13cdd625ced9"
+      resolved-ref: f97c87c1783cc7b04b49378d9f60f52f572d6a5c
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "3.1.0"
@@ -1074,10 +1074,10 @@ packages:
     dependency: "direct main"
     description:
       name: uuid
-      sha256: "8c951c9cb6504b2aa6b3666e6de504032d9baec24bf4cbabd3eea9edd73d4d77"
+      sha256: cd210a09f7c18cbe5a02511718e0334de6559871052c90a90c0cca46a4aa81c8
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.2"
+    version: "4.3.3"
   vector_math:
     dependency: transitive
     description:
