@@ -100,7 +100,7 @@
   "waitingSendPresentation": "Your answer is sent.",
   "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials (selected).\nFind out how you can obtain the missing credentials or select the missing ones.",
   "attention": "Attention",
-  "cancelWarning": "Tap again to cancel",
+  "cancelWarning": "Please use 'Cancel' to close",
   "accept": "Accept",
   "noteNoCredentials": "No Credentials",
   "allCredentials": "All Credentials",

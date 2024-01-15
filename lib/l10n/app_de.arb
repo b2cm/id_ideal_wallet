@@ -100,7 +100,7 @@
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen bzw. ausgewählt haben.\nInformieren Sie sich, wie Sie die fehlenden Nachweise erlangen können oder wählen Sie die fehlenden aus.",
   "attention": "Achtung",
-  "cancelWarning": "Zum Abbrechen erneut tippen",
+  "cancelWarning": "Zum Beenden 'Abbrechen' verwenden",
   "accept": "Annehmen",
   "noteNoCredentials": "Keine Nachweise vorhanden",
   "allCredentials": "Alle Nachweise",

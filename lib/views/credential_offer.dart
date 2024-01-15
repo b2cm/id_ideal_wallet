@@ -2,7 +2,9 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/footer_buttons.dart';
 import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
+import 'package:id_ideal_wallet/basicUi/standard/secured_widget.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -36,7 +38,7 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
       if (type != 'PaymentReceipt' && type != 'PublicKeyCertificate') {
         var title = Text(
           type,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: Theme.of(context).primaryTextTheme.titleLarge,
         );
         contentData.add(
           const SizedBox(
@@ -59,17 +61,17 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: MediaQuery.of(navigatorKey.currentContext!)
-                              .size
-                              .width *
-                          0.6,
-                      child: IssuerInfoText(
-                        issuer: issuerCertCredential ?? credential.issuer,
-                        endpoint: widget.oidcIssuer,
-                      ),
-                    )),
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width:
+                        MediaQuery.of(navigatorKey.currentContext!).size.width *
+                            0.6,
+                    child: IssuerInfoText(
+                      issuer: issuerCertCredential ?? credential.issuer,
+                      endpoint: widget.oidcIssuer,
+                    ),
+                  ),
+                ),
                 IssuerInfoIcon(
                   issuer: issuerCertCredential ?? credential.issuer,
                   endpoint: widget.oidcIssuer,
@@ -180,88 +182,5 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
                 .pop(widget.requestOidcTan ? controller.text : true)),
       ],
     );
-  }
-}
-
-class FooterButtons extends StatelessWidget {
-  final String? positiveText, negativeText;
-  final void Function()? negativeFunction, positiveFunction;
-
-  const FooterButtons(
-      {super.key,
-      this.positiveText,
-      this.negativeText,
-      this.negativeFunction,
-      this.positiveFunction});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ElevatedButton(
-          onPressed: positiveFunction ?? () => Navigator.of(context).pop(true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.greenAccent.shade700,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(45),
-          ),
-          child: Text(positiveText ?? AppLocalizations.of(context)!.accept),
-        ),
-        const SizedBox(
-          height: 5,
-        ),
-        ElevatedButton(
-          onPressed: negativeFunction ?? () => Navigator.of(context).pop(false),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(45),
-          ),
-          child: Text(negativeText ?? AppLocalizations.of(context)!.reject),
-        ),
-      ],
-    );
-  }
-}
-
-class SecuredWidget extends StatefulWidget {
-  final Widget child;
-
-  const SecuredWidget({
-    super.key,
-    required this.child,
-  });
-
-  @override
-  SecuredWidgetState createState() => SecuredWidgetState();
-}
-
-class SecuredWidgetState extends State<SecuredWidget> {
-  DateTime? currentBackPressTime;
-
-  Future<bool> onWillPop() {
-    DateTime now = DateTime.now();
-    if (currentBackPressTime == null ||
-        now.difference(currentBackPressTime!) > const Duration(seconds: 2)) {
-      currentBackPressTime = now;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        duration: const Duration(seconds: 1),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(30.0),
-          ),
-        ),
-        backgroundColor: Colors.black.withOpacity(0.6),
-        behavior: SnackBarBehavior.floating,
-        content: Text(AppLocalizations.of(context)!.cancelWarning),
-      ));
-      return Future.value(false);
-    }
-    return Future.value(true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(onWillPop: onWillPop, child: widget.child);
   }
 }

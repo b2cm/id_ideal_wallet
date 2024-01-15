@@ -77,24 +77,26 @@ class App extends StatelessWidget {
           // var newUriToCall = uriToCall.replace(queryParameters: newQuery);
           // logger.d(newUriToCall);
           return MaterialPageRoute(
-              builder: (context) =>
-                  Consumer<WalletProvider>(builder: (context, wallet, child) {
-                    if (wallet.isOpen()) {
-                      logger.d(uriToCall);
-                      return WebViewWindow(
-                          initialUrl: uriToCall
-                              .toString()
-                              .replaceAll('wid=', 'wid=${wallet.lndwId}'),
-                          title: asUri.queryParameters['title'] ?? '');
-                    } else {
-                      return const Scaffold(
-                        body: SafeArea(
-                            child: Center(
-                          child: CircularProgressIndicator(),
-                        )),
-                      );
-                    }
-                  }));
+            builder: (context) =>
+                Consumer<WalletProvider>(builder: (context, wallet, child) {
+              if (wallet.isOpen()) {
+                logger.d(uriToCall);
+                return WebViewWindow(
+                    initialUrl: uriToCall
+                        .toString()
+                        .replaceAll('wid=', 'wid=${wallet.lndwId}'),
+                    title: asUri.queryParameters['title'] ?? '');
+              } else {
+                return const Scaffold(
+                  body: SafeArea(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                );
+              }
+            }),
+          );
         } else if (args.name != null && args.name!.contains('invoice')) {
           var uri = Uri.parse('https://wallet.bccm.dev${args.name}');
           var invoice = uri.queryParameters['invoice'];
@@ -201,8 +203,8 @@ class HomeScreen extends StatelessWidget {
               BottomNavigationBarItem(
                   icon: const Icon(Icons.settings),
                   label: AppLocalizations.of(context)!.settings),
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.credit_card), label: 'Zahlung'),
+              // const BottomNavigationBarItem(
+              //     icon: Icon(Icons.credit_card), label: 'Zahlung'),
             ],
             currentIndex: 1,
             onTap: (index) {
@@ -243,10 +245,12 @@ class HomeScreen extends StatelessWidget {
       } else {
         wallet.openWallet();
         return const Scaffold(
-            body: SafeArea(
-                child: Center(
-          child: CircularProgressIndicator(),
-        )));
+          body: SafeArea(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
       }
     });
   }
