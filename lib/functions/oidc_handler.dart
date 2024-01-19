@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -12,25 +13,57 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
 
+String removeTrailingSlash(String base64Input) {
+  while (base64Input.endsWith('/')) {
+    base64Input = base64Input.substring(0, base64Input.length - 1);
+  }
+  return base64Input;
+}
+
 Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
+  logger.d(offer.credentials.first);
+  List<String> credentialToRequest = [];
+  for (var c in offer.credentials) {
+    if (c is String) {
+      credentialToRequest.add(c);
+    } else {
+      credentialToRequest.addAll(c['types']?.cast<String>() ?? []);
+    }
+  }
 
-  var res = true;
-  //await showCupertinoModalPopup(
-  //     context: navigatorKey.currentContext!,
-  //     barrierColor: Colors.white,
-  //     builder: (BuildContext context) =>
-  //         buildOfferCredentialDialogOidc(context, offer.credentials));
+  var issuerString = removeTrailingSlash(offer.credentialIssuer);
 
-  if (res) {
-    print(offer.credentialIssuer);
+  dynamic res = true;
+  res = await Future.delayed(const Duration(seconds: 1), () async {
+    return await showCupertinoModalPopup(
+      context: navigatorKey.currentContext!,
+      barrierColor: Colors.white,
+      builder: (BuildContext context) => CredentialOfferDialog(
+          oidcIssuer: issuerString,
+          requestOidcTan:
+              offer.userPinRequired != null && offer.userPinRequired!,
+          credentials: [
+            VerifiableCredential(
+                context: [credentialsV1Iri],
+                type: credentialToRequest,
+                issuer: {'name': issuerString},
+                credentialSubject: <String, dynamic>{},
+                issuanceDate: DateTime.now())
+          ]),
+    );
+  });
+
+  if (res is String || res) {
+    logger.d(res);
+    logger.d(issuerString);
     logger.d(offer.credentials);
     var issuerMetaReq = await get(
-        Uri.parse(
-            '${offer.credentialIssuer}/.well-known/openid-credential-issuer'),
+        Uri.parse('$issuerString/.well-known/openid-credential-issuer'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -44,11 +77,10 @@ Future<void> handleOfferOidc(String offerUri) async {
 
     logger.d(issuerMetaReq.body);
 
-    var metaData = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
+    var metaData = jsonDecode(issuerMetaReq.body);
 
     var authMetaReq = await get(
-        Uri.parse(
-            '${offer.credentialIssuer}/.well-known/oauth-authorization-server'),
+        Uri.parse('$issuerString/.well-known/oauth-authorization-server'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -57,26 +89,25 @@ Future<void> handleOfferOidc(String offerUri) async {
     });
 
     if (authMetaReq.statusCode != 200) {
-      throw Exception('Bad Status code');
+      throw Exception(
+          'Bad Status code: ${authMetaReq.statusCode} / ${authMetaReq.body}');
     }
 
     var jsonBody = jsonDecode(authMetaReq.body);
     var tokenEndpoint = jsonBody['token_endpoint'];
 
-    print(tokenEndpoint);
+    logger.d(tokenEndpoint);
 
     //send token Request
-    var preAuthCode =
-        offer.grants!['urn:ietf:params:oauth:grant-type:pre-authorized_code']
-            ['pre-authorized_code'];
+    var preAuthCode = offer.preAuthCode;
 
-    print(preAuthCode);
+    logger.d(preAuthCode);
     logger.d('Token-Endpoint: $tokenEndpoint');
 
     var tokenRes = await post(Uri.parse(tokenEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body:
-                'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode')
+                'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode${offer.userPinRequired != null && offer.userPinRequired! ? '&user_pin=$res' : ''}')
         .timeout(const Duration(seconds: 20), onTimeout: () {
       return Response('Timeout', 400);
     });
@@ -84,7 +115,7 @@ Future<void> handleOfferOidc(String offerUri) async {
     if (tokenRes.statusCode == 200) {
       var tokenResponse = OidcTokenResponse.fromJson(tokenRes.body);
 
-      print('Access-Token : ${tokenResponse.accessToken}');
+      logger.d('Access-Token : ${tokenResponse.accessToken}');
 
       var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
           listen: false);
@@ -115,30 +146,36 @@ Future<void> handleOfferOidc(String offerUri) async {
       //end JWT creation
 
       // create VP
-      var signed = await buildPresentation(
-          [], wallet.wallet, tokenResponse.cNonce!,
-          holder: credentialDid, domain: offer.credentialIssuer);
+      var presentation = VerifiablePresentation(
+          context: [credentialsV1Iri, ed25519ContextIri],
+          type: ['VerifiablePresentation'],
+          holder: credentialDid);
+      var signer = EdDsaSigner(loadDocumentFast);
+      var p = await signer.buildProof(
+          presentation.toJson(), wallet.wallet, credentialDid,
+          challenge: tokenResponse.cNonce,
+          domain: offer.credentialIssuer,
+          proofPurpose: 'authentication');
+      presentation.proof = [LinkedDataProof.fromJson(p)];
       // end VP creation
 
       var credentialRequest = {
         'format': 'ldp_vc',
-        'types':
-            offer.credentials.first['type'] ?? offer.credentials.first['types'],
+        'types': credentialToRequest,
         'proof': {'proof_type': 'jwt', 'jwt': jwt}
       };
 
       var credentialRequestLdp = {
         'format': 'ldp_vc',
-        'types':
-            offer.credentials.first['type'] ?? offer.credentials.first['types'],
-        'proof': {'proof_type': 'ldp_vp', 'vp': jsonDecode(signed)}
+        'types': credentialToRequest,
+        'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
       };
 
       logger.d(credentialRequest);
       logger.d(credentialRequestLdp);
 
       var credentialResponse =
-          await post(Uri.parse(metaData.credentialEndpoint),
+          await post(Uri.parse(metaData['credential_endpoint']),
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
@@ -149,6 +186,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       });
 
       if (credentialResponse.statusCode == 200) {
+        logger.d(jsonDecode(credentialResponse.body));
         var credential = jsonDecode(credentialResponse.body)['credential'];
 
         logger.d(credential);
@@ -167,6 +205,8 @@ Future<void> handleOfferOidc(String offerUri) async {
           }
 
           wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+          wallet.storeExchangeHistoryEntry(
+              credDid, DateTime.now(), 'issue', offer.credentialIssuer);
 
           showModalBottomSheet(
               shape: const RoundedRectangleBorder(
@@ -178,7 +218,7 @@ Future<void> handleOfferOidc(String offerUri) async {
               builder: (context) {
                 return ModalDismissWrapper(
                   child: PaymentFinished(
-                    headline: "Credential empfangen",
+                    headline: AppLocalizations.of(context)!.credentialReceived,
                     success: true,
                     amount: CurrencyDisplay(
                         amount: credential['type'].first,
@@ -192,40 +232,74 @@ Future<void> handleOfferOidc(String offerUri) async {
       } else {
         logger.d(credentialResponse.statusCode);
         logger.d(credentialResponse.body);
+
+        showErrorMessage('Credential kann nicht runtergeladen werden');
       }
     } else {
       logger.d(tokenRes.statusCode);
       logger.d(tokenRes.body);
+
+      showErrorMessage('Authentifizierung fehlgeschlagen');
     }
   }
 }
 
 Future<void> handlePresentationRequestOidc(String request) async {
   var asUri = Uri.parse(request);
+  PresentationDefinition? definition;
+  String? nonce;
 
+  nonce = asUri.queryParameters['nonce'];
+  var redirectUri = asUri.queryParameters['redirect_uri'];
   var requestUri = asUri.queryParameters['request_uri'];
   var clientId = asUri.queryParameters['client_id'];
-  logger.d(requestUri);
-  logger.d(clientId);
+  var presDef = asUri.queryParameters['presentation_definition'];
+  var presDefUri = asUri.queryParameters['presentation_definition_uri'];
 
-  if (requestUri == null || clientId == null) {
-    throw Exception('clientId or requestUri');
+  if (clientId == null) {
+    throw Exception('client id null');
   }
 
-  var requestRaw = await get(Uri.parse(requestUri), headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  });
-  logger.d(requestRaw.statusCode);
-  logger.d(requestRaw.body);
+  if (presDef != null) {
+    logger.d(presDef);
+    definition = PresentationDefinition.fromJson(presDef);
+  } else if (presDefUri != null) {
+    logger.d(presDefUri);
+    var res = await get(Uri.parse(presDefUri), headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    if (res.statusCode == 200) {
+      definition = PresentationDefinition.fromJson(res.body);
+    } else {
+      throw Exception('no presentation definition found at $presDefUri');
+    }
+  } else {
+    logger.d(requestUri);
+    logger.d(clientId);
 
-  var requestObject = RequestObject.fromJson(requestRaw.body);
+    if (requestUri == null) {
+      throw Exception('requestUri null');
+    }
 
-  //var def = PresentationDefinition.fromJson(requestRaw.body);
+    var requestRaw = await get(Uri.parse(requestUri), headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    logger.d(requestRaw.statusCode);
+    logger.d(requestRaw.body);
 
-  logger.d(requestObject.nonce);
-  logger.d(requestObject.presentationDefinition);
+    var requestObject = RequestObject.fromJson(requestRaw.body);
 
+    logger.d(requestObject.nonce);
+    logger.d(requestObject.presentationDefinition);
+    definition = requestObject.presentationDefinition;
+    nonce = requestObject.nonce;
+  }
+
+  if (nonce == null) {
+    throw Exception('nonce null');
+  }
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
@@ -240,7 +314,6 @@ Future<void> handlePresentationRequestOidc(String request) async {
       }
     }
   });
-  var definition = requestObject.presentationDefinition;
 
   if (definition == null) {
     logger.d('No presentation definition');
@@ -255,17 +328,18 @@ Future<void> handlePresentationRequestOidc(String request) async {
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
         builder: (context) => PresentationRequestDialog(
-          otherEndpoint: clientId,
+          definitionHash: '',
+          otherEndpoint: redirectUri ?? clientId,
           receiverDid: clientId,
           myDid: 'myDid',
           results: filtered,
           isOidc: true,
-          nonce: requestObject.nonce,
+          nonce: nonce,
         ),
       ),
     );
   } catch (e, stack) {
-    logger.e(e, ['', stack]);
+    logger.e(e, stackTrace: stack);
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);

@@ -35,11 +35,7 @@ class PaymentFinished extends StatelessWidget {
         Text(
           headline,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-          ),
+          style: Theme.of(context).primaryTextTheme.headlineLarge,
         ),
         const SizedBox(height: 20),
         amount,

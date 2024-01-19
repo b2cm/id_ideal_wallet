@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
-import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/credential_offer.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
+import 'package:id_ideal_wallet/basicUi/standard/footer_buttons.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/basicUi/standard/requester_info.dart';
+import 'package:id_ideal_wallet/basicUi/standard/secured_widget.dart';
+import 'package:id_ideal_wallet/constants/kaprion_context.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -19,130 +22,50 @@ import 'package:provider/provider.dart';
 
 import '../functions/didcomm_message_handler.dart';
 
-class RequesterInfo extends StatefulWidget {
-  final String requesterUrl;
-  final String followingText;
-
-  const RequesterInfo(
-      {Key? key, required this.requesterUrl, required this.followingText})
-      : super(key: key);
-
-  @override
-  State<StatefulWidget> createState() => RequesterInfoState();
-}
-
-class RequesterInfoState extends State<RequesterInfo> {
-  String info =
-      AppLocalizations.of(navigatorKey.currentContext!)!.loadIssuerData;
-  bool isLoading = true;
-  bool isVerified = false;
-
-  @override
-  void initState() {
-    super.initState();
-    getInfo();
-  }
-
-  void getInfo() async {
-    try {
-      var certInfo = await getCertificateInfoFromUrl(widget.requesterUrl);
-      info = certInfo?.subjectOrganization ??
-          certInfo?.subjectCommonName ??
-          AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
-      if (certInfo != null) {
-        isVerified = true;
-      }
-      setState(() {});
-    } catch (e) {
-      AppLocalizations.of(navigatorKey.currentContext!)!.anonymous;
-      logger.d('Problem bei Zertifikatsabfrage: $e');
-    }
-    isLoading = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(
-            fontSize: 17,
-            color: Colors.grey.shade700,
-            fontWeight: FontWeight.w500,
-          ),
-          children: [
-            TextSpan(
-              text: info,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            WidgetSpan(
-              child: Container(
-                padding: const EdgeInsets.only(
-                  left: 1,
-                  bottom: 5,
-                ),
-                child: Icon(
-                  isLoading
-                      ? Icons.refresh
-                      : isVerified
-                          ? Icons.check_circle
-                          : Icons.close,
-                  size: 14,
-                  color: isLoading
-                      ? Colors.grey
-                      : isVerified
-                          ? Colors.greenAccent.shade700
-                          : Colors.redAccent.shade700,
-                ),
-              ),
-            ),
-            TextSpan(
-                text: widget.followingText,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.normal)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
   final String? name, purpose;
   final String myDid;
   final String otherEndpoint;
   final String receiverDid;
+  final String definitionHash;
   final RequestPresentation? message;
-  final bool isOidc;
+  final bool isOidc, askForBackground;
   final String? nonce;
+  final String? lnInvoice;
+  final Map<String, dynamic>? lnInvoiceRequest;
+  final List<VerifiableCredential>? paymentCards;
 
   const PresentationRequestDialog(
-      {Key? key,
+      {super.key,
       required this.results,
       required this.receiverDid,
       required this.myDid,
       required this.otherEndpoint,
+      required this.definitionHash,
+      this.askForBackground = false,
       this.name,
       this.purpose,
       this.message,
       this.isOidc = false,
-      this.nonce})
-      : super(key: key);
+      this.nonce,
+      this.lnInvoice,
+      this.lnInvoiceRequest,
+      this.paymentCards});
 
   @override
-  _PresentationRequestDialogState createState() =>
-      _PresentationRequestDialogState();
+  PresentationRequestDialogState createState() =>
+      PresentationRequestDialogState();
 }
 
-class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
+class PresentationRequestDialogState extends State<PresentationRequestDialog> {
   //'Database' for Checkboxes
   Map<String, bool> selectedCredsPerResult = {};
   bool dataEntered = true;
   bool send = false;
   bool fulfillable = true;
+  bool backgroundAllow = true;
+  String amount = '';
 
   @override
   initState() {
@@ -151,7 +74,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int innerPos = 0;
     for (var res in widget.results) {
       innerPos = 0;
-      for (var c in res.credentials) {
+      for (var _ in res.credentials) {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
@@ -166,6 +89,21 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       }
       outerPos++;
     }
+
+    getAmount();
+  }
+
+  Future<void> getAmount() async {
+    if (widget.lnInvoice != null && widget.paymentCards != null) {
+      var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+          listen: false);
+      var paymentId = widget.paymentCards!.first.id!;
+      var lnInKey = wallet.getLnInKey(paymentId);
+      var i = await decodeInvoice(lnInKey!, widget.lnInvoice!);
+      amount = i.amount.toSat().toStringAsFixed(2);
+      logger.d(amount);
+      setState(() {});
+    }
   }
 
   List<Widget> buildChilds() {
@@ -179,11 +117,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       childList.add(
         Text(
           widget.name!,
-          style: const TextStyle(
-            fontSize: 26,
-            color: Color(0xFF3b3b3b),
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).primaryTextTheme.headlineLarge,
         ),
       );
       childList.add(const SizedBox(
@@ -206,15 +140,33 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       height: 10,
     ));
 
-    for (var result in widget.results) {
-      bool all = false;
+    if (widget.askForBackground) {
+      childList.add(CheckboxListTile(
+          title: const Text('Hintergrundabfragen'),
+          subtitle: Text(
+              'Hiermit erlaube ich ${widget.otherEndpoint}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen'),
+          value: backgroundAllow,
+          onChanged: (newValue) {
+            if (newValue != null) {
+              backgroundAllow = newValue;
+              setState(() {});
+            }
+          }));
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+    }
 
+    for (var result in widget.results) {
       var outerTileChildList = <Widget>[];
       var outerTileExpanded = false;
 
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
         dataEntered = false;
+        if (result.credentials.isNotEmpty) {
+          dataEntered = true;
+        }
         for (var i in result.selfIssuable!) {
           outerTileExpanded = true;
           outerTileChildList.add(
@@ -241,8 +193,16 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     var credSubject = <dynamic, dynamic>{'id': did};
                     credSubject.addAll(res);
                     var cred = VerifiableCredential(
-                        context: ['https://schema.org'],
-                        type: ['SelfIssuedCredential'],
+                        context: [
+                          credentialsV1Iri,
+                          'https://schema.org',
+                          ed25519ContextIri
+                        ],
+                        type: [
+                          'VerifiableCredential',
+                          'SelfIssuedCredential'
+                        ],
+                        id: did,
                         issuer: did,
                         credentialSubject: credSubject,
                         issuanceDate: DateTime.now());
@@ -264,6 +224,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent.shade700,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(45),
                 ),
                 child: Text(AppLocalizations.of(navigatorKey.currentContext!)!
@@ -271,6 +232,13 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               ),
             ),
           );
+        }
+
+        if (result.credentials.isNotEmpty) {
+          outerTileChildList.add(const Text(
+            'oder',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ));
         }
       }
       int credCount = result.selfIssuable?.length ?? 0;
@@ -320,22 +288,19 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         title: SizedBox(
           child: RichText(
             text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 21,
-                  color: Color(0xFF3b3b3b),
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).primaryTextTheme.bodyMedium,
                 children: [
                   TextSpan(
                       text:
                           '${credCount - (result.selfIssuable?.length ?? 0)} / $minCount ',
-                      style: TextStyle(
-                        fontSize: 21,
-                        color: result.fulfilled
-                            ? Colors.greenAccent.shade700
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      )),
+                      style: Theme.of(context)
+                          .primaryTextTheme
+                          .bodyMedium!
+                          .copyWith(
+                            color: result.fulfilled
+                                ? Colors.greenAccent.shade700
+                                : Colors.red,
+                          )),
                   TextSpan(
                       text: result.submissionRequirement?.name ??
                           selectedCredNames.toSet().join(', '))
@@ -345,7 +310,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
         subtitle: result.submissionRequirement?.purpose != null
             ? Text(
                 result.submissionRequirement!.purpose!,
-                style: const TextStyle(color: Colors.black),
+                style: Theme.of(context).primaryTextTheme.bodySmall,
               )
             : null,
         children: outerTileChildList,
@@ -376,12 +341,113 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       );
     }
 
+    if (widget.lnInvoice != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: Theme.of(context).primaryTextTheme.titleMedium,
+                children: [
+                  TextSpan(
+                    text: AppLocalizations.of(navigatorKey.currentContext!)!
+                        .paymentInformation,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  WidgetSpan(
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                        left: 1,
+                        bottom: 5,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        // color: Colors.redAccent.shade700,
+                      ),
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.paymentInformationDetail}',
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
+                  TextSpan(
+                      text: '$amount sat',
+                      style: Theme.of(context).primaryTextTheme.titleLarge),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
+    if (widget.lnInvoiceRequest != null) {
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+      childList.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.grey.shade200,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: RichText(
+              text: TextSpan(
+                style: Theme.of(context).primaryTextTheme.titleMedium,
+                children: [
+                  const TextSpan(
+                    text: 'Information',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '\n${AppLocalizations.of(navigatorKey.currentContext!)!.funding1}',
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
+                  TextSpan(
+                      text: ' ${widget.lnInvoiceRequest?['amount']} sat ',
+                      style: Theme.of(context).primaryTextTheme.titleLarge),
+                  TextSpan(
+                      text: AppLocalizations.of(navigatorKey.currentContext!)!
+                          .funding2,
+                      style: Theme.of(context).primaryTextTheme.bodySmall),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+
     return childList;
   }
 
-  Future<void> sendAnswer() async {
+  Future<VerifiablePresentation?> sendAnswer() async {
+    setState(() {
+      send = true;
+    });
     var wallet = Provider.of<WalletProvider>(context, listen: false);
-    List<FilterResult> finalSend = [];
+    if (widget.askForBackground && backgroundAllow) {
+      wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
+    }
+    List<dynamic> finalSend = [];
+    Set<String> issuerDids = {};
     int outerPos = 0;
     int innerPos = 0;
     for (var result in widget.results) {
@@ -390,6 +456,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       for (var cred in result.credentials) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
           credList.add(cred);
+          issuerDids.add(getIssuerDidFromCredential(cred.toJson()));
         }
         innerPos++;
       }
@@ -400,6 +467,26 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
     }
+    // logger.d(issuerDids);
+    // Set<String> addedCredentials = {};
+    // for (var d in issuerDids) {
+    //   var entry = wallet.getConfig('certCreds:$d');
+    //   if (entry != null) {
+    //     logger.d(entry);
+    //     var j = jsonDecode(entry) as List;
+    //     for (var c in j) {
+    //       var cred = VerifiableCredential.fromJson(c);
+    //       if (!addedCredentials.contains(cred.id)) {
+    //         finalSend.add(cred);
+    //         addedCredentials.add(cred.id!);
+    //         logger.d(c);
+    //       }
+    //     }
+    //   }
+    // }
+    //
+    // logger.d('collected Credentials');
+
     if (widget.isOidc) {
       var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
           loadDocumentFunction: loadDocumentFast);
@@ -407,6 +494,7 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
       logger.d(await verifyPresentation(vp, widget.nonce!,
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
+      logger.d('send presentation to ${widget.otherEndpoint}');
       var res = await post(Uri.parse(widget.otherEndpoint),
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body:
@@ -459,56 +547,124 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
               widget.receiverDid);
         }
 
-        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
-            .presentationFailed);
+        await showModalBottomSheet(
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10))),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                closeSeconds: 4,
+                child: PaymentFinished(
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationFailed,
+                  success: false,
+                  amount: const CurrencyDisplay(
+                      width: 350,
+                      amount: '',
+                      symbol: '',
+                      mainFontSize: 18,
+                      centered: true),
+                ),
+              );
+            });
         // Navigator.of(context).pop();
       }
+      return VerifiablePresentation.fromJson(vp);
     } else {
-      var vp = await buildPresentation(finalSend, wallet.wallet,
-          widget.message!.presentationDefinition.first.challenge);
-      var presentationMessage = Presentation(
-          replyUrl: '$relay/buffer/${widget.myDid}',
-          returnRoute: ReturnRouteValue.thread,
-          to: [widget.receiverDid],
-          from: widget.myDid,
-          verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
-          threadId: widget.message!.threadId ?? widget.message!.id,
-          parentThreadId: widget.message!.parentThreadId);
-      sendMessage(widget.myDid, widget.otherEndpoint, wallet,
-          presentationMessage, widget.receiverDid);
-      for (var pres in presentationMessage.verifiablePresentation) {
-        for (var cred in pres.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present',
-              widget.receiverDid);
-        }
-      }
-      // Navigator.of(context).pop();
-    }
+      var vp = await buildPresentation(
+          finalSend,
+          wallet.wallet,
+          widget.message?.presentationDefinition.first.challenge ??
+              widget.nonce ??
+              '',
+          loadDocumentFunction: loadDocumentKaprion);
+      if (widget.message != null) {
+        var presentationMessage = Presentation(
+            replyUrl: '$relay/buffer/${widget.myDid}',
+            returnRoute: ReturnRouteValue.thread,
+            to: [widget.receiverDid],
+            from: widget.myDid,
+            verifiablePresentation: [VerifiablePresentation.fromJson(vp)],
+            threadId: widget.message!.threadId ?? widget.message!.id,
+            parentThreadId: widget.message!.parentThreadId);
+        logger.d(widget.lnInvoiceRequest);
+        logger.d(widget.paymentCards);
+        if (widget.lnInvoiceRequest != null && widget.paymentCards != null) {
+          logger.d('generate invoice');
+          var paymentId = widget.paymentCards!.first.id!;
+          var lnInKey = wallet.getLnInKey(paymentId);
+          var paymentType =
+              widget.paymentCards!.first.credentialSubject['paymentType'];
+          var invoice = await createInvoice(
+              lnInKey!,
+              SatoshiAmount.fromUnitAndValue(
+                  widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+              memo: widget.lnInvoiceRequest!['memo'] ?? '',
+              isMainnet: paymentType == 'LightningMainnetPayment');
+          var index = invoice['checking_id'];
+          logger.d(index);
+          wallet.newPayment(
+            paymentId,
+            index,
+            widget.lnInvoiceRequest!['memo'] ?? '',
+            SatoshiAmount.fromUnitAndValue(
+                widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
+          );
 
-    // Navigator.of(context).pop();
+          var paymentAtt = Attachment(
+              format: 'lnInvoice',
+              data: AttachmentData(json: {
+                'type': 'lnInvoice',
+                'lnInvoice': invoice['payment_request']
+              }));
+
+          presentationMessage.attachments?.add(paymentAtt);
+        }
+        sendMessage(widget.myDid, widget.otherEndpoint, wallet,
+            presentationMessage, widget.receiverDid,
+            lnInvoice: widget.lnInvoice, paymentCards: widget.paymentCards);
+      }
+
+      for (var cred
+          in VerifiablePresentation.fromJson(vp).verifiableCredential ?? []) {
+        wallet.storeExchangeHistoryEntry(
+            getHolderDidFromCredential(cred.toJson()),
+            DateTime.now(),
+            'present',
+            widget.receiverDid);
+      }
+
+      // Navigator.of(context).pop();
+      return VerifiablePresentation.fromJson(vp);
+    }
   }
 
   void reject() async {
     logger.d('user declined presentation');
-    logger.d(widget.otherEndpoint);
-    if (widget.otherEndpoint
-        .startsWith('https://lndw84b9dcfb0e65.id-ideal.de')) {
-      get(Uri.parse(
-          'https://lndw84b9dcfb0e65.id-ideal.de/capi/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
-    } else if (widget.otherEndpoint.startsWith(baseUrl)) {
-      get(Uri.parse(
-          '$baseUrl/bas23/api/addtocanceled?thid=${widget.message?.threadId ?? widget.message?.id ?? ''}'));
+    if (widget.message != null) {
+      var problem = ProblemReport(
+          replyUrl: '$relay/buffer/${widget.myDid}',
+          returnRoute: ReturnRouteValue.thread,
+          to: [widget.receiverDid],
+          from: widget.myDid,
+          parentThreadId: widget.message!.threadId ?? widget.message!.id,
+          code: 'e.p.user.decline');
+
+      // TODO sendMessage(
+      //     widget.myDid,
+      //     widget.otherEndpoint,
+      //     Provider.of<WalletProvider>(navigatorKey.currentContext!,
+      //         listen: false),
+      //     problem,
+      //     widget.receiverDid);
     }
     Navigator.of(context).pop();
-    //TODO: send Problem Report, if user rejects
   }
 
   @override
   Widget build(BuildContext context) {
-    bool error = fulfillable && dataEntered;
     return Stack(
       children: [
         Scaffold(
@@ -533,11 +689,14 @@ class _PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   reject: reject)
             else
               FooterButtons(
+                positiveText: widget.lnInvoice != null
+                    ? AppLocalizations.of(context)!.orderWithPayment
+                    : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  await Future.delayed(
+                  var vp = await Future.delayed(
                       const Duration(milliseconds: 50), sendAnswer);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(vp);
                 },
               )
           ],
@@ -587,11 +746,7 @@ class FooterErrorText extends StatelessWidget {
         SizedBox(
           child: RichText(
             text: TextSpan(
-              style: TextStyle(
-                fontSize: 17,
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).primaryTextTheme.titleMedium,
               children: [
                 TextSpan(
                   text: AppLocalizations.of(context)!.attention,
@@ -614,8 +769,7 @@ class FooterErrorText extends StatelessWidget {
                 ),
                 TextSpan(
                     text: '\n$errorMessage',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.normal)),
+                    style: Theme.of(context).primaryTextTheme.bodySmall),
               ],
             ),
           ),
@@ -627,6 +781,7 @@ class FooterErrorText extends StatelessWidget {
             onPressed: reject,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(45),
             ),
             child: Text(AppLocalizations.of(context)!.cancel))

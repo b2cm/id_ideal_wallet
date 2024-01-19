@@ -100,7 +100,7 @@
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen bzw. ausgewählt haben.\nInformieren Sie sich, wie Sie die fehlenden Nachweise erlangen können oder wählen Sie die fehlenden aus.",
   "attention": "Achtung",
-  "cancelWarning": "Zum Abbrechen erneut tippen",
+  "cancelWarning": "Zum Beenden 'Abbrechen' verwenden",
   "accept": "Annehmen",
   "noteNoCredentials": "Keine Nachweise vorhanden",
   "allCredentials": "Alle Nachweise",
@@ -159,5 +159,13 @@
       }
     }
   },
-  "importFailed": "Import fehlgeschlagen"
+  "importFailed": "Import fehlgeschlagen",
+  "saveError": "Fehler beim Speichern",
+  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang.",
+  "paymentInformation": "Zahlungsinformation",
+  "paymentInformationDetail": "Für die Weiterverarbeitung der Daten fallen folgende Kosten an: ",
+  "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
+  "funding2": "gutgeschrieben",
+  "oidcTan": "Vorgangsnummer",
+  "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein."
 }

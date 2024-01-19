@@ -20,34 +20,34 @@ class StyledScaffoldWebView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: Row(
-          children: [
-            InkWell(
-                onTap: backOnTap,
-                child: const Icon(Icons.arrow_back, size: 40)),
-          ],
-        ),
-        title: Text(title),
-        // actions: [
-        //   InkWell(
-        //       onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),
-        //   const SizedBox(
-        //     width: 5,
-        //   ),
-        //   InkWell(
-        //       onTap: () =>
-        //           Navigator.of(context).popUntil((route) => route.isFirst),
-        //       child: const Icon(
-        //         Icons.close,
-        //         size: 40,
-        //       )),
-        //   const SizedBox(
-        //     width: 5,
-        //   ),
-        // ],
-      ),
+      // appBar: AppBar(
+      //   automaticallyImplyLeading: false,
+      //   leading: Row(
+      //     children: [
+      //       InkWell(
+      //           onTap: backOnTap,
+      //           child: const Icon(Icons.arrow_back, size: 40)),
+      //     ],
+      //   ),
+      //   title: Text(title),
+      // actions: [
+      //   InkWell(
+      //       onTap: reloadOnTap, child: const Icon(Icons.refresh, size: 40)),
+      //   const SizedBox(
+      //     width: 5,
+      //   ),
+      //   InkWell(
+      //       onTap: () =>
+      //           Navigator.of(context).popUntil((route) => route.isFirst),
+      //       child: const Icon(
+      //         Icons.close,
+      //         size: 40,
+      //       )),
+      //   const SizedBox(
+      //     width: 5,
+      //   ),
+      // ],
+      // ),
       body: child,
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.black,

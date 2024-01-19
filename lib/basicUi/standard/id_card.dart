@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/xml_widget.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
-import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
-import 'package:id_ideal_wallet/views/issuer_info.dart';
 
+import '../../constants/server_address.dart';
 import 'currency_display.dart';
 
 class IdCard extends StatelessWidget {
@@ -137,6 +137,13 @@ class IdCard extends StatelessWidget {
       }
       var context = wallet?.getContextForCredential(id);
       var layout = context?.credentialSubject['vclayouts']?[type];
+      VerifiableCredential? certCred;
+      var issuer = getIssuerDidFromCredential(credential);
+      var cCreds = wallet?.getConfig('certCreds:$issuer');
+      if (cCreds != null) {
+        certCred =
+            VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
+      }
       if (layout != null) {
         return XmlCard(
             credential: credential,
@@ -165,12 +172,12 @@ class IdCard extends StatelessWidget {
                 : null,
             cardTitle: getTypeToShow(credential.type),
             subjectName:
-                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
+                '${credential.credentialSubject['givenName'] ?? credential.credentialSubject['name'] ?? credential.credentialSubject['standName'] ?? ''} ${credential.credentialSubject['familyName'] ?? ''}',
             bottomLeftText: IssuerInfoText(
-                issuer: credential.issuer,
+                issuer: certCred ?? credential.issuer,
                 selfIssued: credential.isSelfIssued()),
             bottomRightText: IssuerInfoIcon(
-              issuer: credential.issuer,
+              issuer: certCred ?? credential.issuer,
               selfIssued: credential.isSelfIssued(),
             ));
       }
@@ -207,11 +214,10 @@ class IdCard extends StatelessWidget {
           padding: const EdgeInsets.only(left: 10),
           child: Text(
             cardTitle,
-            style: TextStyle(
-              color: cardTitleColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(navigatorKey.currentContext!)
+                .primaryTextTheme
+                .titleLarge!
+                .copyWith(color: cardTitleColor),
           ),
         ),
         const Spacer(),
@@ -234,18 +240,17 @@ class IdCard extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: Text(
-            subjectName,
-            overflow: TextOverflow.clip,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Text(
+              subjectName,
+              overflow: TextOverflow.clip,
+              style: Theme.of(navigatorKey.currentContext!)
+                  .primaryTextTheme
+                  .titleLarge!,
             ),
           ),
-        )),
+        ),
         const Spacer(),
         subjectImage != null
             ? Padding(
@@ -374,6 +379,7 @@ class ContextCredentialCard extends IdCard {
       required super.subjectName,
       required super.bottomLeftText,
       required super.bottomRightText,
+      super.backgroundColor,
       super.cardTitleColor,
       super.backgroundImage,
       super.backgroundColor,
@@ -387,13 +393,15 @@ class ContextCredentialCard extends IdCard {
   Widget buildCenterOverlay() {
     return backgroundImage == null
         ? Center(
-            child: Text(subjectName,
-                overflow: TextOverflow.clip,
-                style: TextStyle(
-                  color: cardTitleColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                )))
+            child: Text(
+              subjectName,
+              overflow: TextOverflow.clip,
+              style: Theme.of(navigatorKey.currentContext!)
+                  .primaryTextTheme
+                  .titleLarge!
+                  .copyWith(color: cardTitleColor),
+            ),
+          )
         : const SizedBox(
             height: 0,
           );
@@ -517,11 +525,10 @@ class ContextCredentialCardBack extends IdCard {
               maxLines: 3,
               subjectName,
               overflow: TextOverflow.clip,
-              style: TextStyle(
-                color: cardTitleColor,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(navigatorKey.currentContext!)
+                  .primaryTextTheme
+                  .titleLarge!
+                  .copyWith(color: cardTitleColor),
             ),
           ),
           onUpdateTap != null
@@ -686,23 +693,24 @@ class PkPassCard extends IdCard {
   @override
   Widget buildHeader() {
     return Container(
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(18),
-            topRight: Radius.circular(18),
-          ),
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
         ),
-        height: 45,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-          child: Text(
-            description,
-            style: TextStyle(
-                color: cardTitleColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w600),
-          ),
-        ));
+      ),
+      height: 45,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        child: Text(
+          description,
+          style: Theme.of(navigatorKey.currentContext!)
+              .primaryTextTheme
+              .titleLarge!
+              .copyWith(color: cardTitleColor),
+        ),
+      ),
+    );
   }
 
   @override

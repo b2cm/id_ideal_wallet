@@ -16,8 +16,7 @@ class PdfPreviewPage extends StatelessWidget {
   final String eventName;
 
   const PdfPreviewPage(
-      {Key? key, required this.paymentReceipt, required this.eventName})
-      : super(key: key);
+      {super.key, required this.paymentReceipt, required this.eventName});
 
   FutureOr<Uint8List> _makePdf(PdfPageFormat format) async {
     String issuerName = '';

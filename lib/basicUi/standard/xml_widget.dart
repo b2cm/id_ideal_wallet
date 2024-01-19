@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
-import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:intl/intl.dart';
 import 'package:xml/xml.dart';
 
@@ -126,7 +126,7 @@ class XmlWidget extends StatelessWidget {
               : null,
         );
       case 'error':
-        return SizedBox();
+        return const SizedBox();
       default:
         return Container(
           decoration: BoxDecoration(

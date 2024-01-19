@@ -11,7 +11,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 class QrScanner extends StatelessWidget {
-  const QrScanner({Key? key}) : super(key: key);
+  const QrScanner({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +68,9 @@ class QrScanner extends StatelessWidget {
                           title: asUri.queryParameters['title'] ?? '')));
                 } else if (code.contains('ooburl')) {
                   handleOobUrl(code);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                } else if (code.contains('oobid')) {
+                  handleOobId(code);
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 } else if (code.startsWith('https://wallet.bccm.dev')) {
                   Navigator.popUntil(context, (route) => route.isFirst);

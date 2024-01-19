@@ -3,7 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'currency_display.dart';
 
-class Balance extends StatefulWidget {
+class Balance extends StatelessWidget {
   const Balance(
       {super.key,
       required this.receiveOnTap,
@@ -14,11 +14,6 @@ class Balance extends StatefulWidget {
   final void Function() sendOnTap;
   final CurrencyDisplay balance;
 
-  @override
-  State<Balance> createState() => _BalanceState();
-}
-
-class _BalanceState extends State<Balance> {
   @override
   Widget build(BuildContext context) {
     // a widget that displays the balance and has two buttons to receive and send
@@ -44,7 +39,7 @@ class _BalanceState extends State<Balance> {
           Container(
             // black border, border radius 25, padding 10
             padding: const EdgeInsets.fromLTRB(15, 0, 0, 7),
-            child: widget.balance,
+            child: balance,
           ),
           // buttons section
           Container(
@@ -63,37 +58,37 @@ class _BalanceState extends State<Balance> {
                 // button without outline, black font
                 // receive button
                 Flexible(
-                    child: FractionallySizedBox(
-                  widthFactor: 1,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Colors.black,
-                          width: 1,
+                  child: FractionallySizedBox(
+                    widthFactor: 1,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          right: BorderSide(
+                            color: Colors.black,
+                            width: 1,
+                          ),
                         ),
                       ),
-                    ),
-                    child: InkWell(
-                      onTap: () => widget.receiveOnTap(),
-                      child: SizedBox(
-                          height: 50,
-                          child: Center(
-                            child: Text(
-                              AppLocalizations.of(context)!.receive,
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          )),
+                      child: InkWell(
+                        onTap: () => receiveOnTap(),
+                        child: SizedBox(
+                            height: 50,
+                            child: Center(
+                              child: Text(
+                                AppLocalizations.of(context)!.receive,
+                                style: Theme.of(context)
+                                    .primaryTextTheme
+                                    .bodyMedium,
+                              ),
+                            )),
+                      ),
                     ),
                   ),
-                )),
+                ),
                 Flexible(
-                    child: FractionallySizedBox(
-                  widthFactor: 1,
-                  child: Container(
+                  child: FractionallySizedBox(
+                    widthFactor: 1,
+                    child: Container(
                       decoration: const BoxDecoration(
                         border: Border(
                           left: BorderSide(
@@ -103,20 +98,21 @@ class _BalanceState extends State<Balance> {
                         ),
                       ),
                       child: InkWell(
-                        onTap: () => widget.sendOnTap(),
+                        onTap: () => sendOnTap(),
                         child: SizedBox(
-                            height: 50,
-                            child: Center(
-                              child: Text(
-                                AppLocalizations.of(context)!.send,
-                                style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            )),
-                      )),
-                )),
+                          height: 50,
+                          child: Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.send,
+                              style:
+                                  Theme.of(context).primaryTextTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

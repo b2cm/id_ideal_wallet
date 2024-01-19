@@ -50,6 +50,8 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
 
+  Map<String, List<String>> aboGroups = {};
+
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
@@ -61,7 +63,7 @@ class WalletProvider extends ChangeNotifier {
 
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
-    t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+    // t = Timer.periodic(const Duration(seconds: 10), checkRelay);
   }
 
   Future<List<int>?> startUri() async {
@@ -232,6 +234,8 @@ class WalletProvider extends ChangeNotifier {
 
       _buildCredentialList();
 
+      generateAboGroups();
+
       // if (contextCredentials.isEmpty) {
       //   //await issueLNDWContextMittweida(this);
       //   await issueLNDWContextDresden(this);
@@ -290,11 +294,82 @@ class WalletProvider extends ChangeNotifier {
       }
 
       startUri().then(getSharedText);
-      //Checking broadcast stream, if deep link was clicked in opened appication
+      //Checking broadcast stream, if deep link was clicked in opened application
       stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
     }
+  }
+
+  void generateAboGroups() {
+    var e = _wallet.getConfigEntry('aboGroups');
+    if (e == null) {
+      // generate from contextCredentials
+      for (var vc in contextCredentials) {
+        List services = vc.credentialSubject['buttons'] ??
+            vc.credentialSubject['services'] ??
+            [];
+
+        List<String> aboData = [];
+        if (services.isNotEmpty) {
+          for (Map entry in services) {
+            var id = const Uuid().v4();
+            aboData.add('abo_$id');
+            entry['bgcolor'] = vc.credentialSubject['backsidecolor'];
+            entry['textcolor'] = vc.credentialSubject['overlaycolor'];
+            _wallet.storeConfigEntry('abo_$id', jsonEncode(entry));
+          }
+
+          aboGroups[vc.credentialSubject['name']] = aboData;
+        }
+      }
+    } else {
+      Map<String, dynamic> dec = jsonDecode(e);
+      aboGroups = dec
+          .map((key, value) => MapEntry(key, (value as List).cast<String>()));
+    }
+  }
+
+  Map<String, dynamic> getAboData(String id) {
+    var e = _wallet.getConfigEntry(id);
+    if (e != null) {
+      return jsonDecode(e) as Map<String, dynamic>;
+    } else {
+      return {};
+    }
+  }
+
+  List<String> getAuthorizedApps() {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    return e == null ? [] : jsonDecode(e).cast<String>();
+  }
+
+  void deleteAuthorizedApp(String uri) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.remove(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    await _wallet.deleteConfigEntry('hash_$uri');
+    notifyListeners();
+  }
+
+  void addAuthorizedApp(String uri, String hash) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.add(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+
+    var h = _wallet.getConfigEntry('hash_$uri');
+    List<String> hashes = h == null ? <String>[] : jsonDecode(h).cast<String>();
+    hashes.add(hash);
+    await _wallet.storeConfigEntry('hash_$uri', jsonEncode(hashes));
+
+    notifyListeners();
+  }
+
+  List<String> getHashesForAuthorizedApp(String uri) {
+    var e = _wallet.getConfigEntry('hash_$uri');
+    return e == null ? [] : jsonDecode(e).cast<String>();
   }
 
   Future<void> addToFavorites(String id) async {
@@ -334,7 +409,11 @@ class WalletProvider extends ChangeNotifier {
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
       [bool notify = false]) async {
-    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    var id = getHolderDidFromCredential(vc.toJson());
+    if (id == '') {
+      var type = my_util.getTypeToShow(vc.type);
+      id = '${vc.issuanceDate.toIso8601String()}$type';
+    }
     logger.d(vc);
 
     // check states that won't change to speed up
@@ -573,6 +652,28 @@ class WalletProvider extends ChangeNotifier {
     return pay;
   }
 
+  List<VerifiableCredential> getSuitablePaymentCredentialsForNetwork(
+      String network) {
+    var pay = <VerifiableCredential>[];
+
+    String paymentType = '';
+    if (network.toLowerCase() == 'mainnet') {
+      paymentType = 'LightningMainnetPayment';
+    } else if (network.toLowerCase() == 'testnet') {
+      paymentType = 'LightningTestnetPayment';
+    } else {
+      paymentType = 'SimulatedPayment';
+    }
+
+    for (var p in paymentCredentials) {
+      if (p.credentialSubject['paymentType'] == paymentType) {
+        pay.add(p);
+      }
+    }
+
+    return pay;
+  }
+
   void removeIdFromUpdateList(String id) async {
     hasUpdate.remove(id);
     _wallet.storeConfigEntry('updateContext', jsonEncode(hasUpdate.toList()));
@@ -753,6 +854,14 @@ class WalletProvider extends ChangeNotifier {
     _wallet.storeConversationEntry(message, myDid);
   }
 
+  void storeConfig(String key, String value) async {
+    await _wallet.storeConfigEntry(key, value);
+  }
+
+  String? getConfig(String key) {
+    return _wallet.getConfigEntry(key);
+  }
+
   bool isOpen() {
     return _wallet.isWalletOpen();
   }
@@ -761,8 +870,12 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConversationEntry(id);
   }
 
-  Future<String> newConnectionDid() async {
-    return _wallet.getNextConnectionDID(KeyType.x25519);
+  Future<String> newConnectionDid([KeyType keytype = KeyType.x25519]) async {
+    return _wallet.getNextConnectionDID(keytype, true);
+  }
+
+  Connection? getConnection(String did) {
+    return _wallet.getConnection(did);
   }
 
   Future<String> newCredentialDid() async {
@@ -773,9 +886,10 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getCredential(did);
   }
 
-  void storeCredential(String vc, String hdPath, [String? newDid]) async {
+  void storeCredential(String vc, String hdPath,
+      {String? newDid, KeyType keyType = KeyType.ed25519}) async {
     await _wallet.storeCredential(vc, '', hdPath,
-        keyType: KeyType.ed25519, credDid: newDid);
+        keyType: keyType, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);
     var type = vcParsed.type
@@ -982,7 +1096,7 @@ class WalletProvider extends ChangeNotifier {
     var did = await newCredentialDid();
     var storage = getCredential(did);
     var vc = VerifiableCredential(
-        context: ['schema.org'],
+        context: [credentialsV1Iri, schemaOrgIri],
         issuer: did,
         issuanceDate: DateTime.now(),
         type: ['HidyContextKundenkarten', 'MemberCard'],

@@ -34,16 +34,19 @@ class StyledScaffoldTitle extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          // Here we take the value from the MyHomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
-          title: title is String ? Text(title) : title,
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          title: title is String
+              ? Text(
+                  title,
+                  style: Theme.of(context).primaryTextTheme.headlineLarge,
+                )
+              : title,
           actions: appBarActions,
         ),
-        // padding with red background
         body: Container(
             margin: const EdgeInsets.only(left: 10, right: 10, top: 0),
             child: child),
-        // padding only left and right
         persistentFooterButtons: footerButtons,
         bottomNavigationBar: BottomNavigationBar(
           selectedItemColor: currentlyActive == null

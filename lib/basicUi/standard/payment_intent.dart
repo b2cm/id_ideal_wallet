@@ -22,14 +22,10 @@ class PaymentIntent extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          "Bezahlen",
+        Text(
+          AppLocalizations.of(context)!.pay,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-          ),
+          style: Theme.of(context).primaryTextTheme.headlineLarge,
         ),
         const SizedBox(height: 20),
         amount,
@@ -41,11 +37,7 @@ class PaymentIntent extends StatelessWidget {
                 child: Text(
                   memo,
                   textAlign: TextAlign.justify,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
+                  style: Theme.of(context).primaryTextTheme.bodySmall,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 7,
                 ),
