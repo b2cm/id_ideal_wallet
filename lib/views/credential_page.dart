@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
@@ -287,7 +288,8 @@ class ContextCardState extends State<ContextCard> {
                 }
                 wallet.deleteCredential(credId);
                 wallet.removeFromFavorites(credId);
-                Navigator.popUntil(context, (route) => route.isFirst);
+                context.go('/');
+                ;
               },
               child: Text(AppLocalizations.of(context)!.delete))
         ],

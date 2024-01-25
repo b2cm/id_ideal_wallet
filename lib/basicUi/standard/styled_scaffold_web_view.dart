@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:id_ideal_wallet/views/credential_page.dart';
-import 'package:id_ideal_wallet/views/qr_scanner.dart';
+import 'package:go_router/go_router.dart';
 
 class StyledScaffoldWebView extends StatelessWidget {
   const StyledScaffoldWebView({
@@ -67,17 +66,19 @@ class StyledScaffoldWebView extends StatelessWidget {
         onTap: (index) {
           switch (index) {
             case 0:
-              Navigator.of(context).pushReplacement(MaterialPageRoute(
-                  builder: (context) => const CredentialPage(
-                        initialSelection: 'all',
-                      )));
+              if (index == 0) {
+                context.go('/credentials?initialSelection=all');
+              }
               break;
             case 1:
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const QrScanner()));
+              if (index == 1) {
+                context.go('/scanner');
+              }
               break;
             case 2:
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              if (index == 2) {
+                context.go('/');
+              }
               break;
           }
         },
