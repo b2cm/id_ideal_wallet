@@ -5,10 +5,10 @@ import 'package:app_settings/app_settings.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/main.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -201,7 +201,8 @@ class WelcomeScreenState extends State<WelcomeScreen> {
                     Provider.of<WalletProvider>(navigatorKey.currentContext!,
                             listen: false)
                         .onBoarded();
-                    context.go('/');
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const HomeScreen()));
                   }
                 }
               : () {

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
 
 class StyledScaffoldWebView extends StatelessWidget {
   const StyledScaffoldWebView({
@@ -8,12 +6,14 @@ class StyledScaffoldWebView extends StatelessWidget {
     required this.title,
     required this.backOnTap,
     required this.reloadOnTap,
+    this.abo,
     required this.child,
   });
 
   final String title;
   final void Function() backOnTap;
   final void Function() reloadOnTap;
+  final void Function()? abo;
   final Widget child;
 
   @override
@@ -48,41 +48,48 @@ class StyledScaffoldWebView extends StatelessWidget {
       // ],
       // ),
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.co_present), label: 'Credentials'),
-          BottomNavigationBarItem(
-              icon: const Icon(
-                Icons.qr_code_scanner_sharp,
-                size: 30,
-              ),
-              label: AppLocalizations.of(context)!.scan),
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        ],
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              if (index == 0) {
-                context.go('/credentials?initialSelection=all');
-              }
-              break;
-            case 1:
-              if (index == 1) {
-                context.go('/scanner');
-              }
-              break;
-            case 2:
-              if (index == 2) {
-                context.go('/');
-              }
-              break;
-          }
-        },
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: abo != null
+          ? FloatingActionButton.extended(
+              onPressed: abo,
+              icon: const Icon(Icons.add),
+              isExtended: true,
+              label: const Text('Abonieren'),
+            )
+          : null,
+      // bottomNavigationBar: BottomNavigationBar(
+      //   selectedItemColor: Colors.black,
+      //   unselectedItemColor: Colors.black,
+      //   items: [
+      //     const BottomNavigationBarItem(
+      //         icon: Icon(Icons.co_present), label: 'Credentials'),
+      //     BottomNavigationBarItem(
+      //         icon: const Icon(
+      //           Icons.qr_code_scanner_sharp,
+      //           size: 30,
+      //         ),
+      //         label: AppLocalizations.of(context)!.scan),
+      //     const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      //   ],
+      //   currentIndex: 1,
+      //   onTap: (index) {
+      //     switch (index) {
+      //       case 0:
+      //         Navigator.of(context).pushReplacement(MaterialPageRoute(
+      //             builder: (context) => const CredentialPage(
+      //                   initialSelection: 'all',
+      //                 )));
+      //         break;
+      //       case 1:
+      //         Navigator.of(context).push(
+      //             MaterialPageRoute(builder: (context) => const QrScanner()));
+      //         break;
+      //       case 2:
+      //         Navigator.of(context).popUntil((route) => route.isFirst);
+      //         break;
+      //     }
+      //   },
+      // ),
     );
   }
 }

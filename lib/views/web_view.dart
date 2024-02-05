@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:go_router/go_router.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
@@ -28,6 +27,7 @@ class WebViewWindow extends StatefulWidget {
 
 class WebViewWindowState extends State<WebViewWindow> {
   final GlobalKey webViewKey = GlobalKey();
+  bool isInAbo = false;
 
   InAppWebViewController? webViewController;
   InAppWebViewSettings settings = InAppWebViewSettings(
@@ -43,6 +43,12 @@ class WebViewWindowState extends State<WebViewWindow> {
   @override
   void initState() {
     super.initState();
+
+    var currentAbos =
+        Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
+            .aboList;
+    List<String> allAbos = currentAbos.map((e) => e['url']!).toList();
+    isInAbo = allAbos.contains(widget.initialUrl);
 
     pullToRefreshController = kIsWeb
         ? null
@@ -73,148 +79,160 @@ class WebViewWindowState extends State<WebViewWindow> {
           return true;
         }
       },
-      child: StyledScaffoldWebView(
-        title: widget.title,
-        backOnTap: () async {
-          if (webViewController != null &&
-              await webViewController!.canGoBack()) {
-            webViewController?.goBack();
-          } else {
-            navigatorKey.currentContext!.go('/');
-          }
-        },
-        reloadOnTap: () async {
-          var initialUri = await webViewController?.getUrl();
-          if (initialUri?.fragment != null &&
-              initialUri!.fragment.contains('wid')) {
-            webViewController?.reload();
-          } else {
-            var wallet = Provider.of<WalletProvider>(
-                navigatorKey.currentContext!,
-                listen: false);
-            webViewController?.loadUrl(
-                urlRequest: URLRequest(
-                    url: WebUri.uri(Uri.parse(
-                        '$initialUri${initialUri.toString().contains('?') ? '&wid=${wallet.lndwId}' : '?wid=${wallet.lndwId}'}'))));
-          }
-        },
-        child: SafeArea(
-          child: Column(children: <Widget>[
-            Expanded(
-              child: Stack(
-                children: [
-                  InAppWebView(
-                    key: webViewKey,
-                    initialUrlRequest:
-                        URLRequest(url: WebUri(widget.initialUrl)),
-                    initialSettings: settings,
-                    pullToRefreshController: pullToRefreshController,
-                    // Testing only: accept bad (self signed) certs
-                    onReceivedServerTrustAuthRequest:
-                        (controller, challenge) async {
-                      return ServerTrustAuthResponse(
-                          action: ServerTrustAuthResponseAction.PROCEED);
-                    },
-                    onWebViewCreated: (controller) {
-                      webViewController = controller;
-                      webViewController?.addJavaScriptHandler(
-                          handlerName: 'echoHandlerAsync',
-                          callback: (args) async {
-                            await Future.delayed(const Duration(seconds: 2));
-                            return args;
-                          });
-                      webViewController?.addJavaScriptHandler(
-                          handlerName: 'echoHandler',
-                          callback: (args) {
-                            return args;
-                          });
-                      webViewController?.addJavaScriptHandler(
-                          handlerName: 'presentationRequestHandler',
-                          callback: (args) async {
-                            logger.d(args);
-                            return await requestPresentationHandler(args.first,
-                                widget.initialUrl, args[1], args[2]);
-                          });
-                    },
-                    onLoadStart: (controller, url) {
-                      setState(() {
-                        urlController.text = widget.initialUrl;
-                      });
-                    },
-                    onPermissionRequest: (controller, request) async {
-                      return PermissionResponse(
-                          resources: request.resources,
-                          action: PermissionResponseAction.GRANT);
-                    },
-                    shouldOverrideUrlLoading:
-                        (controller, navigationAction) async {
-                      var uri = navigationAction.request.url!;
+      child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+        return StyledScaffoldWebView(
+          title: widget.title,
+          abo: isInAbo
+              ? null
+              : () {
+                  wallet.addAbo(widget.initialUrl, '', widget.title);
+                },
+          backOnTap: () async {
+            if (webViewController != null &&
+                await webViewController!.canGoBack()) {
+              webViewController?.goBack();
+            } else {
+              Navigator.of(navigatorKey.currentContext!)
+                  .popUntil((route) => route.isFirst);
+            }
+          },
+          reloadOnTap: () async {
+            var initialUri = await webViewController?.getUrl();
+            if (initialUri?.fragment != null &&
+                initialUri!.fragment.contains('wid')) {
+              webViewController?.reload();
+            } else {
+              var wallet = Provider.of<WalletProvider>(
+                  navigatorKey.currentContext!,
+                  listen: false);
+              webViewController?.loadUrl(
+                  urlRequest: URLRequest(
+                      url: WebUri.uri(Uri.parse(
+                          '$initialUri${initialUri.toString().contains('?') ? '&wid=${wallet.lndwId}' : '?wid=${wallet.lndwId}'}'))));
+            }
+          },
+          child: SafeArea(
+            child: Column(children: <Widget>[
+              Expanded(
+                child: Stack(
+                  children: [
+                    InAppWebView(
+                      key: webViewKey,
+                      initialUrlRequest:
+                          URLRequest(url: WebUri(widget.initialUrl)),
+                      initialSettings: settings,
+                      pullToRefreshController: pullToRefreshController,
+                      // Testing only: accept bad (self signed) certs
+                      onReceivedServerTrustAuthRequest:
+                          (controller, challenge) async {
+                        return ServerTrustAuthResponse(
+                            action: ServerTrustAuthResponseAction.PROCEED);
+                      },
+                      onWebViewCreated: (controller) {
+                        webViewController = controller;
+                        webViewController?.addJavaScriptHandler(
+                            handlerName: 'echoHandlerAsync',
+                            callback: (args) async {
+                              await Future.delayed(const Duration(seconds: 2));
+                              return args;
+                            });
+                        webViewController?.addJavaScriptHandler(
+                            handlerName: 'echoHandler',
+                            callback: (args) {
+                              return args;
+                            });
+                        webViewController?.addJavaScriptHandler(
+                            handlerName: 'presentationRequestHandler',
+                            callback: (args) async {
+                              logger.d(args);
+                              return await requestPresentationHandler(
+                                  args.first,
+                                  widget.initialUrl,
+                                  args[1],
+                                  args[2]);
+                            });
+                      },
+                      onLoadStart: (controller, url) {
+                        setState(() {
+                          urlController.text = widget.initialUrl;
+                        });
+                      },
+                      onPermissionRequest: (controller, request) async {
+                        return PermissionResponse(
+                            resources: request.resources,
+                            action: PermissionResponseAction.GRANT);
+                      },
+                      shouldOverrideUrlLoading:
+                          (controller, navigationAction) async {
+                        var uri = navigationAction.request.url!;
 
-                      if ((uri.authority.contains('wallet.id-ideal.de') ||
-                              uri.authority.contains('wallet.bccm.dev')) &&
-                          uri.query.contains('oob')) {
-                        handleDidcommMessage(
-                            '${uri.toString()}&initialWebview=${widget.initialUrl}');
-                        return NavigationActionPolicy.CANCEL;
-                      }
+                        if ((uri.authority.contains('wallet.id-ideal.de') ||
+                                uri.authority.contains('wallet.bccm.dev')) &&
+                            uri.query.contains('oob')) {
+                          handleDidcommMessage(
+                              '${uri.toString()}&initialWebview=${widget.initialUrl}');
+                          return NavigationActionPolicy.CANCEL;
+                        }
 
-                      // if (![
-                      //   "http",
-                      //   "https",
-                      //   "file",
-                      //   "chrome",
-                      //   "data",
-                      //   "javascript",
-                      //   "about"
-                      // ].contains(uri.scheme)) {
-                      //   if (await canLaunchUrl(uri)) {
-                      //     // Launch the App
-                      //     await launchUrl(
-                      //       uri,
-                      //     );
-                      //     // and cancel the request
-                      //     return NavigationActionPolicy.CANCEL;
-                      //   }
-                      // }
+                        // if (![
+                        //   "http",
+                        //   "https",
+                        //   "file",
+                        //   "chrome",
+                        //   "data",
+                        //   "javascript",
+                        //   "about"
+                        // ].contains(uri.scheme)) {
+                        //   if (await canLaunchUrl(uri)) {
+                        //     // Launch the App
+                        //     await launchUrl(
+                        //       uri,
+                        //     );
+                        //     // and cancel the request
+                        //     return NavigationActionPolicy.CANCEL;
+                        //   }
+                        // }
 
-                      return NavigationActionPolicy.ALLOW;
-                    },
-                    onLoadStop: (controller, url) async {
-                      pullToRefreshController?.endRefreshing();
-                      setState(() {
-                        urlController.text = widget.initialUrl;
-                      });
-                    },
-                    onReceivedError: (controller, request, error) {
-                      pullToRefreshController?.endRefreshing();
-                    },
-                    onProgressChanged: (controller, progress) {
-                      if (progress == 100) {
+                        return NavigationActionPolicy.ALLOW;
+                      },
+                      onLoadStop: (controller, url) async {
                         pullToRefreshController?.endRefreshing();
-                      }
-                      setState(() {
-                        this.progress = progress / 100;
-                        urlController.text = widget.initialUrl;
-                      });
-                    },
-                    onUpdateVisitedHistory: (controller, url, androidIsReload) {
-                      setState(() {
-                        urlController.text = widget.initialUrl;
-                      });
-                    },
-                    onConsoleMessage: (controller, consoleMessage) {
-                      logger.d(consoleMessage);
-                    },
-                  ),
-                  progress < 1.0
-                      ? LinearProgressIndicator(value: progress)
-                      : Container(),
-                ],
+                        setState(() {
+                          urlController.text = widget.initialUrl;
+                        });
+                      },
+                      onReceivedError: (controller, request, error) {
+                        pullToRefreshController?.endRefreshing();
+                      },
+                      onProgressChanged: (controller, progress) {
+                        if (progress == 100) {
+                          pullToRefreshController?.endRefreshing();
+                        }
+                        setState(() {
+                          this.progress = progress / 100;
+                          urlController.text = widget.initialUrl;
+                        });
+                      },
+                      onUpdateVisitedHistory:
+                          (controller, url, androidIsReload) {
+                        setState(() {
+                          urlController.text = widget.initialUrl;
+                        });
+                      },
+                      onConsoleMessage: (controller, consoleMessage) {
+                        logger.d(consoleMessage);
+                      },
+                    ),
+                    progress < 1.0
+                        ? LinearProgressIndicator(value: progress)
+                        : Container(),
+                  ],
+                ),
               ),
-            ),
-          ]),
-        ),
-      ),
+            ]),
+          ),
+        );
+      }),
     );
   }
 }
@@ -301,8 +319,8 @@ Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
     }
 
     return vp;
-  } catch (e, stack) {
-    logger.e(e, stackTrace: stack);
+  } catch (e) {
+    logger.e(e);
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);

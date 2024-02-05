@@ -50,7 +50,9 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
 
-  Map<String, List<String>> aboGroups = {};
+  //[[url, pic-url], [url, pic-url], ...]
+  List<Map<String, String>> aboList = [];
+  Map<String, Map<String, String>> credentialStyling = {};
 
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
@@ -236,6 +238,19 @@ class WalletProvider extends ChangeNotifier {
 
       generateAboGroups();
 
+      var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+      if (lastUpdateCheck == null ||
+          DateTime.now().difference(DateTime.parse(lastUpdateCheck)) >=
+              const Duration(days: 1)) {
+        logger.d('with request');
+        generateCredentialStyling(true);
+        _wallet.storeConfigEntry(
+            'lastUpdateCheck', DateTime.now().toIso8601String());
+      } else {
+        logger.d('without request');
+        generateCredentialStyling();
+      }
+
       // if (contextCredentials.isEmpty) {
       //   //await issueLNDWContextMittweida(this);
       //   await issueLNDWContextDresden(this);
@@ -274,7 +289,7 @@ class WalletProvider extends ChangeNotifier {
       // }
 
       var updateable = _wallet.getConfigEntry('updateContext');
-      var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+
       lastUpdateCheck = null;
       if (updateable == null || lastUpdateCheck == null) {
         checkForContextUpdates();
@@ -301,8 +316,30 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> generateCredentialStyling([bool request = false]) async {
+    var s = _wallet.getConfigEntry('credentialStyling');
+    if (s == null || request) {
+      var res = await get(Uri.parse(stylingEndpoint));
+      if (res.statusCode == 200) {
+        credentialStyling = (jsonDecode(res.body) as Map<String, dynamic>).map(
+            (key, value) =>
+                MapEntry(key, (value as Map).cast<String, String>()));
+      } else {
+        credentialStyling = {};
+      }
+
+      _wallet.storeConfigEntry(
+          'credentialStyling', jsonEncode(credentialStyling));
+    } else {
+      credentialStyling = (jsonDecode(s) as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, (value as Map).cast<String, String>()));
+    }
+
+    logger.d(credentialStyling);
+  }
+
   void generateAboGroups() {
-    var e = _wallet.getConfigEntry('aboGroups');
+    var e = _wallet.getConfigEntry('aboList');
     if (e == null) {
       // generate from contextCredentials
       for (var vc in contextCredentials) {
@@ -310,23 +347,25 @@ class WalletProvider extends ChangeNotifier {
             vc.credentialSubject['services'] ??
             [];
 
-        List<String> aboData = [];
         if (services.isNotEmpty) {
           for (Map entry in services) {
-            var id = const Uuid().v4();
-            aboData.add('abo_$id');
-            entry['bgcolor'] = vc.credentialSubject['backsidecolor'];
-            entry['textcolor'] = vc.credentialSubject['overlaycolor'];
-            _wallet.storeConfigEntry('abo_$id', jsonEncode(entry));
+            var bg = vc.credentialSubject['mainbgimg'] ?? '';
+            if (entry['url'] == 'https://test.hidy.app/kigallery') {
+              bg =
+                  'https://test.hidy.app/styles/hidycontextplaceholder_contextbg.png';
+            }
+            aboList.add({
+              'url': entry['url'],
+              'mainbgimage': bg,
+              'name': entry['name']
+            });
           }
-
-          aboGroups[vc.credentialSubject['name']] = aboData;
         }
       }
+      wallet.storeConfigEntry('aboList', jsonEncode(aboList));
     } else {
-      Map<String, dynamic> dec = jsonDecode(e);
-      aboGroups = dec
-          .map((key, value) => MapEntry(key, (value as List).cast<String>()));
+      List dec = jsonDecode(e);
+      aboList = dec.map((e) => (e as Map).cast<String, String>()).toList();
     }
   }
 
@@ -337,6 +376,13 @@ class WalletProvider extends ChangeNotifier {
     } else {
       return {};
     }
+  }
+
+  void addAbo(String url, String pictureUrl, String title) {
+    aboList.add({'url': url, 'mainbgimage': pictureUrl, 'name': title});
+    wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+
+    notifyListeners();
   }
 
   List<String> getAuthorizedApps() {
@@ -383,7 +429,7 @@ class WalletProvider extends ChangeNotifier {
     var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
     f.remove(id);
     await _wallet.storeConfigEntry('favorites', jsonEncode(f));
-    notifyListeners();
+    //notifyListeners();
   }
 
   bool isFavorite(String id) {
@@ -782,7 +828,7 @@ class WalletProvider extends ChangeNotifier {
       }
     }
 
-    logger.d(contextCredentials.length);
+    logger.d(paymentCredentials.map((e) => e.id).join(';'));
 
     // sort contexts by date
     contextCredentials.sort((a, b) {
@@ -995,7 +1041,7 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getAllCredentials();
   }
 
-  void deleteCredential(String credDid) async {
+  void deleteCredential(String credDid, [bool notify = false]) async {
     var cred = getCredential(credDid);
     logger.d(credDid);
     logger.d(cred);
@@ -1024,7 +1070,9 @@ class WalletProvider extends ChangeNotifier {
       }
     }
     _buildCredentialList();
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void storeExchangeHistoryEntry(String credentialDid, DateTime timestamp,

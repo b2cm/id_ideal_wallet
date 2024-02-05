@@ -338,8 +338,8 @@ Future<void> handlePresentationRequestOidc(String request) async {
         ),
       ),
     );
-  } catch (e, stack) {
-    logger.e(e, stackTrace: stack);
+  } catch (e) {
+    logger.e(e);
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);

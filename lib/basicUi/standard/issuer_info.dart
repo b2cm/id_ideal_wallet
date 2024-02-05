@@ -87,11 +87,12 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         if (widget.issuer.containsKey('name')) {
           issuerName = '${widget.issuer['name']} ($issuerName)';
         }
-        setState(() {});
+
+        if (mounted) setState(() {});
       } else if (widget.issuer.containsKey('name')) {
         issuerName =
             '${widget.issuer['name']}\n(${AppLocalizations.of(context)!.notVerified})';
-        setState(() {});
+        if (mounted) setState(() {});
       } else {
         issuerName =
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
@@ -200,7 +201,7 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
           marker = Icons.verified_outlined;
           iconColor = Colors.green;
         }
-        setState(() {});
+        if (mounted) setState(() {});
       } else if (widget.endpoint != null) {
         var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
         if (certInfo != null && certInfo.valid != null && certInfo.valid!) {

@@ -6,16 +6,15 @@ import 'dart:typed_data';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
-import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -286,10 +285,10 @@ class ContextCardState extends State<ContextCard> {
                   credId =
                       '${widget.context.issuanceDate.toIso8601String()}$type';
                 }
-                wallet.deleteCredential(credId);
+
+                wallet.deleteCredential(credId, true);
                 wallet.removeFromFavorites(credId);
-                context.go('/');
-                ;
+                Navigator.of(context).pop();
               },
               child: Text(AppLocalizations.of(context)!.delete))
         ],
@@ -521,18 +520,16 @@ class CredentialCardState extends State<CredentialCard> {
   Widget build(BuildContext context) {
     return InkWell(
         onLongPress: () => widget.credential.type.contains('ContextCredential')
-            ? Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    CredentialDetailView(credential: widget.credential)))
+            ? Provider.of<NavigationProvider>(context, listen: false)
+                .changePage([6], credential: widget.credential)
             : null,
         onTap: () => widget.clickable
             ? widget.credential.type.contains('ContextCredential')
                 ? Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CredentialPage(
                         initialSelection: widget.credential.id!)))
-                : Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        CredentialDetailView(credential: widget.credential)))
+                : Provider.of<NavigationProvider>(context, listen: false)
+                    .changePage([6], credential: widget.credential)
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           var id = getHolderDidFromCredential(widget.credential.toJson());

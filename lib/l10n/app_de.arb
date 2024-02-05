@@ -119,7 +119,7 @@
   "loadIssuerData": "Lade Informationen",
   "errorOpen": "Das Wallet kann nicht geöffnet werden.\nIst auf Ihrem Gerät ein Sicherheitsmechanismus (Pin, Passwort, Muster, Fingerabdruck,...) hinterlegt?\nWenn nicht, sichern Sie Ihr Gerät über Ihre Geräteeinstellungen.",
   "credential": "Nachweis",
-  "add": "Hinzugefügt",
+  "add": "Hinzufügen",
   "hashNotMatch": "Hash stimmt nicht überein",
   "hashNotMatchNote": "Dies kann ein Betrugsversuch sein,\n daher wird die Zahlung abgebrochen.",
   "otherValue": "Anderer Betrag",

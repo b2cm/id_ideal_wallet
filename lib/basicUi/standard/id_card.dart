@@ -131,18 +131,25 @@ class IdCard extends StatelessWidget {
           subjectName: '');
     } else {
       var type = getTypeToShow(credential.type);
-      var id = credential.id ?? getHolderDidFromCredential(credential.toJson());
-      if (id == '') {
-        id = '${credential.issuanceDate.toIso8601String()}$type';
-      }
-      var context = wallet?.getContextForCredential(id);
-      var layout = context?.credentialSubject['vclayouts']?[type];
+      Map<String, dynamic>? layout;
       VerifiableCredential? certCred;
-      var issuer = getIssuerDidFromCredential(credential);
-      var cCreds = wallet?.getConfig('certCreds:$issuer');
-      if (cCreds != null) {
-        certCred =
-            VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
+      if (wallet != null && wallet.credentialStyling.containsKey(type)) {
+        layout = wallet.credentialStyling[type];
+      } else {
+        var id =
+            credential.id ?? getHolderDidFromCredential(credential.toJson());
+        if (id == '') {
+          id = '${credential.issuanceDate.toIso8601String()}$type';
+        }
+        var context = wallet?.getContextForCredential(id);
+        layout = context?.credentialSubject['vclayouts']?[type];
+
+        var issuer = getIssuerDidFromCredential(credential);
+        var cCreds = wallet?.getConfig('certCreds:$issuer');
+        if (cCreds != null) {
+          certCred =
+              VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
+        }
       }
       if (layout != null) {
         return XmlCard(
@@ -382,7 +389,6 @@ class ContextCredentialCard extends IdCard {
       super.backgroundColor,
       super.cardTitleColor,
       super.backgroundImage,
-      super.backgroundColor,
       this.onReturnTap,
       this.addToFavorites,
       this.isFavorite = false,

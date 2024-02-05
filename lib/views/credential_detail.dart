@@ -1,10 +1,10 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
@@ -101,10 +101,11 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 Navigator.of(context).pop();
                 //Navigator.of(context).pop();
                 if (widget.credential.type.contains('ContextCredential')) {
-                  context.go('/');
-                  ;
+                  Provider.of<NavigationProvider>(context, listen: false)
+                      .goBack();
                 } else {
-                  Navigator.of(context).pop();
+                  Provider.of<NavigationProvider>(context, listen: false)
+                      .goBack();
                   // Navigator.of(context).pushReplacement(MaterialPageRoute(
                   //     builder: (context) => const CredentialPage(
                   //           initialSelection: 'all',

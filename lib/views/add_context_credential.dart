@@ -273,8 +273,8 @@ Future<void> issueContext(
 
 Future<void> issueLNTestNetContext(
     WalletProvider wallet, Map<String, dynamic> content,
-    {bool isMainnet = false}) async {
-  var did = await wallet.newCredentialDid();
+    {bool isMainnet = false, String? externalDid}) async {
+  var did = externalDid ?? await wallet.newCredentialDid();
   logger.d(did);
   var contextCred = VerifiableCredential(
       context: [credentialsV1Iri, schemaOrgIri],
@@ -293,6 +293,7 @@ Future<void> issueLNTestNetContext(
   var signed = await signCredential(wallet.wallet, contextCred.toJson());
 
   await createLNWallet(did, isMainnet: isMainnet);
+  await Future.delayed(Duration(seconds: 1));
 
   var storageCred = wallet.getCredential(did);
 
