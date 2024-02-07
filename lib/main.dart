@@ -70,7 +70,9 @@ class App extends StatelessWidget {
           return null;
         }
         logger.d(args);
-        if (args.name != null && args.name!.contains('oob')) {
+        if (args.name != null && args.name!.contains('ooburl')) {
+          handleOobUrl('https://wallet.bccm.dev${args.name}');
+        } else if (args.name != null && args.name!.contains('oob')) {
           handleDidcommMessage('https://wallet.bccm.dev${args.name}');
         } else if (args.name != null && args.name!.contains('webview')) {
           logger.d(args);
@@ -288,13 +290,13 @@ class HomeScreen extends StatelessWidget {
                   width: 20,
                 ),
                 CustomNavigationItem(
-                    text: 'Zahlung',
+                    text: AppLocalizations.of(context)!.payments(0),
                     activeIcon: Icons.credit_card,
                     inactiveIcon: Icons.credit_card_outlined,
                     activeIndices: const [3],
                     navigator: navigator),
                 CustomNavigationItem(
-                    text: 'Über',
+                    text: AppLocalizations.of(context)!.settings,
                     activeIcon: Icons.settings,
                     inactiveIcon: Icons.settings_outlined,
                     activeIndices: const [4, 7, 8],

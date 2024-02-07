@@ -13,6 +13,7 @@
   "forShow": "zum Vorzeigen anbieten",
   "delete": "Löschen",
   "deletionNote": "Sind Sie sicher, dass sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+  "deletionNoteApp": "Sind Sie sicher, dass sie diese Anwendung löschen möchten?",
   "issuer": "Aussteller",
   "otherData": "Sonstige Daten",
   "personnelData": "Persönliche Daten",
@@ -43,7 +44,15 @@
   "anonymousIssuer": "Anonymer Aussteller",
   "anonymous": "anonym",
   "total": "Gesamt",
-  "payments": "Zahlungen",
+  "payments": "Zahlung{count, plural, =0{} other{en}}",
+  "@payments": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
   "paymentMethod": "Zahlungsmethode",
   "noteShownCredentials": "Diese Nachweise wurden soeben vorgezeigt",
   "noteOtherShowCredentials": "Ihr Gegenüber bietet Ihnen an, einen Nachweis mit folgenden Daten vorzuzeigen:",
@@ -167,5 +176,8 @@
   "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
   "funding2": "gutgeschrieben",
   "oidcTan": "Vorgangsnummer",
-  "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein."
+  "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.",
+  "noAppNote": "Sie haben noch keine Anwendungen hinzugefügt",
+  "newAppTitle": "Neue Anwendungen",
+  "newAppNote": "Keine neuen Anwendungen verfügbar"
 }

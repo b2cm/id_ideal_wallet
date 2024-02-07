@@ -369,6 +369,12 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
+  void deleteAbo(int index) async {
+    aboList.removeAt(index);
+    await wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+    notifyListeners();
+  }
+
   Map<String, dynamic> getAboData(String id) {
     var e = _wallet.getConfigEntry(id);
     if (e != null) {

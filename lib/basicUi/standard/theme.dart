@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class IdWalletDesignTheme {
   final ThemeData theme = ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+      cardColor: Colors.white,
       fontFamily: 'Outfit',
       primaryTextTheme: const TextTheme(
           headlineLarge: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),

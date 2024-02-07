@@ -13,6 +13,7 @@
   "forShow": "offer for presentation",
   "delete": "delete",
   "deletionNote": "Are you sure you want to delete this credential? This operation cannot be undone.",
+  "deletionNoteApp": "Are you sure you want to delete this application?",
   "issuer": "Issuer",
   "otherData": "Other data",
   "personnelData": "Personal data",
@@ -43,7 +44,15 @@
   "anonymousIssuer": "anonymous issuer",
   "anonymous": "anonymous",
   "total": "total",
-  "payments": "payments",
+  "payments": "Payment{count, plural, =0{} other{s}}",
+  "@payments": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
   "paymentMethod": "payment method",
   "noteShownCredentials": "These credentials were just presented",
   "noteOtherShowCredentials": "Your counterpart offers to show you a credential with the following data:",
@@ -167,5 +176,8 @@
   "funding1": "You will be credited with ",
   "funding2": "for releasing your data",
   "oidcTan": "Transaction number",
-  "oidcTanInfo": "The issuer has sent you a transaction number for this transaction. Please enter it here."
+  "oidcTanInfo": "The issuer has sent you a transaction number for this transaction. Please enter it here.",
+  "noAppNote": "You haven't added any applications yet",
+  "newAppTitle": "New applications",
+  "newAppNote": "No new applications available"
 }

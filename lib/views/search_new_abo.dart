@@ -59,7 +59,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: 'Neue Anwendungen',
+        title: AppLocalizations.of(context)!.newAppTitle,
         fab: !searching && toShow.isNotEmpty
             ? FloatingActionButton.extended(
                 onPressed: () {
@@ -81,7 +81,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
         child: searching
             ? const Center(child: CircularProgressIndicator())
             : toShow.isEmpty
-                ? const Center(child: Text('Keine neuen Anwendungen verfügbar'))
+                ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
                 : ListView.separated(
                     itemCount: toShow.length,
                     itemBuilder: (context, index) {

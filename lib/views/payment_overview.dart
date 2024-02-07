@@ -16,7 +16,7 @@ class PaymentOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: AppLocalizations.of(context)!.payments,
+        title: AppLocalizations.of(context)!.payments(1),
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {
             var allPayments = wallet.getAllPayments(paymentContext.id!);
