@@ -13,6 +13,7 @@
   "forShow": "offer for presentation",
   "delete": "delete",
   "deletionNote": "Are you sure you want to delete this credential? This operation cannot be undone.",
+  "deletionNoteApp": "Are you sure you want to delete this application?",
   "issuer": "Issuer",
   "otherData": "Other data",
   "personnelData": "Personal data",
@@ -43,7 +44,15 @@
   "anonymousIssuer": "anonymous issuer",
   "anonymous": "anonymous",
   "total": "total",
-  "payments": "payments",
+  "payments": "Payment{count, plural, =0{} other{s}}",
+  "@payments": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
   "paymentMethod": "payment method",
   "noteShownCredentials": "These credentials were just presented",
   "noteOtherShowCredentials": "Your counterpart offers to show you a credential with the following data:",
@@ -100,7 +109,7 @@
   "waitingSendPresentation": "Your answer is sent.",
   "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials (selected).\nFind out how you can obtain the missing credentials or select the missing ones.",
   "attention": "Attention",
-  "cancelWarning": "Tap again to cancel",
+  "cancelWarning": "Please use 'Cancel' to close",
   "accept": "Accept",
   "noteNoCredentials": "No Credentials",
   "allCredentials": "All Credentials",
@@ -119,7 +128,7 @@
   "loadIssuerData": "Load information",
   "errorOpen": "The wallet cannot be opened.\nIs a security mechanism (pin, password, pattern, fingerprint,...) stored on your device?\nIf not, secure your device via your device settings.",
   "credential": "Credential",
-  "add": "Added",
+  "add": "Add",
   "hashNotMatch": "Hash does not match",
   "hashNotMatchNote": "This may be an attempt to scam you,\ntherefore the payment will be canceled",
   "otherValue": "Other Amount",
@@ -159,5 +168,16 @@
       }
     }
   },
-  "importFailed": "Import failed"
+  "importFailed": "Import failed",
+  "saveError": "Error saving",
+  "saveErrorNote": "Unable to save the credential.\nPlease retry the operation.",
+  "paymentInformation": "Payment information",
+  "paymentInformationDetail": "The following costs are incurred for the further processing of the data: ",
+  "funding1": "You will be credited with ",
+  "funding2": "for releasing your data",
+  "oidcTan": "Transaction number",
+  "oidcTanInfo": "The issuer has sent you a transaction number for this transaction. Please enter it here.",
+  "noAppNote": "You haven't added any applications yet",
+  "newAppTitle": "New applications",
+  "newAppNote": "No new applications available"
 }

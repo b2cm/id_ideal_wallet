@@ -21,11 +21,12 @@ class Heading extends StatelessWidget {
             ),
           ),
           child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 7, 0, 0),
-              child: Text(
-                text,
-                style: TextStyle(fontSize: 18, color: Colors.grey[800]),
-              )),
+            padding: const EdgeInsets.fromLTRB(0, 7, 0, 0),
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 18, color: Colors.grey[800]),
+            ),
+          ),
         ),
       ),
     );

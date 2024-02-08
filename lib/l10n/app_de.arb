@@ -13,6 +13,7 @@
   "forShow": "zum Vorzeigen anbieten",
   "delete": "Löschen",
   "deletionNote": "Sind Sie sicher, dass sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+  "deletionNoteApp": "Sind Sie sicher, dass sie diese Anwendung löschen möchten?",
   "issuer": "Aussteller",
   "otherData": "Sonstige Daten",
   "personnelData": "Persönliche Daten",
@@ -43,7 +44,15 @@
   "anonymousIssuer": "Anonymer Aussteller",
   "anonymous": "anonym",
   "total": "Gesamt",
-  "payments": "Zahlungen",
+  "payments": "Zahlung{count, plural, =0{} other{en}}",
+  "@payments": {
+    "placeholders": {
+      "count": {
+        "type": "num",
+        "format": "compact"
+      }
+    }
+  },
   "paymentMethod": "Zahlungsmethode",
   "noteShownCredentials": "Diese Nachweise wurden soeben vorgezeigt",
   "noteOtherShowCredentials": "Ihr Gegenüber bietet Ihnen an, einen Nachweis mit folgenden Daten vorzuzeigen:",
@@ -100,7 +109,7 @@
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen bzw. ausgewählt haben.\nInformieren Sie sich, wie Sie die fehlenden Nachweise erlangen können oder wählen Sie die fehlenden aus.",
   "attention": "Achtung",
-  "cancelWarning": "Zum Abbrechen erneut tippen",
+  "cancelWarning": "Zum Beenden 'Abbrechen' verwenden",
   "accept": "Annehmen",
   "noteNoCredentials": "Keine Nachweise vorhanden",
   "allCredentials": "Alle Nachweise",
@@ -119,7 +128,7 @@
   "loadIssuerData": "Lade Informationen",
   "errorOpen": "Das Wallet kann nicht geöffnet werden.\nIst auf Ihrem Gerät ein Sicherheitsmechanismus (Pin, Passwort, Muster, Fingerabdruck,...) hinterlegt?\nWenn nicht, sichern Sie Ihr Gerät über Ihre Geräteeinstellungen.",
   "credential": "Nachweis",
-  "add": "Hinzugefügt",
+  "add": "Hinzufügen",
   "hashNotMatch": "Hash stimmt nicht überein",
   "hashNotMatchNote": "Dies kann ein Betrugsversuch sein,\n daher wird die Zahlung abgebrochen.",
   "otherValue": "Anderer Betrag",
@@ -159,5 +168,16 @@
       }
     }
   },
-  "importFailed": "Import fehlgeschlagen"
+  "importFailed": "Import fehlgeschlagen",
+  "saveError": "Fehler beim Speichern",
+  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang.",
+  "paymentInformation": "Zahlungsinformation",
+  "paymentInformationDetail": "Für die Weiterverarbeitung der Daten fallen folgende Kosten an: ",
+  "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
+  "funding2": "gutgeschrieben",
+  "oidcTan": "Vorgangsnummer",
+  "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.",
+  "noAppNote": "Sie haben noch keine Anwendungen hinzugefügt",
+  "newAppTitle": "Neue Anwendungen",
+  "newAppNote": "Keine neuen Anwendungen verfügbar"
 }

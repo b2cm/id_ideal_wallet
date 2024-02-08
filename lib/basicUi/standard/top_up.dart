@@ -45,8 +45,9 @@ class _TopUpState extends State<TopUp> {
                               height: 0,
                             )
                           : Text(AppLocalizations.of(context)!.paymentMethod,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
+                              style: Theme.of(context)
+                                  .primaryTextTheme
+                                  .titleLarge),
                       widget.paymentMethods == null
                           ? ToggleButtons(
                               direction: Axis.horizontal,
@@ -75,13 +76,15 @@ class _TopUpState extends State<TopUp> {
                                 minWidth: 80.0,
                               ),
                               isSelected: _selectedReceiveOption,
-                              children: const <Widget>[
+                              children: <Widget>[
                                 Text('Crypto',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
+                                    style: Theme.of(context)
+                                        .primaryTextTheme
+                                        .titleLarge),
                                 Text('Fiat',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
+                                    style: Theme.of(context)
+                                        .primaryTextTheme
+                                        .titleLarge),
                               ],
                             )
                           : ListView.builder(

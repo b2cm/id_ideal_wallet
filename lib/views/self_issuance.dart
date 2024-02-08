@@ -1,9 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:android_id/android_id.dart';
 import 'package:dart_ssi/credentials.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
@@ -51,7 +48,7 @@ final socialMediaSchema = JsonSchema.create({
 });
 
 class SelfIssueList extends StatelessWidget {
-  const SelfIssueList({Key? key}) : super(key: key);
+  const SelfIssueList({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -70,54 +67,54 @@ class SelfIssueList extends StatelessWidget {
                         schema: socialMediaSchema,
                         type: 'SocialMediaAccountCredential'))),
                 child: const Text('Social Media Account')),
-            ElevatedButton(
-                onPressed: () async {
-                  JsonSchema deviceInfoSchema;
-                  var deviceInfo = DeviceInfoPlugin();
-                  if (Platform.isAndroid) {
-                    var info = await deviceInfo.androidInfo;
-                    var androidAidPlugin = const AndroidId();
-                    deviceInfoSchema = JsonSchema.create({
-                      'type': 'object',
-                      'properties': {
-                        'deviceId': {
-                          'type': 'string',
-                          'const': await androidAidPlugin.getId()
-                        },
-                        'deviceModel': {'type': 'string', 'const': info.model},
-                        'deviceManufacturer': {
-                          'type': 'string',
-                          'const': info.manufacturer
-                        },
-                      }
-                    });
-                  } else if (Platform.isIOS) {
-                    var info = await deviceInfo.iosInfo;
-                    deviceInfoSchema = JsonSchema.create({
-                      'type': 'object',
-                      'properties': {
-                        'deviceId': {
-                          'type': 'string',
-                          'const': info.identifierForVendor
-                        },
-                        'deviceModel': {'type': 'string', 'const': info.model},
-                        'deviceManufacturer': {
-                          'type': 'string',
-                          'const': 'Apple'
-                        },
-                      }
-                    });
-                  } else {
-                    throw Exception(
-                        'This should never happen. Unknown Platform');
-                  }
-
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => FixedSelfIssue(
-                          schema: deviceInfoSchema,
-                          type: 'DeviceInformation')));
-                },
-                child: Text(AppLocalizations.of(context)!.deviceInformation))
+            // ElevatedButton(
+            //     onPressed: () async {
+            //       JsonSchema deviceInfoSchema;
+            //       var deviceInfo = DeviceInfoPlugin();
+            //       if (Platform.isAndroid) {
+            //         var info = await deviceInfo.androidInfo;
+            //         var androidAidPlugin = const AndroidId();
+            //         deviceInfoSchema = JsonSchema.create({
+            //           'type': 'object',
+            //           'properties': {
+            //             'deviceId': {
+            //               'type': 'string',
+            //               'const': await androidAidPlugin.getId()
+            //             },
+            //             'deviceModel': {'type': 'string', 'const': info.model},
+            //             'deviceManufacturer': {
+            //               'type': 'string',
+            //               'const': info.manufacturer
+            //             },
+            //           }
+            //         });
+            //       } else if (Platform.isIOS) {
+            //         var info = await deviceInfo.iosInfo;
+            //         deviceInfoSchema = JsonSchema.create({
+            //           'type': 'object',
+            //           'properties': {
+            //             'deviceId': {
+            //               'type': 'string',
+            //               'const': info.identifierForVendor
+            //             },
+            //             'deviceModel': {'type': 'string', 'const': info.model},
+            //             'deviceManufacturer': {
+            //               'type': 'string',
+            //               'const': 'Apple'
+            //             },
+            //           }
+            //         });
+            //       } else {
+            //         throw Exception(
+            //             'This should never happen. Unknown Platform');
+            //       }
+            //
+            //       Navigator.of(context).push(MaterialPageRoute(
+            //           builder: (context) => FixedSelfIssue(
+            //               schema: deviceInfoSchema,
+            //               type: 'DeviceInformation')));
+            //     },
+            //     child: Text(AppLocalizations.of(context)!.deviceInformation))
           ],
         ));
   }
@@ -127,8 +124,7 @@ class FixedSelfIssue extends StatelessWidget {
   final JsonSchema schema;
   final String type;
 
-  const FixedSelfIssue({Key? key, required this.schema, required this.type})
-      : super(key: key);
+  const FixedSelfIssue({super.key, required this.schema, required this.type});
 
   void afterValidation(Map<dynamic, dynamic> result) async {
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
@@ -199,8 +195,7 @@ class CredentialSelfIssue extends StatefulWidget {
   final int outerPos;
 
   const CredentialSelfIssue(
-      {Key? key, required this.input, required this.outerPos})
-      : super(key: key);
+      {super.key, required this.input, required this.outerPos});
 
   @override
   State<StatefulWidget> createState() => CredentialSelfIssueState();

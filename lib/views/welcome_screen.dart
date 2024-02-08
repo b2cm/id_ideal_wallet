@@ -142,11 +142,11 @@ class WelcomeScreenState extends State<WelcomeScreen> {
                       height: 0,
                     ),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: ListTile(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 6),
                   shape: error
-                      ? RoundedRectangleBorder(
+                      ? const RoundedRectangleBorder(
                           side: BorderSide(color: Colors.red))
                       : null,
                   leading: Checkbox(
@@ -201,8 +201,8 @@ class WelcomeScreenState extends State<WelcomeScreen> {
                     Provider.of<WalletProvider>(navigatorKey.currentContext!,
                             listen: false)
                         .onBoarded();
-                    Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => HomeScreen()));
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const HomeScreen()));
                   }
                 }
               : () {

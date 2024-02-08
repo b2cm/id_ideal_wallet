@@ -4,22 +4,22 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
-import 'package:id_ideal_wallet/views/issuer_info.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
 
 class HistoryEntries extends StatelessWidget {
-  const HistoryEntries({Key? key, required this.credential}) : super(key: key);
+  const HistoryEntries({super.key, required this.credential});
+
   final VerifiableCredential credential;
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
-      var credId =
-          credential.id ?? getHolderDidFromCredential(credential.toJson());
+      var credId = getHolderDidFromCredential(credential.toJson());
       if (credId == '') {
         var type = getTypeToShow(credential.type);
         credId = '${credential.issuanceDate.toIso8601String()}$type';
@@ -68,8 +68,7 @@ class HistoryEntries extends StatelessWidget {
 class CredentialDetailView extends StatefulWidget {
   final VerifiableCredential credential;
 
-  const CredentialDetailView({Key? key, required this.credential})
-      : super(key: key);
+  const CredentialDetailView({super.key, required this.credential});
 
   @override
   CredentialDetailState createState() => CredentialDetailState();
@@ -91,7 +90,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
               child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
               onPressed: () async {
-                var credId = widget.credential.id ??
+                var credId =
                     getHolderDidFromCredential(widget.credential.toJson());
                 if (credId == '') {
                   var type = getTypeToShow(widget.credential.type);
@@ -102,9 +101,11 @@ class CredentialDetailState extends State<CredentialDetailView> {
                 Navigator.of(context).pop();
                 //Navigator.of(context).pop();
                 if (widget.credential.type.contains('ContextCredential')) {
-                  Navigator.popUntil(context, (route) => route.isFirst);
+                  Provider.of<NavigationProvider>(context, listen: false)
+                      .goBack();
                 } else {
-                  Navigator.of(context).pop();
+                  Provider.of<NavigationProvider>(context, listen: false)
+                      .goBack();
                   // Navigator.of(context).pushReplacement(MaterialPageRoute(
                   //     builder: (context) => const CredentialPage(
                   //           initialSelection: 'all',
@@ -294,7 +295,11 @@ class CredentialInfo extends StatelessWidget {
       otherData.add(expDateTile);
     }
 
-    var id = credential.id ?? getHolderDidFromCredential(credential.toJson());
+    var id = getHolderDidFromCredential(credential.toJson());
+    if (id == '') {
+      var type = getTypeToShow(credential.type);
+      id = '${credential.issuanceDate.toIso8601String()}$type';
+    }
     var statusTile =
         Consumer<WalletProvider>(builder: (context, wallet, child) {
       var status = wallet.revocationState[id];
@@ -385,29 +390,4 @@ class CredentialInfo extends StatelessWidget {
               ..._buildOtherData(),
             ]));
   }
-}
-
-Card buildCredentialCard(VerifiableCredential credential) {
-  List<Widget> content = [
-    Text(getTypeToShow(credential.type),
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-    const SizedBox(
-      height: 10,
-    )
-  ];
-  content.add(IssuerInfoText(issuer: credential.issuer));
-  content.add(const SizedBox(
-    height: 10,
-  ));
-  var additional = buildCredSubject(credential.credentialSubject);
-  content += additional;
-  return Card(
-    child: Padding(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: content,
-      ),
-    ),
-  );
 }

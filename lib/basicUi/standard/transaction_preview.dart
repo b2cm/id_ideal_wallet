@@ -20,19 +20,17 @@ class TransactionPreview extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
       child: Row(
-        mainAxisAlignment:
-            wide ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // title
-
           Container(
+            width: MediaQuery.of(context).size.width * 0.7,
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             child: Text(
               title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              style: Theme.of(context).primaryTextTheme.bodyMedium,
             ),
           ),
-
           // amount
           Container(
             padding: const EdgeInsets.fromLTRB(0, 0, 15, 0),

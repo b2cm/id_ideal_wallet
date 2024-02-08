@@ -50,6 +50,10 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
 
+  //[[url, pic-url], [url, pic-url], ...]
+  List<Map<String, String>> aboList = [];
+  Map<String, Map<String, String>> credentialStyling = {};
+
   List<String> relayedDids = [];
   DateTime? lastCheckRevocation;
   Map<String, int> revocationState = {};
@@ -61,7 +65,7 @@ class WalletProvider extends ChangeNotifier {
 
   WalletProvider(String walletPath, [this.onboard = true])
       : _wallet = WalletStore(walletPath) {
-    t = Timer.periodic(const Duration(seconds: 10), checkRelay);
+    // t = Timer.periodic(const Duration(seconds: 10), checkRelay);
   }
 
   Future<List<int>?> startUri() async {
@@ -232,6 +236,21 @@ class WalletProvider extends ChangeNotifier {
 
       _buildCredentialList();
 
+      generateAboGroups();
+
+      var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+      if (lastUpdateCheck == null ||
+          DateTime.now().difference(DateTime.parse(lastUpdateCheck)) >=
+              const Duration(days: 1)) {
+        logger.d('with request');
+        generateCredentialStyling(true);
+        _wallet.storeConfigEntry(
+            'lastUpdateCheck', DateTime.now().toIso8601String());
+      } else {
+        logger.d('without request');
+        generateCredentialStyling();
+      }
+
       // if (contextCredentials.isEmpty) {
       //   //await issueLNDWContextMittweida(this);
       //   await issueLNDWContextDresden(this);
@@ -270,7 +289,7 @@ class WalletProvider extends ChangeNotifier {
       // }
 
       var updateable = _wallet.getConfigEntry('updateContext');
-      var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+
       lastUpdateCheck = null;
       if (updateable == null || lastUpdateCheck == null) {
         checkForContextUpdates();
@@ -290,11 +309,119 @@ class WalletProvider extends ChangeNotifier {
       }
 
       startUri().then(getSharedText);
-      //Checking broadcast stream, if deep link was clicked in opened appication
+      //Checking broadcast stream, if deep link was clicked in opened application
       stream.receiveBroadcastStream().listen((d) => getSharedText(d));
 
       notifyListeners();
     }
+  }
+
+  Future<void> generateCredentialStyling([bool request = false]) async {
+    var s = _wallet.getConfigEntry('credentialStyling');
+    if (s == null || request) {
+      var res = await get(Uri.parse(stylingEndpoint));
+      if (res.statusCode == 200) {
+        credentialStyling = (jsonDecode(res.body) as Map<String, dynamic>).map(
+            (key, value) =>
+                MapEntry(key, (value as Map).cast<String, String>()));
+      } else {
+        credentialStyling = {};
+      }
+
+      _wallet.storeConfigEntry(
+          'credentialStyling', jsonEncode(credentialStyling));
+    } else {
+      credentialStyling = (jsonDecode(s) as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, (value as Map).cast<String, String>()));
+    }
+
+    logger.d(credentialStyling);
+  }
+
+  void generateAboGroups() {
+    var e = _wallet.getConfigEntry('aboList');
+    if (e == null) {
+      // generate from contextCredentials
+      for (var vc in contextCredentials) {
+        List services = vc.credentialSubject['buttons'] ??
+            vc.credentialSubject['services'] ??
+            [];
+
+        if (services.isNotEmpty) {
+          for (Map entry in services) {
+            var bg = vc.credentialSubject['mainbgimg'] ?? '';
+            if (entry['url'] == 'https://test.hidy.app/kigallery') {
+              bg =
+                  'https://test.hidy.app/styles/hidycontextplaceholder_contextbg.png';
+            }
+            aboList.add({
+              'url': entry['url'],
+              'mainbgimage': bg,
+              'name': entry['name']
+            });
+          }
+        }
+      }
+      wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+    } else {
+      List dec = jsonDecode(e);
+      aboList = dec.map((e) => (e as Map).cast<String, String>()).toList();
+    }
+  }
+
+  void deleteAbo(int index) async {
+    aboList.removeAt(index);
+    await wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+    notifyListeners();
+  }
+
+  Map<String, dynamic> getAboData(String id) {
+    var e = _wallet.getConfigEntry(id);
+    if (e != null) {
+      return jsonDecode(e) as Map<String, dynamic>;
+    } else {
+      return {};
+    }
+  }
+
+  void addAbo(String url, String pictureUrl, String title) {
+    aboList.add({'url': url, 'mainbgimage': pictureUrl, 'name': title});
+    wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+
+    notifyListeners();
+  }
+
+  List<String> getAuthorizedApps() {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    return e == null ? [] : jsonDecode(e).cast<String>();
+  }
+
+  void deleteAuthorizedApp(String uri) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.remove(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+    await _wallet.deleteConfigEntry('hash_$uri');
+    notifyListeners();
+  }
+
+  void addAuthorizedApp(String uri, String hash) async {
+    var e = _wallet.getConfigEntry('authorizedApps');
+    List<String> old = e == null ? <String>[] : jsonDecode(e).cast<String>();
+    old.add(uri);
+    await _wallet.storeConfigEntry('authorizedApps', jsonEncode(old));
+
+    var h = _wallet.getConfigEntry('hash_$uri');
+    List<String> hashes = h == null ? <String>[] : jsonDecode(h).cast<String>();
+    hashes.add(hash);
+    await _wallet.storeConfigEntry('hash_$uri', jsonEncode(hashes));
+
+    notifyListeners();
+  }
+
+  List<String> getHashesForAuthorizedApp(String uri) {
+    var e = _wallet.getConfigEntry('hash_$uri');
+    return e == null ? [] : jsonDecode(e).cast<String>();
   }
 
   Future<void> addToFavorites(String id) async {
@@ -308,7 +435,7 @@ class WalletProvider extends ChangeNotifier {
     var f = jsonDecode(_wallet.getConfigEntry('favorites')!) as List;
     f.remove(id);
     await _wallet.storeConfigEntry('favorites', jsonEncode(f));
-    notifyListeners();
+    //notifyListeners();
   }
 
   bool isFavorite(String id) {
@@ -334,7 +461,11 @@ class WalletProvider extends ChangeNotifier {
 
   Future<void> checkValiditySingle(VerifiableCredential vc,
       [bool notify = false]) async {
-    var id = vc.id ?? getHolderDidFromCredential(vc.toJson());
+    var id = getHolderDidFromCredential(vc.toJson());
+    if (id == '') {
+      var type = my_util.getTypeToShow(vc.type);
+      id = '${vc.issuanceDate.toIso8601String()}$type';
+    }
     logger.d(vc);
 
     // check states that won't change to speed up
@@ -573,6 +704,28 @@ class WalletProvider extends ChangeNotifier {
     return pay;
   }
 
+  List<VerifiableCredential> getSuitablePaymentCredentialsForNetwork(
+      String network) {
+    var pay = <VerifiableCredential>[];
+
+    String paymentType = '';
+    if (network.toLowerCase() == 'mainnet') {
+      paymentType = 'LightningMainnetPayment';
+    } else if (network.toLowerCase() == 'testnet') {
+      paymentType = 'LightningTestnetPayment';
+    } else {
+      paymentType = 'SimulatedPayment';
+    }
+
+    for (var p in paymentCredentials) {
+      if (p.credentialSubject['paymentType'] == paymentType) {
+        pay.add(p);
+      }
+    }
+
+    return pay;
+  }
+
   void removeIdFromUpdateList(String id) async {
     hasUpdate.remove(id);
     _wallet.storeConfigEntry('updateContext', jsonEncode(hasUpdate.toList()));
@@ -682,7 +835,7 @@ class WalletProvider extends ChangeNotifier {
       }
     }
 
-    logger.d(contextCredentials.length);
+    logger.d(paymentCredentials.map((e) => e.id).join(';'));
 
     // sort contexts by date
     contextCredentials.sort((a, b) {
@@ -754,6 +907,14 @@ class WalletProvider extends ChangeNotifier {
     _wallet.storeConversationEntry(message, myDid);
   }
 
+  void storeConfig(String key, String value) async {
+    await _wallet.storeConfigEntry(key, value);
+  }
+
+  String? getConfig(String key) {
+    return _wallet.getConfigEntry(key);
+  }
+
   bool isOpen() {
     return _wallet.isWalletOpen();
   }
@@ -762,8 +923,12 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConversationEntry(id);
   }
 
-  Future<String> newConnectionDid() async {
-    return _wallet.getNextConnectionDID(KeyType.x25519);
+  Future<String> newConnectionDid([KeyType keytype = KeyType.x25519]) async {
+    return _wallet.getNextConnectionDID(keytype, true);
+  }
+
+  Connection? getConnection(String did) {
+    return _wallet.getConnection(did);
   }
 
   Future<String> newCredentialDid() async {
@@ -775,9 +940,9 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void storeCredential(String vc, String hdPath,
-      {String? newDid, String? isoMdlData}) async {
+      {String? newDid, String? isoMdlData, KeyType keyType = KeyType.ed25519}) async {
     await _wallet.storeCredential(vc, isoMdlData ?? '', hdPath,
-        keyType: KeyType.ed25519, credDid: newDid);
+        keyType: keyType, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);
     var type = vcParsed.type
@@ -883,7 +1048,7 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getAllCredentials();
   }
 
-  void deleteCredential(String credDid) async {
+  void deleteCredential(String credDid, [bool notify = false]) async {
     var cred = getCredential(credDid);
     logger.d(credDid);
     logger.d(cred);
@@ -912,7 +1077,9 @@ class WalletProvider extends ChangeNotifier {
       }
     }
     _buildCredentialList();
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void storeExchangeHistoryEntry(String credentialDid, DateTime timestamp,
@@ -984,7 +1151,7 @@ class WalletProvider extends ChangeNotifier {
     var did = await newCredentialDid();
     var storage = getCredential(did);
     var vc = VerifiableCredential(
-        context: ['schema.org'],
+        context: [credentialsV1Iri, schemaOrgIri],
         issuer: did,
         issuanceDate: DateTime.now(),
         type: ['HidyContextKundenkarten', 'MemberCard'],

@@ -37,11 +37,7 @@ class InvoiceDisplayState extends State<InvoiceDisplay> {
           Text(
             AppLocalizations.of(context)!.requestPayment,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.black,
-            ),
+            style: Theme.of(context).primaryTextTheme.headlineLarge,
           ),
           const SizedBox(height: 20),
           SwitchListTile(
@@ -68,11 +64,7 @@ class InvoiceDisplayState extends State<InvoiceDisplay> {
                   child: Text(
                     widget.memo,
                     textAlign: TextAlign.justify,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
-                    ),
+                    style: Theme.of(context).primaryTextTheme.bodySmall,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 7,
                   ),
@@ -86,11 +78,7 @@ class InvoiceDisplayState extends State<InvoiceDisplay> {
             },
             child: Text(
               AppLocalizations.of(context)!.back,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-              ),
+              style: Theme.of(context).primaryTextTheme.titleLarge,
             ),
           ),
           const SizedBox(height: 10),
@@ -115,11 +103,7 @@ class InvoiceDisplayState extends State<InvoiceDisplay> {
             },
             child: Text(
               AppLocalizations.of(context)!.copy,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-              ),
+              style: Theme.of(context).primaryTextTheme.titleLarge,
             ),
           ),
         ],

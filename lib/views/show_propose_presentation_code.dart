@@ -26,12 +26,11 @@ class QrRender extends StatefulWidget {
   final VerifiableCredential? paymentContext;
 
   const QrRender(
-      {Key? key,
+      {super.key,
       required this.credential,
       this.amount,
       this.memo,
-      this.paymentContext})
-      : super(key: key);
+      this.paymentContext});
 
   @override
   State<QrRender> createState() => QrRenderState();

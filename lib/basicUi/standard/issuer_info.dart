@@ -1,3 +1,5 @@
+import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/x509.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -11,8 +13,10 @@ class IssuerInfoText extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoText(
-      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
-      : super(key: key);
+      {super.key,
+      required this.issuer,
+      this.selfIssued = false,
+      this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoTextState();
@@ -71,29 +75,50 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName = certInfo?.subjectOrganization ??
             certInfo?.subjectCommonName ??
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+
         setState(() {});
+      } else if (widget.issuer.containsKey('id') &&
+          widget.issuer['id'].startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        issuerName = certInfo?.subjectOrganization ??
+            certInfo?.subjectCommonName ??
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+        if (widget.issuer.containsKey('name')) {
+          issuerName = '${widget.issuer['name']} ($issuerName)';
+        }
+
+        if (mounted) setState(() {});
       } else if (widget.issuer.containsKey('name')) {
         issuerName =
             '${widget.issuer['name']}\n(${AppLocalizations.of(context)!.notVerified})';
+        if (mounted) setState(() {});
+      } else {
+        issuerName =
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+      }
+    } else if (widget.issuer is VerifiableCredential) {
+      issuerName =
+          widget.issuer.credentialSubject['companyInformation']['legalName'];
+    } else {
+      if (widget.issuer.startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        issuerName = certInfo?.subjectOrganization ??
+            certInfo?.subjectCommonName ??
+            AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
         setState(() {});
       } else {
         issuerName =
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
       }
-    } else {
-      issuerName =
-          AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Text(issuerName,
-        style: const TextStyle(
-          color: Colors.black54,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ));
+        style: Theme.of(context).primaryTextTheme.titleMedium);
   }
 }
 
@@ -103,8 +128,10 @@ class IssuerInfoIcon extends StatefulWidget {
   final String? endpoint;
 
   const IssuerInfoIcon(
-      {Key? key, required this.issuer, this.selfIssued = false, this.endpoint})
-      : super(key: key);
+      {super.key,
+      required this.issuer,
+      this.selfIssued = false,
+      this.endpoint});
 
   @override
   State<StatefulWidget> createState() => IssuerInfoIconState();
@@ -162,20 +189,56 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
           logger.d('cant verify certificate');
         }
         setState(() {});
+      } else if (widget.issuer.containsKey('credentialSubject') &&
+          widget.issuer.containsKey('issuer')) {
+        marker = Icons.verified_outlined;
+        iconColor = Colors.green;
+      } else if (widget.issuer.containsKey('id') &&
+          widget.issuer['id'].startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        if (certInfo != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+        }
+        if (mounted) setState(() {});
+      } else if (widget.endpoint != null) {
+        var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+        if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+          setState(() {});
+        }
       } else if (widget.issuer.containsKey('name')) {
         marker = Icons.question_mark;
         iconColor = Colors.black54;
         setState(() {});
       }
+    } else if (widget.issuer is VerifiableCredential) {
+      marker = Icons.verified_outlined;
+      iconColor = Colors.green;
+      setState(() {});
     } else if (widget.endpoint != null) {
       var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
       if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
         marker = Icons.verified_outlined;
         iconColor = Colors.green;
+        setState(() {});
       }
     } else {
-      iconColor = Colors.red;
-      marker = Icons.close;
+      if (widget.issuer.startsWith('did:web')) {
+        var didUrl = didWebToUri(widget.issuer['id']);
+        var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
+        if (certInfo != null && certInfo.valid!) {
+          marker = Icons.verified_outlined;
+          iconColor = Colors.green;
+        }
+        setState(() {});
+      } else {
+        iconColor = Colors.red;
+        marker = Icons.close;
+        setState(() {});
+      }
     }
   }
 

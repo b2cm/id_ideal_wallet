@@ -45,11 +45,7 @@ class PaymentDetails extends StatelessWidget {
                 child: Text(
                   memo,
                   textAlign: TextAlign.justify,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
-                  ),
+                  style: Theme.of(context).primaryTextTheme.bodySmall,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 7,
                 ),
@@ -59,11 +55,7 @@ class PaymentDetails extends StatelessWidget {
         Text(
           "Eingang am ${timestamp.day}.${timestamp.month}.${timestamp.year}",
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: Colors.black,
-          ),
+          style: Theme.of(context).primaryTextTheme.bodySmall,
         ),
         const SizedBox(height: 20),
         additionalInfo,

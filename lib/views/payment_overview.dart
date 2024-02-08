@@ -11,13 +11,12 @@ import 'package:provider/provider.dart';
 class PaymentOverview extends StatelessWidget {
   final VerifiableCredential paymentContext;
 
-  const PaymentOverview({Key? key, required this.paymentContext})
-      : super(key: key);
+  const PaymentOverview({super.key, required this.paymentContext});
 
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: AppLocalizations.of(context)!.payments,
+        title: AppLocalizations.of(context)!.payments(1),
         child: Consumer<WalletProvider>(
           builder: (context, wallet, child) {
             var allPayments = wallet.getAllPayments(paymentContext.id!);

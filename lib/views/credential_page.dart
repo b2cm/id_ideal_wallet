@@ -12,10 +12,9 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
-import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
-import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -24,8 +23,7 @@ import 'package:provider/provider.dart';
 class CredentialPage extends StatefulWidget {
   final String initialSelection;
 
-  const CredentialPage({Key? key, required this.initialSelection})
-      : super(key: key);
+  const CredentialPage({super.key, required this.initialSelection});
 
   @override
   CredentialPageState createState() => CredentialPageState();
@@ -92,8 +90,7 @@ class CredentialPageState extends State<CredentialPage> {
                     itemBuilder: (context, index) {
                       var cred = credentialList[index];
                       var type = getTypeToShow(cred.type);
-                      var id =
-                          cred.id ?? getHolderDidFromCredential(cred.toJson());
+                      var id = getHolderDidFromCredential(cred.toJson());
                       if (id == '') {
                         id = '${cred.issuanceDate.toIso8601String()}$type';
                       }
@@ -206,8 +203,7 @@ dynamic uriDecode(dynamic value) {
 class Base64ImagePreview extends StatelessWidget {
   final String imageDataUri;
 
-  const Base64ImagePreview({Key? key, required this.imageDataUri})
-      : super(key: key);
+  const Base64ImagePreview({super.key, required this.imageDataUri});
 
   @override
   Widget build(BuildContext context) {
@@ -222,8 +218,7 @@ class Base64ImagePreview extends StatelessWidget {
 class Base64PdfPreview extends StatelessWidget {
   final String pdfDataUri;
 
-  const Base64PdfPreview({Key? key, required this.pdfDataUri})
-      : super(key: key);
+  const Base64PdfPreview({super.key, required this.pdfDataUri});
 
   FutureOr<Uint8List> _makePdf() {
     var base64 = pdfDataUri.split(',').last;
@@ -290,9 +285,10 @@ class ContextCardState extends State<ContextCard> {
                   credId =
                       '${widget.context.issuanceDate.toIso8601String()}$type';
                 }
-                wallet.deleteCredential(credId);
+
+                wallet.deleteCredential(credId, true);
                 wallet.removeFromFavorites(credId);
-                Navigator.popUntil(context, (route) => route.isFirst);
+                Navigator.of(context).pop();
               },
               child: Text(AppLocalizations.of(context)!.delete))
         ],
@@ -465,11 +461,10 @@ class CredentialCard extends StatefulWidget {
   final bool clickable;
 
   const CredentialCard(
-      {Key? key,
+      {super.key,
       required this.credential,
       this.background,
-      this.clickable = true})
-      : super(key: key);
+      this.clickable = true});
 
   @override
   State<StatefulWidget> createState() => CredentialCardState();
@@ -525,22 +520,19 @@ class CredentialCardState extends State<CredentialCard> {
   Widget build(BuildContext context) {
     return InkWell(
         onLongPress: () => widget.credential.type.contains('ContextCredential')
-            ? Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    CredentialDetailView(credential: widget.credential)))
+            ? Provider.of<NavigationProvider>(context, listen: false)
+                .changePage([6], credential: widget.credential)
             : null,
         onTap: () => widget.clickable
             ? widget.credential.type.contains('ContextCredential')
                 ? Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CredentialPage(
                         initialSelection: widget.credential.id!)))
-                : Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        CredentialDetailView(credential: widget.credential)))
+                : Provider.of<NavigationProvider>(context, listen: false)
+                    .changePage([6], credential: widget.credential)
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-          var id = widget.credential.id ??
-              getHolderDidFromCredential(widget.credential.toJson());
+          var id = getHolderDidFromCredential(widget.credential.toJson());
           var revState = wallet.revocationState[id];
           if (revState == RevocationState.expired.index ||
               revState == RevocationState.revoked.index ||
