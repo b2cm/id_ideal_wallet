@@ -7,10 +7,12 @@ class NavigationProvider extends ChangeNotifier {
   List<int> pageStack = [];
   String webViewUrl = 'https://hidy.app';
   VerifiableCredential? credential;
+  bool canPop = true;
 
   void changePage(List<int> newIndex,
       {String? webViewUrl, VerifiableCredential? credential}) {
     if (newIndex.first != activeIndex) {
+      canPop = false;
       activeIndex = newIndex.first;
       while (pageStack.isNotEmpty && newIndex.contains(pageStack.last)) {
         pageStack.removeLast();
@@ -34,6 +36,7 @@ class NavigationProvider extends ChangeNotifier {
       if (activeIndex == 0) {
         Navigator.of(navigatorKey.currentContext!).pop();
       } else {
+        canPop = true;
         activeIndex = 0;
       }
     } else {

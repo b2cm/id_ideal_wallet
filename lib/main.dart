@@ -38,12 +38,12 @@ void main() async {
           create: (context) => WalletProvider(appDocumentDir.path, isInit)),
       ChangeNotifierProvider(create: (context) => NavigationProvider())
     ],
-    child: App(),
+    child: const App(),
   ));
 }
 
 class App extends StatelessWidget {
-  App({super.key});
+  const App({super.key});
 
   @override
   Widget build(context) {
@@ -100,9 +100,10 @@ class App extends StatelessWidget {
                     } else {
                       return const Scaffold(
                         body: SafeArea(
-                            child: Center(
-                          child: CircularProgressIndicator(),
-                        )),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
                       );
                     }
                   }));
@@ -165,91 +166,6 @@ class StartScreenState extends State<StartScreen> {
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  BottomNavigationBar buildBottomBar2(
-      BuildContext context, NavigationProvider navigator) {
-    return BottomNavigationBar(
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.black,
-      showUnselectedLabels: true,
-      selectedFontSize: 12,
-      items: [
-        BottomNavigationBarItem(
-            icon: Icon(
-              Icons.home,
-              color: navigator.activeIndex == 0 ? Colors.blue : Colors.black,
-            ),
-            label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(
-              Icons.co_present,
-              color: navigator.activeIndex == 1 ? Colors.blue : Colors.black,
-            ),
-            label: 'Credentials'),
-        BottomNavigationBarItem(
-            icon: Icon(
-              Icons.qr_code_scanner_sharp,
-              color: navigator.activeIndex == 2 ? Colors.blue : Colors.black,
-              //size: 30,
-            ),
-            label: AppLocalizations.of(context)!.scan),
-        BottomNavigationBarItem(
-            icon: Icon(
-              Icons.credit_card,
-              color: navigator.activeIndex == 3 ? Colors.blue : Colors.black,
-            ),
-            label: 'Zahlung'),
-        BottomNavigationBarItem(
-            icon: Icon(
-              Icons.settings,
-              color: navigator.activeIndex == 4 ? Colors.blue : Colors.black,
-            ),
-            label: AppLocalizations.of(context)!.settings),
-      ],
-      //currentIndex: navigator.activeIndex,
-      onTap: (index) {
-        navigator.changePage([index]);
-      },
-    );
-  }
-
-  BottomNavigationBar buildBottomBar3(
-      BuildContext context, NavigationProvider navigator) {
-    return BottomNavigationBar(
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.black,
-      showUnselectedLabels: true,
-      selectedFontSize: 12,
-      items: [
-        const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.co_present), label: 'Credentials'),
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card), label: 'Zahlung'),
-        BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: AppLocalizations.of(context)!.settings),
-      ],
-      //currentIndex: navigator.activeIndex,
-      onTap: (index) {
-        if (index < 2) {
-          navigator.changePage([index]);
-        } else {
-          navigator.changePage([index + 1]);
-        }
-      },
-    );
-  }
-
-  Widget buildFab3(NavigationProvider navigator) {
-    return FloatingActionButton(
-      backgroundColor: Colors.grey.shade300,
-      onPressed: () {
-        navigator.changePage([2]);
-      },
-      child: Icon(Icons.qr_code_scanner),
-    );
-  }
 
   BottomAppBar buildBottomBar1(
       BuildContext context, NavigationProvider navigator) {
@@ -328,21 +244,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  BottomAppBar buildBottomBar4(BuildContext context) {
-    return BottomAppBar(
-      surfaceTintColor: Colors.grey,
-      child: Row(
-        children: [
-          IconButton(
-              onPressed: () {}, isSelected: true, icon: Icon(Icons.home)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.co_present)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.credit_card)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.settings))
-        ],
-      ),
-    );
-  }
-
   Widget getContent(NavigationProvider navigator, WalletProvider wallet) {
     switch (navigator.activeIndex) {
       case 0:
@@ -384,7 +285,7 @@ class HomeScreen extends StatelessWidget {
         return Consumer<NavigationProvider>(
             builder: (context, navigator, child) {
           return PopScope(
-              canPop: false,
+              canPop: navigator.canPop,
               onPopInvoked: (_) => navigator.goBack(),
               child: Scaffold(
                   body: Stack(children: [
