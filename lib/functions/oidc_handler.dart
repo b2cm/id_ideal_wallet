@@ -270,30 +270,32 @@ Future<void> handleOfferOidc(String offerUri) async {
                   'No hd path for credential found. Sure we control it?');
             }
 
-          wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
-          wallet.storeExchangeHistoryEntry(
-              credDid, DateTime.now(), 'issue', offer.credentialIssuer);
+            wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+            wallet.storeExchangeHistoryEntry(
+                credDid, DateTime.now(), 'issue', offer.credentialIssuer);
 
-          showModalBottomSheet(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline: AppLocalizations.of(context)!.credentialReceived,
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: credential['type'].first,
-                        symbol: '',
-                        mainFontSize: 35,
-                        centered: true),
-                  ),
-                );
-              });
+            showModalBottomSheet(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10)),
+                ),
+                context: navigatorKey.currentContext!,
+                builder: (context) {
+                  return ModalDismissWrapper(
+                    child: PaymentFinished(
+                      headline:
+                          AppLocalizations.of(context)!.credentialReceived,
+                      success: true,
+                      amount: CurrencyDisplay(
+                          amount: credential['type'].first,
+                          symbol: '',
+                          mainFontSize: 35,
+                          centered: true),
+                    ),
+                  );
+                });
+          }
         }
       } else {
         logger.d(credentialResponse.statusCode);

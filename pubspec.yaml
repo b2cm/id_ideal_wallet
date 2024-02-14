@@ -84,6 +84,7 @@ dependencies:
   cbor_test:
     path: ../cbor_test
   json_ld_processor: any
+  bluetooth_low_energy: ^5.0.6
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -15,6 +15,7 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
+import 'package:id_ideal_wallet/views/iso_credential_request.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
@@ -74,8 +75,10 @@ class CredentialPageState extends State<CredentialPage> {
             appBarActions: [
               InkWell(
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coming soon')));
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => IsoCredentialRequest()));
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //     const SnackBar(content: Text('Coming soon')));
                   },
                   child: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10),
