@@ -57,11 +57,11 @@ dependencies:
     git:
       url: https://github.com/SaOtto/x509/
       ref: verification
-  printing:
-    git:
-      url: https://github.com/Gustl22/dart_pdf.git
-      ref: patch-1
-      path: printing
+  printing: ^5.11.1
+  #    git:
+  #      url: https://github.com/Gustl22/dart_pdf.git
+  #      ref: patch-1
+  #      path: printing
   pdf: ^3.10.3
   json_schema_form:
     git:
