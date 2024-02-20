@@ -41,6 +41,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.10"
+  args:
+    dependency: transitive
+    description:
+      name: args
+      sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2"
   asn1lib:
     dependency: transitive
     description:
@@ -113,6 +121,62 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
+  bluetooth_low_energy:
+    dependency: "direct main"
+    description:
+      name: bluetooth_low_energy
+      sha256: f8537b61c149f350f14144e2f25ea03f1827d771b1995120e408b2773ffbe91c
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.6"
+  bluetooth_low_energy_android:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_android
+      sha256: b06da128d4a15e094dac67e52e701fd331441c81425b0c776598aab01a07ccfe
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.4"
+  bluetooth_low_energy_darwin:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_darwin
+      sha256: d8c37f27c48ad523e5c32d1002d8e67570b1f4e6d69c54e09bca152a07f6ab3f
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.5"
+  bluetooth_low_energy_linux:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_linux
+      sha256: "2809830a8b67eac5d53fdc6e907aa878ec61884d6e6a42da2b79b826410c8327"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
+  bluetooth_low_energy_platform_interface:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_platform_interface
+      sha256: "5af74eb8f97a896dfdbcff2da284d4fe5b4e2e49ebb2f46f826ac1810f66e4d7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
+  bluetooth_low_energy_windows:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_windows
+      sha256: "5a0b22003d14dc84f3f16e73a77f2645df034badb9003f368e6f9bc02e8b249a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.3"
+  bluez:
+    dependency: transitive
+    description:
+      name: bluez
+      sha256: bfd004c81e3de0f06dce8580bc39a4600e4a6efe465a866b31d4d954c9f356aa
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -145,6 +209,21 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  cbor:
+    dependency: transitive
+    description:
+      name: cbor
+      sha256: "360c7cbb1b334454e334d395df63913e498f51b82b35888fb9774e5e960a71f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.0"
+  cbor_test:
+    dependency: "direct main"
+    description:
+      path: "../cbor_test"
+      relative: true
+    source: path
+    version: "1.0.0"
   characters:
     dependency: transitive
     description:
@@ -193,6 +272,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0+1"
+  cryptography:
+    dependency: transitive
+    description:
+      name: cryptography
+      sha256: d146b76d33d94548cf035233fbc2f4338c1242fa119013bead807d033fc4ae05
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.7.0"
+  csslib:
+    dependency: transitive
+    description:
+      name: csslib
+      sha256: "706b5707578e0c1b4b7550f64078f0a0f19dec3f50a178ffae7006b0a9ca58fb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -218,6 +313,14 @@ packages:
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "3.1.0"
+  dbus:
+    dependency: transitive
+    description:
+      name: dbus
+      sha256: "365c771ac3b0e58845f39ec6deebc76e3276aa9922b0cc60840712094d9047ac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.10"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -446,6 +549,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.3"
+  html:
+    dependency: transitive
+    description:
+      name: html
+      sha256: "3a7812d5bcd2894edf53dfaf8cd640876cf6cef50a8f238745c8b8120ea74d3a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.4"
   http:
     dependency: "direct main"
     description:
@@ -462,6 +573,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  ieee754:
+    dependency: transitive
+    description:
+      name: ieee754
+      sha256: "7d87451c164a56c156180d34a4e93779372edd191d2c219206100b976203128c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
   image:
     dependency: transitive
     description:
@@ -615,6 +734,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.10"
+  log_service:
+    dependency: transitive
+    description:
+      name: log_service
+      sha256: "21124936899e227d1779268077921d46d57456e2592d1562e455be273594e2e4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   logger:
     dependency: "direct main"
     description:

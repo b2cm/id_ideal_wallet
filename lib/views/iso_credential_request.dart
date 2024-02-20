@@ -1,10 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
+import 'package:cbor_test/cbor_test.dart';
+import 'package:dart_ssi/util.dart';
+import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class IsoCredentialRequest extends StatefulWidget {
@@ -17,6 +24,7 @@ class IsoCredentialRequest extends StatefulWidget {
 class IsoCredentialRequestState extends State<IsoCredentialRequest>
     with SingleTickerProviderStateMixin {
   late final ValueNotifier<BluetoothLowEnergyState> state;
+  late final ValueNotifier<String> qrData;
   late final ValueNotifier<bool> advertising;
   late final ValueNotifier<List<Log>> logs;
   late final StreamSubscription stateChangedSubscription;
@@ -25,6 +33,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   late final StreamSubscription characteristicNotifyStateChangedSubscription;
   late final UUID serviceUuid;
   late final GattService mdocService;
+  List<int> readBuffer = [];
 
   @override
   void initState() {
@@ -33,6 +42,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     state = ValueNotifier(BluetoothLowEnergyState.unknown);
     advertising = ValueNotifier(false);
     logs = ValueNotifier([]);
+    qrData = ValueNotifier('');
     serviceUuid = UUID.fromString(const Uuid().v4().toString());
     mdocService = GattService(uuid: serviceUuid, characteristics: [
       mdocPeripheralState,
@@ -40,10 +50,18 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       mdocPeripheralServer2Client
     ]);
 
+    setBleState();
+
+    generateDeviceEngagement();
+
     stateChangedSubscription = PeripheralManager.instance.stateChanged.listen(
       (eventArgs) {
         state.value = eventArgs.state;
         logger.d('BluetoothState changed: ${eventArgs.state}');
+        if (eventArgs.state == BluetoothLowEnergyState.poweredOn &&
+            advertising.value == false) {
+          startAdvertising();
+        }
       },
     );
 
@@ -71,15 +89,13 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         final central = eventArgs.central;
         final characteristic = eventArgs.characteristic;
         final value = eventArgs.value;
-        final log = Log(
-          LogType.write,
-          value,
-          'central: ${central.uuid}; characteristic: ${characteristic.uuid}',
-        );
-        logs.value = [
-          ...logs.value,
-          log,
-        ];
+        logger.d('${characteristic.uuid} : (${value.length}) $value ');
+        if (characteristic.uuid == mdocPeripheralClient2Server.uuid) {
+          readBuffer.addAll(value.sublist(3));
+          if (value.first == 0) {
+            decrypt();
+          }
+        }
       },
     );
 
@@ -89,27 +105,45 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         final central = eventArgs.central;
         final characteristic = eventArgs.characteristic;
         final state = eventArgs.state;
-        final log = Log(
-          LogType.notify,
-          Uint8List.fromList([]),
-          'central: ${central.uuid}; characteristic: ${characteristic.uuid}; state: $state',
-        );
-        logs.value = [
-          ...logs.value,
-          log,
-        ];
-        // Write someting to the central when notify started.
-        if (state) {
-          final elements = List.generate(2000, (i) => i % 256);
-          final value = Uint8List.fromList(elements);
-          await PeripheralManager.instance.writeCharacteristic(
-            characteristic,
-            value: value,
-            central: central,
-          );
-        }
+        logger.d('${characteristic.uuid} : $state');
       },
     );
+  }
+
+  decrypt() async {}
+
+  setBleState() async {
+    var s = await PeripheralManager.instance.getState();
+    state.value = s;
+  }
+
+  generateDeviceEngagement() async {
+    var wallet = Provider.of<WalletProvider>(context, listen: false);
+    var mdocDid = await wallet.newConnectionDid(KeyType.p256);
+    var deviceEphemeralCosePub = await didToCosePublicKey(mdocDid);
+    var deviceEphemeralCosePriv = deviceEphemeralCosePub;
+    deviceEphemeralCosePriv.d = base64Decode(addPaddingToBase64((await wallet
+        .wallet
+        .getPrivateKeyForConnectionDidAsJwk(mdocDid))!['d']));
+    var bleEngagement = DeviceEngagement(
+        security: Security(
+            cipherSuiteIdentifier: 1,
+            deviceKeyBytes: deviceEphemeralCosePub.toCoseKeyBytes().bytes),
+        deviceRetrievalMethods: [
+          DeviceRetrievalMethod(
+              type: 2,
+              options: BLEOptions(
+                  supportPeripheralServerMode: true,
+                  supportCentralClientMode: false,
+                  peripheralModeId: serviceUuid.value))
+        ]);
+
+    // Encode for Qr-Code
+    var encodedEngagement =
+        removePaddingFromBase64(base64Encode(bleEngagement.toCbor()));
+    logger.d('mdoc:$encodedEngagement');
+    qrData.value = 'mdoc:$encodedEngagement';
+    startAdvertising();
   }
 
   Future<void> startAdvertising() async {
@@ -117,10 +151,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     await PeripheralManager.instance.addService(mdocService);
     final advertisement = Advertisement(
       name: 'mdoc',
-      manufacturerSpecificData: ManufacturerSpecificData(
-        id: 0x2e19,
-        data: Uint8List.fromList([0x01, 0x02, 0x03]),
-      ),
+      serviceUUIDs: [serviceUuid],
     );
     await PeripheralManager.instance.startAdvertising(advertisement);
     advertising.value = true;
@@ -129,6 +160,12 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   Future<void> stopAdvertising() async {
     await PeripheralManager.instance.stopAdvertising();
     advertising.value = false;
+  }
+
+  @override
+  void dispose() {
+    stopAdvertising();
+    super.dispose();
   }
 
   @override
@@ -143,18 +180,15 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
                           ? ValueListenableBuilder(
                               valueListenable: advertising,
                               builder: (context, advertising, child) {
-                                return TextButton(
-                                  onPressed: () async {
-                                    if (advertising) {
-                                      await stopAdvertising();
-                                    } else {
-                                      await startAdvertising();
-                                    }
-                                  },
-                                  child: Text(
-                                    advertising ? 'END' : 'BEGIN',
-                                  ),
-                                );
+                                return advertising
+                                    ? ValueListenableBuilder(
+                                        valueListenable: qrData,
+                                        builder: (context, qrData, child) {
+                                          return qrData.isEmpty
+                                              ? Text('Daten werden erstellt')
+                                              : QrImageView(data: qrData);
+                                        })
+                                    : Text('Es wird vorbereitet');
                               },
                             )
                           : const Text(

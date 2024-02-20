@@ -208,6 +208,7 @@ Future<void> handleOfferOidc(String offerUri) async {
 
             var vc = VerifiableCredential(
                 context: [
+                  credentialsV1Iri,
                   'schema.org'
                 ],
                 type: [
