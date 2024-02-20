@@ -48,7 +48,10 @@ class WebViewWindowState extends State<WebViewWindow> {
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
     List<String> allAbos = currentAbos.map((e) => e['url']!).toList();
-    isInAbo = allAbos.contains(widget.initialUrl);
+    var asUri = Uri.parse(widget.initialUrl);
+    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    isInAbo = allAbos.contains(toCheck);
+    logger.d('$allAbos contains? $toCheck');
 
     pullToRefreshController = kIsWeb
         ? null
