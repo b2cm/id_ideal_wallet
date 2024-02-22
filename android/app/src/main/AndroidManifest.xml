@@ -33,9 +33,9 @@
             </intent-filter>
 
             <!-- Deep linking -->
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="true" />
+            <!--            <meta-data-->
+            <!--                android:name="flutter_deeplinking_enabled"-->
+            <!--                android:value="true" />-->
 
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -66,6 +66,36 @@
                 <data
                     android:host="*"
                     android:scheme="openid-presentation-request" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="*"
+                    android:scheme="lnurl" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="*"
+                    android:scheme="lnbc" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="*"
+                    android:scheme="lnbt" />
             </intent-filter>
             <intent-filter>
 

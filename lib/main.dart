@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,8 +6,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/custom_navigation_item.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -36,7 +33,7 @@ void main() async {
     providers: [
       ChangeNotifierProvider(
           create: (context) => WalletProvider(appDocumentDir.path, isInit)),
-      ChangeNotifierProvider(create: (context) => NavigationProvider())
+      ChangeNotifierProvider(create: (context) => NavigationProvider(!isInit))
     ],
     child: const App(),
   ));
@@ -66,101 +63,23 @@ class App extends StatelessWidget {
       onUnknownRoute: (args) =>
           MaterialPageRoute(builder: (context) => const StartScreen()),
       onGenerateRoute: (args) {
-        if (!Provider.of<WalletProvider>(context, listen: false).onboard) {
-          return null;
-        }
+        Provider.of<NavigationProvider>(context, listen: false)
+            .handleLink('https://wallet.bccm.dev${args.name}');
         logger.d(args);
-        if (args.name != null && args.name!.contains('ooburl')) {
-          handleOobUrl('https://wallet.bccm.dev${args.name}');
-        } else if (args.name != null && args.name!.contains('oob')) {
-          handleDidcommMessage('https://wallet.bccm.dev${args.name}');
-        } else if (args.name != null && args.name!.contains('webview')) {
-          logger.d(args);
-          var asUri = Uri.parse('https://wallet.bccm.dev${args.name}');
-          logger.d(asUri);
-          logger.d(asUri.queryParameters);
-          var uriToCall =
-              '${Uri.parse(asUri.queryParameters['url']!)}${asUri.hasFragment ? '#${asUri.fragment}' : ''}';
-          logger.d(uriToCall);
-
-          // var newQuery = {'wid': wallet.lndwId};
-          // newQuery.addAll(uriToCall.queryParameters);
-          // var newUriToCall = uriToCall.replace(queryParameters: newQuery);
-          // logger.d(newUriToCall);
-          return MaterialPageRoute(
-              builder: (context) =>
-                  Consumer<WalletProvider>(builder: (context, wallet, child) {
-                    if (wallet.isOpen()) {
-                      logger.d(uriToCall);
-                      return WebViewWindow(
-                          initialUrl: uriToCall
-                              .toString()
-                              .replaceAll('wid=', 'wid=${wallet.lndwId}'),
-                          title: asUri.queryParameters['title'] ?? '');
-                    } else {
-                      return const Scaffold(
-                        body: SafeArea(
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                      );
-                    }
-                  }));
-        } else if (args.name != null && args.name!.contains('invoice')) {
-          var uri = Uri.parse('https://wallet.bccm.dev${args.name}');
-          var invoice = uri.queryParameters['invoice'];
-          if (invoice != null) {
-            payInvoiceInteraction(invoice,
-                isMainnet: invoice.toLowerCase().startsWith('lnbc'));
-          } else if (uri.queryParameters.containsKey('lnurl')) {
-            handleLnurl(uri.queryParameters['lnurl']!);
-          }
-        }
         return null;
       },
     );
   }
 }
 
-class StartScreen extends StatefulWidget {
+class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
 
   @override
-  StartScreenState createState() => StartScreenState();
-}
-
-class StartScreenState extends State<StartScreen> {
-  bool init = true;
-  bool showWelcome = false;
-
-  @override
-  initState() {
-    super.initState();
-    checkOnboard();
-  }
-
-  Future<void> checkOnboard() async {
-    var on = await isOnboard();
-    logger.d(on);
-    showWelcome = !on;
-    init = false;
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return init
-        ? const Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          )
-        : showWelcome
-            ? const WelcomeScreen()
-            : const HomeScreen();
+    return Consumer<NavigationProvider>(builder: (context, navigator, child) {
+      return navigator.showWelcome ? const WelcomeScreen() : const HomeScreen();
+    });
   }
 }
 

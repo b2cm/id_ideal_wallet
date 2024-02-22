@@ -179,5 +179,7 @@
   "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.",
   "noAppNote": "Sie haben noch keine Anwendungen hinzugefügt",
   "newAppTitle": "Neue Anwendungen",
-  "newAppNote": "Keine neuen Anwendungen verfügbar"
+  "newAppNote": "Keine neuen Anwendungen verfügbar",
+  "unknownQrCode": "Unbekannter Qr-Code",
+  "unknownQrCodeNote": "Der gescannte Qr-Code enthalt Daten, die nicht verarbeitet werden können."
 }

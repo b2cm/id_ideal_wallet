@@ -44,7 +44,9 @@ class SearchNewAboState extends State<SearchNewAbo> {
     checked = [];
     if (available.isNotEmpty) {
       for (var entry in available) {
-        if (!inAbo.contains(entry['url'])) {
+        var asUri = Uri.parse(entry['url']);
+        var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+        if (!inAbo.contains(toCheck)) {
           toShow.add(entry);
           checked.add(false);
         }
@@ -59,62 +61,63 @@ class SearchNewAboState extends State<SearchNewAbo> {
   @override
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
-        title: AppLocalizations.of(context)!.newAppTitle,
-        fab: !searching && toShow.isNotEmpty
-            ? FloatingActionButton.extended(
-                onPressed: () {
-                  var wallet =
-                      Provider.of<WalletProvider>(context, listen: false);
-                  for (int i = 0; i < checked.length; i++) {
-                    if (checked[i]) {
-                      var entry = toShow[i];
-                      wallet.addAbo(
-                          entry['url'], entry['mainbgimg'], entry['name']);
-                    }
+      title: AppLocalizations.of(context)!.newAppTitle,
+      fab: !searching && toShow.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                var wallet =
+                    Provider.of<WalletProvider>(context, listen: false);
+                for (int i = 0; i < checked.length; i++) {
+                  if (checked[i]) {
+                    var entry = toShow[i];
+                    wallet.addAbo(
+                        entry['url'], entry['mainbgimg'], entry['name']);
                   }
-                  Provider.of<NavigationProvider>(context, listen: false)
-                      .goBack();
-                },
-                label: Text(AppLocalizations.of(context)!.add),
-              )
-            : null,
-        child: searching
-            ? const Center(child: CircularProgressIndicator())
-            : toShow.isEmpty
-                ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
-                : ListView.separated(
-                    itemCount: toShow.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        trailing: Checkbox(
-                          value: checked[index],
-                          onChanged: (bool? value) {
-                            if (value != null) {
-                              setState(() {
-                                checked[index] = value;
-                              });
-                            }
-                          },
-                        ),
-                        leading: Container(
-                            width: 100,
-                            decoration: BoxDecoration(
-                                border: Border.all(),
-                                borderRadius: BorderRadius.circular(10),
-                                image: DecorationImage(
-                                    scale: 0.2,
-                                    fit: BoxFit.cover,
-                                    image: Image.network(
-                                            toShow[index]['mainbgimg'])
-                                        .image))),
-                        title: Text(toShow[index]['name'] ?? ''),
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) {
-                      return const SizedBox(
-                        height: 7,
-                      );
-                    },
-                  ));
+                }
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .goBack();
+              },
+              label: Text(AppLocalizations.of(context)!.add),
+            )
+          : null,
+      child: searching
+          ? const Center(child: CircularProgressIndicator())
+          : toShow.isEmpty
+              ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
+              : ListView.separated(
+                  itemCount: toShow.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      trailing: Checkbox(
+                        value: checked[index],
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            setState(() {
+                              checked[index] = value;
+                            });
+                          }
+                        },
+                      ),
+                      leading: Container(
+                          width: 100,
+                          decoration: BoxDecoration(
+                              border: Border.all(),
+                              borderRadius: BorderRadius.circular(10),
+                              image: DecorationImage(
+                                  scale: 0.2,
+                                  fit: BoxFit.cover,
+                                  image:
+                                      Image.network(toShow[index]['mainbgimg'])
+                                          .image))),
+                      title: Text(toShow[index]['name'] ?? ''),
+                    );
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return const SizedBox(
+                      height: 7,
+                    );
+                  },
+                ),
+    );
   }
 }

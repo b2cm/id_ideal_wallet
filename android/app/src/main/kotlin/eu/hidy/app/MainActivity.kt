@@ -23,7 +23,12 @@ class MainActivity : FlutterFragmentActivity() {
     private var sharedText: ByteArray? = null
     private val CHANNEL = "app.channel.shared.data"
     private val EVENTS = "app.channel.shared.data/events"
-    private var linksReceiver: BroadcastReceiver? = null
+    private var contentReceiver: BroadcastReceiver? = null
+
+    private val deepLinkChannel = "app.channel.deeplink"
+    private val deepLinkEvents = "app.channel.deeplink/events"
+    private var linkReceiver: BroadcastReceiver? = null
+    private var initialLink: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +43,8 @@ class MainActivity : FlutterFragmentActivity() {
             val `is` = contentResolver.openInputStream(intent.data!!)
             val content = `is`?.let { unwrap(it) }
             sharedText = content
+        } else {
+            initialLink = intent.dataString
         }
 
     }
@@ -49,10 +56,14 @@ class MainActivity : FlutterFragmentActivity() {
         val data = intent.data
 
         println(data)
+        if (data != null) {
+            println(data.scheme)
+        }
 
         if (data != null && data.scheme == "content") {
-            linksReceiver?.onReceive(this.applicationContext, intent)
-
+            contentReceiver?.onReceive(this.applicationContext, intent)
+        } else {
+            linkReceiver?.onReceive(this.applicationContext, intent)
         }
     }
 
@@ -68,6 +79,20 @@ class MainActivity : FlutterFragmentActivity() {
                 events.success(file)
 
 
+            }
+        }
+    }
+
+    fun createLinkReceiver(events: EventChannel.EventSink): BroadcastReceiver {
+        return object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                content: Intent
+            ) { // NOTE: assuming intent.getAction() is Intent.ACTION_VIEW
+//                val dataString =
+//                    intent.dataString ?: events.error("UNAVAILABLE", "Link unavailable", null)
+                println(content.data.toString())
+                events.success(content.data.toString())
             }
         }
     }
@@ -88,9 +113,13 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        // No Screenshots
         window.addFlags(LayoutParams.FLAG_SECURE)
+
+        // Flutter
         GeneratedPluginRegistrant.registerWith(flutterEngine)
 
+        // init Method channel for reading pkpass file
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
                 if (call.method!!.contentEquals("getSharedText")) {
@@ -99,14 +128,38 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
 
+        // init deep link Method Channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, deepLinkChannel)
+            .setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
+                if (call.method!!.contentEquals("getInitialLink")) {
+                    if (initialLink != null) {
+                        result.success(initialLink);
+                    }
+                }
+            }
+
+        // init EventChannel for pkpass
         EventChannel(flutterEngine.dartExecutor, EVENTS).setStreamHandler(
             object : EventChannel.StreamHandler {
                 override fun onListen(args: Any?, events: EventChannel.EventSink) {
-                    linksReceiver = createChangeReceiver(events)
+                    contentReceiver = createChangeReceiver(events)
                 }
 
                 override fun onCancel(args: Any?) {
-                    linksReceiver = null
+                    contentReceiver = null
+                }
+            }
+        )
+
+        // init EventChannel for deeplinks
+        EventChannel(flutterEngine.dartExecutor, deepLinkEvents).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(args: Any?, events: EventChannel.EventSink) {
+                    linkReceiver = createLinkReceiver(events)
+                }
+
+                override fun onCancel(args: Any?) {
+                    linkReceiver = null
                 }
             }
         )
