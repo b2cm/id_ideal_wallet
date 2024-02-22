@@ -49,6 +49,7 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> credentials = [];
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
+  List<Credential> isoMdocCredentials = [];
 
   //[[url, pic-url], [url, pic-url], ...]
   List<Map<String, String>> aboList = [];
@@ -813,6 +814,9 @@ class WalletProvider extends ChangeNotifier {
       }
       if (cred.plaintextCredential == '' ||
           cred.plaintextCredential.startsWith('isoData:')) {
+        if (cred.plaintextCredential.startsWith('isoData:')) {
+          isoMdocCredentials.add(cred);
+        }
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('ContextCredential')) {
           _wallet.storeConfigEntry(

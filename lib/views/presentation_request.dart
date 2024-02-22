@@ -19,6 +19,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:provider/provider.dart';
+import 'package:x509b/x509.dart';
 
 import '../functions/didcomm_message_handler.dart';
 
@@ -30,11 +31,12 @@ class PresentationRequestDialog extends StatefulWidget {
   final String receiverDid;
   final String definitionHash;
   final RequestPresentation? message;
-  final bool isOidc, askForBackground;
+  final bool isOidc, askForBackground, isIso;
   final String? nonce;
   final String? lnInvoice;
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
+  final X509Certificate? requesterCert;
 
   const PresentationRequestDialog(
       {super.key,
@@ -48,10 +50,12 @@ class PresentationRequestDialog extends StatefulWidget {
       this.purpose,
       this.message,
       this.isOidc = false,
+      this.isIso = false,
       this.nonce,
       this.lnInvoice,
       this.lnInvoiceRequest,
-      this.paymentCards});
+      this.paymentCards,
+      this.requesterCert});
 
   @override
   PresentationRequestDialogState createState() =>
@@ -131,6 +135,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: RequesterInfo(
           requesterUrl: widget.otherEndpoint,
+          requesterCert: widget.requesterCert,
           followingText:
               ' ${AppLocalizations.of(navigatorKey.currentContext!)!.noteGetInformation}:',
         ),
@@ -694,9 +699,13 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  var vp = await Future.delayed(
-                      const Duration(milliseconds: 50), sendAnswer);
-                  Navigator.of(context).pop(vp);
+                  if (widget.isIso) {
+                    Navigator.of(context).pop(true);
+                  } else {
+                    var vp = await Future.delayed(
+                        const Duration(milliseconds: 50), sendAnswer);
+                    Navigator.of(context).pop(vp);
+                  }
                 },
               )
           ],

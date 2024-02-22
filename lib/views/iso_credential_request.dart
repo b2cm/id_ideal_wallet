@@ -2,17 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:base_codecs/base_codecs.dart';
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
+import 'package:cbor/cbor.dart';
 import 'package:cbor_test/cbor_test.dart';
+import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:intl/intl.dart';
+import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:x509b/x509.dart';
 
 class IsoCredentialRequest extends StatefulWidget {
   const IsoCredentialRequest({super.key});
@@ -23,25 +27,27 @@ class IsoCredentialRequest extends StatefulWidget {
 
 class IsoCredentialRequestState extends State<IsoCredentialRequest>
     with SingleTickerProviderStateMixin {
-  late final ValueNotifier<BluetoothLowEnergyState> state;
+  late final ValueNotifier<BluetoothLowEnergyState> bleState;
   late final ValueNotifier<String> qrData;
-  late final ValueNotifier<bool> advertising;
-  late final ValueNotifier<List<Log>> logs;
+  late final ValueNotifier<int> transmissionState;
   late final StreamSubscription stateChangedSubscription;
   late final StreamSubscription characteristicReadSubscription;
   late final StreamSubscription characteristicWrittenSubscription;
   late final StreamSubscription characteristicNotifyStateChangedSubscription;
   late final UUID serviceUuid;
   late final GattService mdocService;
+  late final DeviceEngagement engagement;
+  late final CoseKey myPrivateKey;
   List<int> readBuffer = [];
+  SessionEncryptor? encryptor;
+  Central? connectedDevice;
 
   @override
   void initState() {
     super.initState();
 
-    state = ValueNotifier(BluetoothLowEnergyState.unknown);
-    advertising = ValueNotifier(false);
-    logs = ValueNotifier([]);
+    bleState = ValueNotifier(BluetoothLowEnergyState.unknown);
+    transmissionState = ValueNotifier(0);
     qrData = ValueNotifier('');
     serviceUuid = UUID.fromString(const Uuid().v4().toString());
     mdocService = GattService(uuid: serviceUuid, characteristics: [
@@ -56,30 +62,12 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
 
     stateChangedSubscription = PeripheralManager.instance.stateChanged.listen(
       (eventArgs) {
-        state.value = eventArgs.state;
+        bleState.value = eventArgs.state;
         logger.d('BluetoothState changed: ${eventArgs.state}');
         if (eventArgs.state == BluetoothLowEnergyState.poweredOn &&
-            advertising.value == false) {
+            transmissionState.value == false) {
           startAdvertising();
         }
-      },
-    );
-
-    characteristicReadSubscription =
-        PeripheralManager.instance.characteristicRead.listen(
-      (eventArgs) async {
-        final central = eventArgs.central;
-        final characteristic = eventArgs.characteristic;
-        final value = eventArgs.value;
-        final log = Log(
-          LogType.read,
-          value,
-          'central: ${central.uuid}; characteristic: ${characteristic.uuid}',
-        );
-        logs.value = [
-          ...logs.value,
-          log,
-        ];
       },
     );
 
@@ -90,10 +78,19 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         final characteristic = eventArgs.characteristic;
         final value = eventArgs.value;
         logger.d('${characteristic.uuid} : (${value.length}) $value ');
+        // connectedDevice = central;
         if (characteristic.uuid == mdocPeripheralClient2Server.uuid) {
           readBuffer.addAll(value.sublist(3));
           if (value.first == 0) {
             decrypt();
+          }
+        }
+        if (characteristic.uuid == mdocPeripheralState.uuid) {
+          if (value.first == 1) {
+            logger.d('Start Signal recieved');
+          } else if (value.first == 2) {
+            logger.d('End Signal received');
+            transmissionState.value = 4;
           }
         }
       },
@@ -106,26 +103,158 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         final characteristic = eventArgs.characteristic;
         final state = eventArgs.state;
         logger.d('${characteristic.uuid} : $state');
+        if (state) {
+          connectedDevice = central;
+          stopAdvertising();
+        }
       },
     );
   }
 
-  decrypt() async {}
+  decrypt() async {
+    var decodedEstablishment = SessionEstablishment.fromCbor(readBuffer);
+    var transcriptHolder = SessionTranscript(
+        deviceEngagementBytes: engagement.toDeviceEngagementBytes(),
+        keyBytes: decodedEstablishment.eReaderKey.toCoseKeyBytes());
+    encryptor = SessionEncryptor(
+        mdocRole: MdocRole.mdocHolder,
+        myPrivateKey: myPrivateKey,
+        otherPublicKey: decodedEstablishment.eReaderKey);
+    await encryptor!
+        .generateKeys(cborEncode(transcriptHolder.toSessionTranscriptBytes()));
+
+    var decryptedRequest =
+        await encryptor!.decrypt(decodedEstablishment.encryptedRequest);
+    var decodedRequest = DeviceRequest.fromCbor(decryptedRequest);
+
+    logger.d(decodedRequest);
+
+    readBuffer = [];
+
+    // Check Signature
+    for (var docRequest in decodedRequest.docRequests) {
+      var correctSig = verifyDocRequestSignature(docRequest, transcriptHolder);
+      logger.d(correctSig);
+      if (!correctSig) {
+        logger.d('One false DocRequest');
+        throw Exception('Invalid DocRequest');
+      }
+    }
+
+    var certIt = parsePem(
+        '-----BEGIN CERTIFICATE-----\n${base64Encode(decodedRequest.docRequests.first.readerAuthSignature!.unprotected[33].cast<int>())}\n-----END CERTIFICATE-----');
+    var requesterCert = certIt.first as X509Certificate;
+
+    List<VerifiableCredential> toShow = [];
+    List<IsoRequestedItem> filterResult = [];
+
+    var isoCreds =
+        Provider.of<WalletProvider>(context, listen: false).isoMdocCredentials;
+
+    for (var cred in isoCreds) {
+      var data = IssuerSignedObject.fromCbor(
+          base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
+      var m = MobileSecurityObject.fromCbor(data.issuerAuth.payload);
+      for (var docRequest in decodedRequest.docRequests) {
+        logger.d('${docRequest.itemsRequest.docType} ==? ${m.docType}');
+        if (docRequest.itemsRequest.docType == m.docType) {
+          Map<String, Map<String, dynamic>> revealedData = getDataToReveal(
+              decodedRequest.docRequests.first.itemsRequest, data);
+          logger.d(revealedData);
+          if (revealedData.isNotEmpty) {
+            var contentToShow = revealedData.values.fold(<String, dynamic>{},
+                (previousValue, element) {
+              previousValue.addAll(element);
+              return previousValue;
+            });
+
+            var vc = VerifiableCredential.fromJson(cred.w3cCredential);
+            vc.credentialSubject = contentToShow;
+            toShow.add(vc);
+            var key = await Provider.of<WalletProvider>(context, listen: false)
+                .wallet
+                .getPrivateKey(cred.hdPath, KeyType.ed25519);
+            filterResult.add(IsoRequestedItem(m.docType, revealedData, data,
+                CoseKey(kty: 1, crv: 6, d: hex.decode(key))));
+          }
+        }
+      }
+    }
+
+    var asFilter = FilterResult(
+        credentials: toShow,
+        matchingDescriptorIds: [],
+        presentationDefinitionId: '');
+
+    var res = await Navigator.of(navigatorKey.currentContext!).push(
+      MaterialPageRoute(
+        builder: (context) => PresentationRequestDialog(
+          definitionHash: '',
+          otherEndpoint: '',
+          receiverDid: '',
+          myDid: '',
+          results: [asFilter],
+          isIso: true,
+          requesterCert: requesterCert,
+        ),
+      ),
+    );
+
+    if (res) {
+      List<Document> content = [];
+      for (var entry in filterResult) {
+        var signedData = await generateDeviceSignature(
+          entry.revealedData,
+          decodedRequest.docRequests.first.itemsRequest.docType,
+          transcriptHolder,
+          entry.privateKey,
+        );
+        var docToSend = Document(
+            docType: entry.docType,
+            issuerSigned: entry.issuerSigned,
+            deviceSigned: signedData);
+        content.add(docToSend);
+      }
+
+      // Generate Response
+      var response = DeviceResponse(status: 1, documents: content);
+
+      // Encrypt Response
+      var encryptedResponse = await encryptor!.encrypt(response.toCbor());
+      var responseToSend =
+          SessionData(encryptedData: encryptedResponse).toCbor();
+
+      const fragmentSize = 509;
+      var start = 0;
+      while (start < responseToSend.length) {
+        final end = start + fragmentSize;
+        final fragmentedValue = end < responseToSend.length
+            ? [1, 0, 0] + responseToSend.sublist(start, end)
+            : [0, 0, 0] + responseToSend.sublist(start);
+        await PeripheralManager.instance.writeCharacteristic(
+            mdocPeripheralServer2Client,
+            value: Uint8List.fromList(fragmentedValue),
+            central: connectedDevice!);
+        logger.d('write $start - $end');
+        start = end;
+      }
+    }
+    transmissionState.value = 3;
+  }
 
   setBleState() async {
     var s = await PeripheralManager.instance.getState();
-    state.value = s;
+    bleState.value = s;
   }
 
   generateDeviceEngagement() async {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     var mdocDid = await wallet.newConnectionDid(KeyType.p256);
     var deviceEphemeralCosePub = await didToCosePublicKey(mdocDid);
-    var deviceEphemeralCosePriv = deviceEphemeralCosePub;
-    deviceEphemeralCosePriv.d = base64Decode(addPaddingToBase64((await wallet
-        .wallet
+    myPrivateKey = deviceEphemeralCosePub;
+    myPrivateKey.d = base64Decode(addPaddingToBase64((await wallet.wallet
         .getPrivateKeyForConnectionDidAsJwk(mdocDid))!['d']));
-    var bleEngagement = DeviceEngagement(
+    engagement = DeviceEngagement(
         security: Security(
             cipherSuiteIdentifier: 1,
             deviceKeyBytes: deviceEphemeralCosePub.toCoseKeyBytes().bytes),
@@ -140,7 +269,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
 
     // Encode for Qr-Code
     var encodedEngagement =
-        removePaddingFromBase64(base64Encode(bleEngagement.toCbor()));
+        removePaddingFromBase64(base64Encode(engagement.toCbor()));
     logger.d('mdoc:$encodedEngagement');
     qrData.value = 'mdoc:$encodedEngagement';
     startAdvertising();
@@ -154,12 +283,12 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       serviceUUIDs: [serviceUuid],
     );
     await PeripheralManager.instance.startAdvertising(advertisement);
-    advertising.value = true;
+    transmissionState.value = 1; // advertising mode
   }
 
   Future<void> stopAdvertising() async {
     await PeripheralManager.instance.stopAdvertising();
-    advertising.value = false;
+    transmissionState.value = 2;
   }
 
   @override
@@ -174,60 +303,39 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         body: SafeArea(
             child: Center(
                 child: ValueListenableBuilder(
-                    valueListenable: state,
+                    valueListenable: bleState,
                     builder: (context, state, child) {
                       return state == BluetoothLowEnergyState.poweredOn
                           ? ValueListenableBuilder(
-                              valueListenable: advertising,
+                              valueListenable: transmissionState,
                               builder: (context, advertising, child) {
-                                return advertising
-                                    ? ValueListenableBuilder(
-                                        valueListenable: qrData,
-                                        builder: (context, qrData, child) {
-                                          return qrData.isEmpty
-                                              ? Text('Daten werden erstellt')
-                                              : QrImageView(data: qrData);
-                                        })
-                                    : Text('Es wird vorbereitet');
+                                if (advertising == 0) {
+                                  return Text('Es wird vorbereitet');
+                                } else if (advertising == 1) {
+                                  return ValueListenableBuilder(
+                                      valueListenable: qrData,
+                                      builder: (context, qrData, child) {
+                                        return qrData.isEmpty
+                                            ? Text('Daten werden erstellt')
+                                            : QrImageView(data: qrData);
+                                      });
+                                } else if (advertising == 2) {
+                                  return Text(
+                                      'Erfolgreich verbunden. Warte auf Anfrage');
+                                } else if (advertising == 3) {
+                                  return Text('Daten gesendet');
+                                } else if (advertising == 4) {
+                                  return Text(
+                                      'Übertragung beendet. Verbindung getrennt');
+                                } else {
+                                  return Text('Keine Ahnung was grad los ist');
+                                }
                               },
                             )
                           : const Text(
                               'Bluetooth ist nicht aktiv. Bitte anschalten.');
                     }))));
   }
-}
-
-class Log {
-  final DateTime time;
-  final LogType type;
-  final Uint8List value;
-  final String? detail;
-
-  Log(
-    this.type,
-    this.value, [
-    this.detail,
-  ]) : time = DateTime.now();
-
-  @override
-  String toString() {
-    final type = this.type.toString().split('.').last;
-    final formatter = DateFormat.Hms();
-    final time = formatter.format(this.time);
-    final message = value.toString();
-    if (detail == null) {
-      return '[$type]$time: $message';
-    } else {
-      return '[$type]$time: $message /* $detail */';
-    }
-  }
-}
-
-enum LogType {
-  read,
-  write,
-  notify,
-  error,
 }
 
 final GattCharacteristic mdocPeripheralState = GattCharacteristic(
@@ -249,3 +357,13 @@ final GattCharacteristic mdocPeripheralServer2Client = GattCharacteristic(
       GattCharacteristicProperty.notify,
     ],
     descriptors: []);
+
+class IsoRequestedItem {
+  CoseKey privateKey;
+  Map<String, Map<String, dynamic>> revealedData;
+  IssuerSignedObject issuerSigned;
+  String docType;
+
+  IsoRequestedItem(
+      this.docType, this.revealedData, this.issuerSigned, this.privateKey);
+}
