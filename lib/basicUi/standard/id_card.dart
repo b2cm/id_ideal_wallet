@@ -399,13 +399,16 @@ class ContextCredentialCard extends IdCard {
   Widget buildCenterOverlay() {
     return backgroundImage == null
         ? Center(
-            child: Text(
-              subjectName,
-              overflow: TextOverflow.clip,
-              style: Theme.of(navigatorKey.currentContext!)
-                  .primaryTextTheme
-                  .titleLarge!
-                  .copyWith(color: cardTitleColor),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Text(
+                subjectName,
+                overflow: TextOverflow.clip,
+                style: Theme.of(navigatorKey.currentContext!)
+                    .primaryTextTheme
+                    .titleLarge!
+                    .copyWith(color: cardTitleColor),
+              ),
             ),
           )
         : const SizedBox(

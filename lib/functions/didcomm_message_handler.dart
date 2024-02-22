@@ -370,11 +370,10 @@ Future<bool> handleInvitation(
 
 String? determineReplyUrl(String? replyUrl, List<String>? replyTo,
     [String? myDid]) {
-  logger.d(replyTo);
-  if (replyUrl != null) {
+  if (replyUrl != null && replyUrl.startsWith('http')) {
     return replyUrl;
   } else if (replyTo != null && replyTo.isNotEmpty) {
-    for (var url in replyTo) {
+    for (String url in replyTo) {
       if (url.startsWith('http')) return url;
     }
   } else if (myDid != null) {
@@ -558,6 +557,9 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
     }
   } else {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
     throw Exception('We do not support other transports');
   }
 }
