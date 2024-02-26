@@ -87,8 +87,18 @@ class NavigationProvider extends ChangeNotifier {
     // Handle own App Link
     else if (link.startsWith('https://wallet.bccm.dev')) {
       var asUri = Uri.parse(link);
+      // Known Query Parameter
+      if (link.contains('credential_offer')) {
+        handleOfferOidc(link);
+      } else if (link.contains('ooburl=')) {
+        handleOobUrl(link);
+      } else if (link.contains('oobid=')) {
+        handleOobId(link);
+      } else if (link.contains('_oob=')) {
+        handleDidcommMessage(link);
+      }
       // Known Path Parameters
-      if (asUri.path == '/' || asUri.path.isEmpty) {
+      else if (asUri.path == '/' || asUri.path.isEmpty) {
         // only open hidy
         logger.d('only open');
       } else if (link.contains('/webview')) {
@@ -109,16 +119,6 @@ class NavigationProvider extends ChangeNotifier {
         } else if (uri.queryParameters.containsKey('lnurl')) {
           handleLnurl(uri.queryParameters['lnurl']!);
         }
-      }
-      // Known Query Parameter
-      else if (link.contains('credential_offer')) {
-        handleOfferOidc(link);
-      } else if (link.contains('ooburl=')) {
-        handleOobUrl(link);
-      } else if (link.contains('oobid=')) {
-        handleOobId(link);
-      } else if (link.contains('_oob=')) {
-        handleDidcommMessage(link);
       } else {
         showErrorMessage(
             AppLocalizations.of(navigatorKey.currentContext!)!.unknownQrCode,
