@@ -181,5 +181,6 @@
   "newAppTitle": "New applications",
   "newAppNote": "No new applications available",
   "unknownQrCode": "Unknown Qr-Code",
-  "unknownQrCodeNote": "The scanned Qr code contains data that cannot be processed."
+  "unknownQrCodeNote": "The scanned Qr code contains data that cannot be processed.",
+  "subscribe": "Subscribe"
 }

@@ -64,7 +64,7 @@ class NavigationProvider extends ChangeNotifier {
   }
 
   void handleLink(String link) {
-    logger.d(link);
+    logger.i(link);
     if (showWelcome) {
       logger.d('Buffer link');
       bufferedLink = link;
@@ -86,8 +86,12 @@ class NavigationProvider extends ChangeNotifier {
     }
     // Handle own App Link
     else if (link.startsWith('https://wallet.bccm.dev')) {
+      var asUri = Uri.parse(link);
       // Known Path Parameters
-      if (link.contains('/webview')) {
+      if (asUri.path == '/' || asUri.path.isEmpty) {
+        // only open hidy
+        logger.d('only open');
+      } else if (link.contains('/webview')) {
         var asUri = Uri.parse(link);
         var uriToCall = Uri.parse(asUri.queryParameters['url']!);
         var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,

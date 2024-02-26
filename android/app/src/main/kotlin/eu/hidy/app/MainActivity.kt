@@ -37,7 +37,7 @@ class MainActivity : FlutterFragmentActivity() {
         val type = intent.type
         val data = intent.data
 
-        println(data)
+        println("Oncreate inital data: $data")
 
         if (data != null && data.scheme == "content") {
             val `is` = contentResolver.openInputStream(intent.data!!)
@@ -55,9 +55,9 @@ class MainActivity : FlutterFragmentActivity() {
         val type = intent.type
         val data = intent.data
 
-        println(data)
+        println("New intent data: $data")
         if (data != null) {
-            println(data.scheme)
+            println("scheme: ${data.scheme}")
         }
 
         if (data != null && data.scheme == "content") {
@@ -91,8 +91,11 @@ class MainActivity : FlutterFragmentActivity() {
             ) { // NOTE: assuming intent.getAction() is Intent.ACTION_VIEW
 //                val dataString =
 //                    intent.dataString ?: events.error("UNAVAILABLE", "Link unavailable", null)
-                println(content.data.toString())
-                events.success(content.data.toString())
+                println("linkReceiverContent: ${content.data.toString()}")
+                if (content.data != null)
+                    events.success(content.data.toString())
+                else
+                    events.error("No Link", "No Link", null)
             }
         }
     }
@@ -133,7 +136,9 @@ class MainActivity : FlutterFragmentActivity() {
             .setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
                 if (call.method!!.contentEquals("getInitialLink")) {
                     if (initialLink != null) {
-                        result.success(initialLink);
+                        println("initialLink: $initialLink")
+                        result.success(initialLink)
+                        initialLink = null
                     }
                 }
             }

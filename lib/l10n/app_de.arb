@@ -181,5 +181,6 @@
   "newAppTitle": "Neue Anwendungen",
   "newAppNote": "Keine neuen Anwendungen verfügbar",
   "unknownQrCode": "Unbekannter Qr-Code",
-  "unknownQrCodeNote": "Der gescannte Qr-Code enthalt Daten, die nicht verarbeitet werden können."
+  "unknownQrCodeNote": "Der gescannte Qr-Code enthalt Daten, die nicht verarbeitet werden können.",
+  "subscribe": "Abonieren"
 }
