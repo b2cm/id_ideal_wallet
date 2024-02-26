@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_web_view.dart';
+import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -28,6 +28,8 @@ class WebViewWindow extends StatefulWidget {
 class WebViewWindowState extends State<WebViewWindow> {
   final GlobalKey webViewKey = GlobalKey();
   bool isInAbo = false;
+  ValueNotifier<bool> canAbo = ValueNotifier(false);
+  String imageUrl = '';
 
   InAppWebViewController? webViewController;
   InAppWebViewSettings settings = InAppWebViewSettings(
@@ -44,14 +46,7 @@ class WebViewWindowState extends State<WebViewWindow> {
   void initState() {
     super.initState();
 
-    var currentAbos =
-        Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-            .aboList;
-    List<String> allAbos = currentAbos.map((e) => e['url']!).toList();
-    var asUri = Uri.parse(widget.initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
-    isInAbo = allAbos.contains(toCheck);
-    logger.d('$allAbos contains? $toCheck');
+    checkAbo();
 
     pullToRefreshController = kIsWeb
         ? null
@@ -71,6 +66,44 @@ class WebViewWindowState extends State<WebViewWindow> {
           );
   }
 
+  Future<void> checkAbo() async {
+    var currentAbos =
+        Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
+            .aboList;
+    List<String> allAbos = currentAbos.map((e) => e['url']!).toList();
+    var asUri = Uri.parse(widget.initialUrl);
+    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    bool inLocalAboList = allAbos.contains(toCheck);
+    logger.d('$allAbos contains? $toCheck');
+
+    if (inLocalAboList) {
+      // we have already an abo
+      return;
+    }
+
+    var res = await get(Uri.parse(applicationEndpoint));
+    List<Map<String, dynamic>> available = [];
+    if (res.statusCode == 200) {
+      List dec = jsonDecode(res.body);
+      available = dec.map((e) => (e as Map).cast<String, dynamic>()).toList();
+    }
+    Map<String, String> uriToImage = {};
+    if (available.isNotEmpty) {
+      List<String> allowedAbos = available.map((e) {
+        var u = Uri.parse(e['url']!);
+        var correctUri = '${u.scheme}://${u.host}${u.path}';
+        uriToImage[correctUri] = e['mainbgimg'];
+        return '${u.scheme}://${u.host}${u.path}';
+      }).toList();
+      logger.d('$allowedAbos contains? $toCheck');
+      if (allowedAbos.contains(toCheck)) {
+        imageUrl = uriToImage[toCheck] ?? '';
+        logger.d(imageUrl);
+        canAbo.value = true;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -83,38 +116,26 @@ class WebViewWindowState extends State<WebViewWindow> {
         }
       },
       child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-        return StyledScaffoldWebView(
-          title: widget.title,
-          abo: isInAbo
-              ? null
-              : () {
-                  wallet.addAbo(widget.initialUrl, '', widget.title);
-                },
-          backOnTap: () async {
-            if (webViewController != null &&
-                await webViewController!.canGoBack()) {
-              webViewController?.goBack();
-            } else {
-              Navigator.of(navigatorKey.currentContext!)
-                  .popUntil((route) => route.isFirst);
-            }
-          },
-          reloadOnTap: () async {
-            var initialUri = await webViewController?.getUrl();
-            if (initialUri?.fragment != null &&
-                initialUri!.fragment.contains('wid')) {
-              webViewController?.reload();
-            } else {
-              var wallet = Provider.of<WalletProvider>(
-                  navigatorKey.currentContext!,
-                  listen: false);
-              webViewController?.loadUrl(
-                  urlRequest: URLRequest(
-                      url: WebUri.uri(Uri.parse(
-                          '$initialUri${initialUri.toString().contains('?') ? '&wid=${wallet.lndwId}' : '?wid=${wallet.lndwId}'}'))));
-            }
-          },
-          child: SafeArea(
+        return Scaffold(
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: ValueListenableBuilder(
+            valueListenable: canAbo,
+            builder: (context, value, w) {
+              return value
+                  ? FloatingActionButton.extended(
+                      onPressed: () {
+                        wallet.addAbo(
+                            widget.initialUrl, imageUrl, widget.title);
+                        canAbo.value = false;
+                      },
+                      icon: const Icon(Icons.add),
+                      isExtended: true,
+                      label: Text(AppLocalizations.of(context)!.subscribe),
+                    )
+                  : const SizedBox();
+            },
+          ),
+          body: SafeArea(
             child: Column(children: <Widget>[
               Expanded(
                 child: Stack(

@@ -8,7 +8,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
-import 'package:id_ideal_wallet/main.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -201,8 +201,10 @@ class WelcomeScreenState extends State<WelcomeScreen> {
                     Provider.of<WalletProvider>(navigatorKey.currentContext!,
                             listen: false)
                         .onBoarded();
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (context) => const HomeScreen()));
+                    Provider.of<NavigationProvider>(
+                            navigatorKey.currentContext!,
+                            listen: false)
+                        .finishOnboard();
                   }
                 }
               : () {

@@ -387,7 +387,8 @@ class WalletProvider extends ChangeNotifier {
 
   void addAbo(String url, String pictureUrl, String title) {
     var asUri = Uri.parse(url);
-    var toSave = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toSave =
+        '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
     aboList.add({'url': toSave, 'mainbgimage': pictureUrl, 'name': title});
     wallet.storeConfigEntry('aboList', jsonEncode(aboList));
 

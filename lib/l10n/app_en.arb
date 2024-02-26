@@ -179,5 +179,8 @@
   "oidcTanInfo": "The issuer has sent you a transaction number for this transaction. Please enter it here.",
   "noAppNote": "You haven't added any applications yet",
   "newAppTitle": "New applications",
-  "newAppNote": "No new applications available"
+  "newAppNote": "No new applications available",
+  "unknownQrCode": "Unknown Qr-Code",
+  "unknownQrCodeNote": "The scanned Qr code contains data that cannot be processed.",
+  "subscribe": "Subscribe"
 }

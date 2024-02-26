@@ -173,11 +173,15 @@ class AboOverviewState extends State<AboOverview>
                                         e['mainbgimage']!.isNotEmpty
                                     ? Image.network(e['mainbgimage']!).image
                                     : null,
-                                backgroundColor:
-                                    const Color.fromARGB(255, 255, 255, 255),
+                                backgroundColor: Colors.green.shade300,
                                 cardTitleColor:
                                     const Color.fromARGB(255, 255, 255, 255),
-                                subjectName: e['name'] ?? '',
+                                subjectName:
+                                    e['name'] != null && e['name']!.isNotEmpty
+                                        ? e['name']!
+                                        : e['url'] != null
+                                            ? e['url']!
+                                            : '',
                                 bottomLeftText: const SizedBox(
                                   width: 0,
                                 ),
