@@ -217,8 +217,8 @@ Future<void> handleOfferOidc(String offerUri) async {
                 ],
                 issuer: {
                   'name': 'IsoMdlIssuer',
-                  'certificate': base64UrlEncode(
-                      data.issuerAuth.unprotected[33].cast<int>())
+                  'certificate':
+                      base64UrlEncode(data.issuerAuth.unprotected.x509chain!)
                 },
                 credentialSubject: credSubject,
                 issuanceDate: signedData.validityInfo.validFrom,

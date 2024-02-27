@@ -80,7 +80,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         logger.d('${characteristic.uuid} : (${value.length}) $value ');
         // connectedDevice = central;
         if (characteristic.uuid == mdocPeripheralClient2Server.uuid) {
-          readBuffer.addAll(value.sublist(3));
+          readBuffer.addAll(value.sublist(1));
           if (value.first == 0) {
             decrypt();
           }
@@ -142,7 +142,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     }
 
     var certIt = parsePem(
-        '-----BEGIN CERTIFICATE-----\n${base64Encode(decodedRequest.docRequests.first.readerAuthSignature!.unprotected[33].cast<int>())}\n-----END CERTIFICATE-----');
+        '-----BEGIN CERTIFICATE-----\n${base64Encode(decodedRequest.docRequests.first.readerAuthSignature!.unprotected.x509chain!)}\n-----END CERTIFICATE-----');
     var requesterCert = certIt.first as X509Certificate;
 
     List<VerifiableCredential> toShow = [];
@@ -220,17 +220,18 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       var response = DeviceResponse(status: 1, documents: content);
 
       // Encrypt Response
-      var encryptedResponse = await encryptor!.encrypt(response.toCbor());
+      var encryptedResponse =
+          await encryptor!.encrypt(response.toEncodedCbor());
       var responseToSend =
-          SessionData(encryptedData: encryptedResponse).toCbor();
+          SessionData(encryptedData: encryptedResponse).toEncodedCbor();
 
       const fragmentSize = 509;
       var start = 0;
       while (start < responseToSend.length) {
         final end = start + fragmentSize;
         final fragmentedValue = end < responseToSend.length
-            ? [1, 0, 0] + responseToSend.sublist(start, end)
-            : [0, 0, 0] + responseToSend.sublist(start);
+            ? [1] + responseToSend.sublist(start, end)
+            : [0] + responseToSend.sublist(start);
         await PeripheralManager.instance.writeCharacteristic(
             mdocPeripheralServer2Client,
             value: Uint8List.fromList(fragmentedValue),
@@ -268,10 +269,9 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         ]);
 
     // Encode for Qr-Code
-    var encodedEngagement =
-        removePaddingFromBase64(base64Encode(engagement.toCbor()));
-    logger.d('mdoc:$encodedEngagement');
-    qrData.value = 'mdoc:$encodedEngagement';
+    var encodedEngagement = engagement.toUri();
+    logger.d(encodedEngagement);
+    qrData.value = encodedEngagement;
     startAdvertising();
   }
 
