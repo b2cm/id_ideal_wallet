@@ -37,7 +37,7 @@ class NavigationProvider extends ChangeNotifier {
 
   void changePage(List<int> newIndex,
       {String? webViewUrl, VerifiableCredential? credential}) {
-    if (newIndex.first != activeIndex) {
+    if (newIndex.first != activeIndex || newIndex.first == 5) {
       canPop = false;
       activeIndex = newIndex.first;
       while (pageStack.isNotEmpty && newIndex.contains(pageStack.last)) {
