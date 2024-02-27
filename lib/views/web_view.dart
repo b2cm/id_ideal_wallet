@@ -70,7 +70,12 @@ class WebViewWindowState extends State<WebViewWindow> {
     var currentAbos =
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
-    List<String> allAbos = currentAbos.map((e) => e['url']!).toList();
+    List<String> allAbos = currentAbos.map((e) {
+      var u = e['url']!;
+      var asUri = Uri.parse(u);
+      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+    }).toList();
+
     var asUri = Uri.parse(widget.initialUrl);
     var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
     bool inLocalAboList = allAbos.contains(toCheck);

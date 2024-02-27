@@ -28,10 +28,12 @@ class SearchNewAboState extends State<SearchNewAbo> {
   }
 
   Future<void> searchAbos() async {
-    var inAbo = Provider.of<WalletProvider>(context, listen: false)
-        .aboList
-        .map((e) => e['url']!)
-        .toList();
+    var inAbo =
+        Provider.of<WalletProvider>(context, listen: false).aboList.map((e) {
+      var u = e['url']!;
+      var asUri = Uri.parse(u);
+      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+    }).toList();
 
     var res = await get(Uri.parse(applicationEndpoint));
     List<Map<String, dynamic>> available = [];

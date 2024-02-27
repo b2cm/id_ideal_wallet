@@ -214,7 +214,7 @@ packages:
     description:
       path: "."
       ref: didcomm
-      resolved-ref: f97c87c1783cc7b04b49378d9f60f52f572d6a5c
+      resolved-ref: b514f0ee39e78a59ac70e284ac6a031d07ff7b15
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "3.1.0"

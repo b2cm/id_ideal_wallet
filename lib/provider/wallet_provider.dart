@@ -388,7 +388,7 @@ class WalletProvider extends ChangeNotifier {
     var asUri = Uri.parse(url);
     var toSave =
         '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
-    aboList.add({'url': toSave, 'mainbgimage': pictureUrl, 'name': title});
+    aboList.add({'url': url, 'mainbgimage': pictureUrl, 'name': title});
     wallet.storeConfigEntry('aboList', jsonEncode(aboList));
 
     notifyListeners();
