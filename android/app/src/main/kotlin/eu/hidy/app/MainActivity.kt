@@ -30,14 +30,25 @@ class MainActivity : FlutterFragmentActivity() {
     private var linkReceiver: BroadcastReceiver? = null
     private var initialLink: String? = null
 
+    private val hceChannel = "app.channel.hce"
+    private val hceEvents = "app.channel.hce/events"
+    private var hceReceiver: BroadcastReceiver? = null
+    private var initialHceBytes: ByteArray? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val intent = intent
         val action = intent.action
         val type = intent.type
         val data = intent.data
+        val extra = intent.extras
 
-        println("Oncreate inital data: $data")
+        println("Oncreate initial data: $data")
+        if (intent.hasExtra("nfcCommand")) {
+            initialHceBytes = extra?.getByteArray("nfcCommand")
+            return
+        }
 
         if (data != null && data.scheme == "content") {
             val `is` = contentResolver.openInputStream(intent.data!!)
@@ -46,7 +57,6 @@ class MainActivity : FlutterFragmentActivity() {
         } else {
             initialLink = intent.dataString
         }
-
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -60,7 +70,13 @@ class MainActivity : FlutterFragmentActivity() {
             println("scheme: ${data.scheme}")
         }
 
-        if (data != null && data.scheme == "content") {
+        println(intent.extras)
+        println(intent.action)
+
+        if (intent.hasExtra("nfcCommand")) {
+            hceReceiver?.onReceive(this.applicationContext, intent)
+
+        } else if (data != null && data.scheme == "content") {
             contentReceiver?.onReceive(this.applicationContext, intent)
         } else {
             linkReceiver?.onReceive(this.applicationContext, intent)
@@ -84,6 +100,7 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     fun createLinkReceiver(events: EventChannel.EventSink): BroadcastReceiver {
+        println("link receiver create")
         return object : BroadcastReceiver() {
             override fun onReceive(
                 context: Context,
@@ -96,6 +113,21 @@ class MainActivity : FlutterFragmentActivity() {
                     events.success(content.data.toString())
                 else
                     events.error("No Link", "No Link", null)
+            }
+        }
+    }
+
+    fun createHceReceiver(events: EventChannel.EventSink): BroadcastReceiver {
+        println("hce receiver create")
+        return object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                content: Intent
+            ) {
+                if (content.hasExtra("nfcCommand")) {
+                    events.success(content.extras?.getByteArray("nfcCommand"))
+                } else
+                    events.error("No Nfc command", "No nfc command", null)
             }
         }
     }
@@ -143,6 +175,16 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
 
+        // init hce Method Channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, hceChannel)
+            .setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
+                if (call.method!!.contentEquals("sendData")) {
+                    val intent: Intent = Intent(this, HceService::class.java)
+                    intent.putExtra("message", call.arguments as ByteArray)
+                    this.startService(intent)
+                }
+            }
+
         // init EventChannel for pkpass
         EventChannel(flutterEngine.dartExecutor, EVENTS).setStreamHandler(
             object : EventChannel.StreamHandler {
@@ -165,6 +207,19 @@ class MainActivity : FlutterFragmentActivity() {
 
                 override fun onCancel(args: Any?) {
                     linkReceiver = null
+                }
+            }
+        )
+
+        // init EventChannel for hce stuff
+        EventChannel(flutterEngine.dartExecutor, hceEvents).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(args: Any?, events: EventChannel.EventSink) {
+                    hceReceiver = createHceReceiver(events)
+                }
+
+                override fun onCancel(args: Any?) {
+                    hceReceiver = null
                 }
             }
         )

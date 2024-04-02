@@ -24,6 +24,7 @@ class NavigationProvider extends ChangeNotifier {
   NavigationProvider(this.showWelcome) {
     getInitialUri().then((l) => handleLink(l));
     stream.receiveBroadcastStream().listen((link) => handleLink(link));
+    logger.d('listen lik stream');
   }
 
   void finishOnboard() {

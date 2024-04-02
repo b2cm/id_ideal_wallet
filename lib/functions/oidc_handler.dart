@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:cbor_test/cbor_test.dart';
+import 'package:base_codecs/base_codecs.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,6 +17,7 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
+import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 
 String removeTrailingSlash(String base64Input) {
@@ -192,7 +194,7 @@ Future<void> handleOfferOidc(String offerUri) async {
 
         if (offer.credentials.first['format'] == 'iso-mdl') {
           var data = IssuerSignedObject.fromCbor(base64Decode(credential));
-          var verified = verifyMso(data);
+          var verified = await verifyMso(data);
           if (verified) {
             var signedData =
                 MobileSecurityObject.fromCbor(data.issuerAuth.payload);
@@ -413,4 +415,19 @@ Future<void> handlePresentationRequestOidc(String request) async {
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
   }
+}
+
+String coseKeyToDid(CoseKey coseKey) {
+  var crvInt = coseKey.crv;
+
+  List<int> prefix;
+  if (crvInt == 6) {
+    prefix = [237, 1];
+  } else {
+    throw Exception('Unknown KeyType');
+  }
+
+  List<int>? keyBytes = coseKey.x;
+
+  return 'did:key:z${base58BitcoinEncode(Uint8List.fromList(prefix + keyBytes!))}';
 }

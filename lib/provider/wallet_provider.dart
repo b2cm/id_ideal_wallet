@@ -18,8 +18,10 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:pkcs7/pkcs7.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../functions/util.dart' as my_util;
@@ -221,6 +223,8 @@ class WalletProvider extends ChangeNotifier {
 
   void openWallet() async {
     if (!_authRunning) {
+      Provider.of<MdocProvider>(navigatorKey.currentContext!, listen: false)
+          .startListening();
       _authRunning = true;
       var isOpen = await my_util.openWallet(_wallet);
       if (!isOpen) {
@@ -240,6 +244,10 @@ class WalletProvider extends ChangeNotifier {
       generateAboGroups();
 
       var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+      if (lastUpdateCheck != null) {
+        logger.d(
+            'lastUpdate: ${DateTime.now().difference(DateTime.parse(lastUpdateCheck))}');
+      }
       if (lastUpdateCheck == null ||
           DateTime.now().difference(DateTime.parse(lastUpdateCheck)) >=
               const Duration(days: 1)) {

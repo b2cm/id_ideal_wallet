@@ -5,14 +5,15 @@ import 'dart:typed_data';
 import 'package:base_codecs/base_codecs.dart';
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:cbor/cbor.dart';
-import 'package:cbor_test/cbor_test.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
+import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -133,7 +134,8 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
 
     // Check Signature
     for (var docRequest in decodedRequest.docRequests) {
-      var correctSig = verifyDocRequestSignature(docRequest, transcriptHolder);
+      var correctSig =
+          await verifyDocRequestSignature(docRequest, transcriptHolder);
       logger.d(correctSig);
       if (!correctSig) {
         logger.d('One false DocRequest');
@@ -156,25 +158,32 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
           base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
       var m = MobileSecurityObject.fromCbor(data.issuerAuth.payload);
       for (var docRequest in decodedRequest.docRequests) {
-        logger.d('${docRequest.itemsRequest.docType} ==? ${m.docType}');
+        logger.d(
+            '${docRequest.itemsRequest.docType} ==? ${m.docType}: ${docRequest.itemsRequest.docType == m.docType}');
         if (docRequest.itemsRequest.docType == m.docType) {
-          Map<String, Map<String, dynamic>> revealedData = getDataToReveal(
+          Map<String, List<IssuerSignedItem>> revealedData = getDataToReveal(
               decodedRequest.docRequests.first.itemsRequest, data);
           logger.d(revealedData);
           if (revealedData.isNotEmpty) {
             var contentToShow = revealedData.values.fold(<String, dynamic>{},
-                (previousValue, element) {
-              previousValue.addAll(element);
-              return previousValue;
+                (previousValueA, element) {
+              previousValueA.addAll(
+                  element.fold(<String, dynamic>{}, (previousValue, element) {
+                previousValue[element.dataElementIdentifier] =
+                    element.dataElementValue;
+                return previousValue;
+              }));
+              return previousValueA;
             });
 
+            data.items = revealedData;
             var vc = VerifiableCredential.fromJson(cred.w3cCredential);
             vc.credentialSubject = contentToShow;
             toShow.add(vc);
             var key = await Provider.of<WalletProvider>(context, listen: false)
                 .wallet
                 .getPrivateKey(cred.hdPath, KeyType.ed25519);
-            filterResult.add(IsoRequestedItem(m.docType, revealedData, data,
+            filterResult.add(IsoRequestedItem(m.docType, {}, data,
                 CoseKey(kty: 1, crv: 6, d: hex.decode(key))));
           }
         }
@@ -204,11 +213,10 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       List<Document> content = [];
       for (var entry in filterResult) {
         var signedData = await generateDeviceSignature(
-          entry.revealedData,
-          decodedRequest.docRequests.first.itemsRequest.docType,
-          transcriptHolder,
-          entry.privateKey,
-        );
+            entry.revealedData,
+            decodedRequest.docRequests.first.itemsRequest.docType,
+            transcriptHolder,
+            signer: SignatureGenerator.get(entry.privateKey));
         var docToSend = Document(
             docType: entry.docType,
             issuerSigned: entry.issuerSigned,
@@ -366,4 +374,40 @@ class IsoRequestedItem {
 
   IsoRequestedItem(
       this.docType, this.revealedData, this.issuerSigned, this.privateKey);
+}
+
+Future<CoseKey> didToCosePublicKey(String did) async {
+  var didDoc = await resolveDidDocument(did);
+  didDoc = didDoc.resolveKeyIds().convertAllKeysToJwk();
+
+  var keyAsJwk = didDoc.verificationMethod!.first.publicKeyJwk;
+
+  print(keyAsJwk);
+
+  CoseKey cose;
+
+  if (did.startsWith('did:key:z6Mk')) {
+    cose = CoseKey(
+        kty: CoseKeyType.octetKeyPair,
+        crv: CoseCurve.ed25519,
+        x: base64Decode(addPaddingToBase64(keyAsJwk!['x']))); // x : pub key
+  } else {
+    int crv;
+    if (did.startsWith('did:key:zDn')) {
+      crv = CoseCurve.p256;
+    } else if (did.startsWith('did:key:z82')) {
+      crv = CoseCurve.p384;
+    } else {
+      crv = CoseCurve.p521;
+    }
+
+    cose = CoseKey(
+        kty: CoseKeyType.ec2,
+        crv: crv,
+        x: base64Decode(addPaddingToBase64(keyAsJwk!['x'])), // x : pub key
+        y: base64Decode(addPaddingToBase64(keyAsJwk['y'])) // y: pub key
+        );
+  }
+
+  return cose;
 }

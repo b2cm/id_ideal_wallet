@@ -8,6 +8,7 @@ import 'package:id_ideal_wallet/basicUi/standard/custom_navigation_item.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/abo_overview.dart';
@@ -35,7 +36,8 @@ void main() async {
     providers: [
       ChangeNotifierProvider(
           create: (context) => WalletProvider(appDocumentDir.path, isInit)),
-      ChangeNotifierProvider(create: (context) => NavigationProvider(!isInit))
+      ChangeNotifierProvider(create: (context) => NavigationProvider(!isInit)),
+      ChangeNotifierProvider(create: (context) => MdocProvider())
     ],
     child: const App(),
   ));
