@@ -113,7 +113,8 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
             child: SizedBox(
               height: 45,
               child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(
+                  onPressed: () =>
+                      Navigator.of(navigatorKey.currentContext!).push(
                         MaterialPageRoute(
                           builder: (context) => TopUp(
                               paymentMethods: [toShow],
