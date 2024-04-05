@@ -135,7 +135,7 @@ class _TopUpState extends State<TopUp> {
                           if (_selectedReceiveOption[0])
                             TextField(
                               controller: _memoController,
-                              maxLines: 8, //or null
+                              maxLines: 4, //or null
                               decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
                                 labelText: 'Memo',
