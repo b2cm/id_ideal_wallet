@@ -182,5 +182,15 @@
   "newAppNote": "Keine neuen Anwendungen verfügbar",
   "unknownQrCode": "Unbekannter Qr-Code",
   "unknownQrCodeNote": "Der gescannte Qr-Code enthalt Daten, die nicht verarbeitet werden können.",
-  "subscribe": "Abonieren"
+  "subscribe": "Abonieren",
+  "sendSatoshi": "Satoshi senden",
+  "backgroundPresentation": "Hintergrundabfragen",
+  "backgroundPresentationNote": "Hiermit erlaube ich {otherParty}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen",
+  "@backgroundPresentationNote": {
+    "placeholders": {
+      "otherParty": {
+        "type": "String"
+      }
+    }
+  }
 }

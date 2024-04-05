@@ -182,5 +182,15 @@
   "newAppNote": "No new applications available",
   "unknownQrCode": "Unknown Qr-Code",
   "unknownQrCodeNote": "The scanned Qr code contains data that cannot be processed.",
-  "subscribe": "Subscribe"
+  "subscribe": "Subscribe",
+  "sendSatoshi": "send Satoshi",
+  "backgroundPresentation": "Background-Presentation",
+  "backgroundPresentationNote": "I hereby authorize {otherParty} to request these credentials in the future without my explicit consent.",
+  "@backgroundPresentationNote": {
+    "placeholders": {
+      "passType": {
+        "type": "String"
+      }
+    }
+  }
 }

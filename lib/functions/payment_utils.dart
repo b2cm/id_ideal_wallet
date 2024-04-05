@@ -131,6 +131,7 @@ Future<Invoice> decodeInvoice(String inKey, String invoice,
   } else if (res.statusCode == 400) {
     Map<String, dynamic> answer = jsonDecode(res.body);
     logger.d(answer['detail'] ?? answer['message']);
+    showErrorMessage('Invoice ungültig');
     throw Exception(answer['detail']);
   } else {
     logger.d('Something went wrong : ${res.statusCode}; ${res.body}');
