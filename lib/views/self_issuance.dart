@@ -230,15 +230,27 @@ class CredentialSelfIssueState extends State<CredentialSelfIssue> {
 
   @override
   Widget build(BuildContext context) {
-    return StyledScaffoldTitle(
-        title: AppLocalizations.of(context)!.selfIssuance,
-        child: JsonSchemaForm(
-          schema: schema,
-          controller: controller,
-          validationButtonText: 'Ok',
-          afterValidation: (credData) {
-            Navigator.of(context).pop((credData, widget.outerPos));
-          },
-        ));
+    return Scaffold(
+      body: SafeArea(
+        child: Column(children: [
+          Text(
+            AppLocalizations.of(context)!.selfIssuance,
+            style: Theme.of(context).primaryTextTheme.headlineLarge,
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          Expanded(
+              child: JsonSchemaForm(
+            schema: schema,
+            controller: controller,
+            validationButtonText: 'Ok',
+            afterValidation: (credData) {
+              Navigator.of(context).pop((credData, widget.outerPos));
+            },
+          ))
+        ]),
+      ),
+    );
   }
 }
