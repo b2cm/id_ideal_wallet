@@ -34,7 +34,7 @@ class QrScanner extends StatelessWidget {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => AddMemberCard(
                         initialNumber: code,
-                        initialBarcodeType: barcode.format.toString())));
+                        initialBarcodeType: barcode.format.name)));
               } else {
                 navigator.goBack();
                 navigator.handleLink(code);
