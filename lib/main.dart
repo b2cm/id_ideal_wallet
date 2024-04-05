@@ -145,18 +145,22 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget buildFab1(NavigationProvider navigator) {
-    return SizedBox(
-      height: 75,
-      width: 75,
-      child: FittedBox(
-        child: FloatingActionButton(
-          onPressed: () {
-            navigator.changePage([2]);
-          },
-          backgroundColor: Colors.grey.shade300,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.qr_code_scanner,
+    return Visibility(
+      visible:
+          MediaQuery.of(navigatorKey.currentContext!).viewInsets.bottom == 0.0,
+      child: SizedBox(
+        height: 75,
+        width: 75,
+        child: FittedBox(
+          child: FloatingActionButton(
+            onPressed: () {
+              navigator.changePage([2]);
+            },
+            backgroundColor: Colors.grey.shade300,
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.qr_code_scanner,
+            ),
           ),
         ),
       ),
