@@ -153,12 +153,11 @@ class SwiperView extends StatelessWidget {
                         child: SizedBox(
                             height: 45,
                             child: ElevatedButton(
-                                onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
+                                onPressed: () => Navigator.of(context)
+                                    .push(MaterialPageRoute(
                                         builder: (context) => TopUp(
-                                            paymentMethods: [contextCred],
-                                            onTopUpSats: onTopUpSats,
-                                            onTopUpFiat: onTopUpFiat))),
+                                              paymentMethod: contextCred,
+                                            ))),
                                 child: Text(
                                     AppLocalizations.of(context)!.receive)))),
                     const SizedBox(

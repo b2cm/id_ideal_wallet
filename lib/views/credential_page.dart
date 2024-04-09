@@ -321,9 +321,9 @@ class ContextCardState extends State<ContextCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) =>
-                CredentialPage(initialSelection: widget.context.id!))),
+        onTap: () => setState(() {
+              back = !back;
+            }),
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           return AnimatedSwitcher(
               duration: const Duration(milliseconds: 800),
@@ -348,9 +348,9 @@ class ContextCardState extends State<ContextCard> {
                                   }
                                 }
                               : null,
-                          onReturnTap: () => setState(() {
-                            back = !back;
-                          }),
+                          // onReturnTap: () => setState(() {
+                          //   back = !back;
+                          // }),
                           balance: Provider.of<WalletProvider>(context,
                                       listen: false)
                                   .balance[widget.context.id]
@@ -396,9 +396,9 @@ class ContextCardState extends State<ContextCard> {
                                   }
                                 }
                               : null,
-                          onReturnTap: () => setState(() {
-                                back = !back;
-                              }),
+                          // onReturnTap: () => setState(() {
+                          //       back = !back;
+                          //     }),
                           cardTitle: '',
                           cardTitleColor:
                               widget.context.credentialSubject['overlaycolor'] != null
@@ -420,15 +420,15 @@ class ContextCardState extends State<ContextCard> {
                           ))
                   : ContextCredentialCard(
                       key: const ValueKey(true),
-                      isFavorite: wallet.isFavorite(widget.context.id!),
-                      addToFavorites: () {
-                        wallet.isFavorite(widget.context.id!)
-                            ? wallet.removeFromFavorites(widget.context.id!)
-                            : wallet.addToFavorites(widget.context.id!);
-                      },
-                      onReturnTap: () => setState(() {
-                            back = !back;
-                          }),
+                      // isFavorite: wallet.isFavorite(widget.context.id!),
+                      // addToFavorites: () {
+                      //   wallet.isFavorite(widget.context.id!)
+                      //       ? wallet.removeFromFavorites(widget.context.id!)
+                      //       : wallet.addToFavorites(widget.context.id!);
+                      // },
+                      // onReturnTap: () => setState(() {
+                      //       back = !back;
+                      //     }),
                       cardTitle: '',
                       cardTitleColor:
                           widget.context.credentialSubject['overlaycolor'] != null

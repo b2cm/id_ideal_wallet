@@ -805,18 +805,22 @@ class PaymentCard extends IdCard {
               : const SizedBox(
                   width: 0,
                 ),
-          SizedBox(
-            height: 45,
-            width: 45,
-            child: InkWell(
-              onTap: onReturnTap,
-              child: Icon(
-                color: cardTitleColor,
-                Icons.change_circle_outlined,
-                size: 35,
-              ),
-            ),
-          )
+          onReturnTap != null
+              ? SizedBox(
+                  height: 45,
+                  width: 45,
+                  child: InkWell(
+                    onTap: onReturnTap,
+                    child: Icon(
+                      color: cardTitleColor,
+                      Icons.change_circle_outlined,
+                      size: 35,
+                    ),
+                  ),
+                )
+              : const SizedBox(
+                  width: 0,
+                )
         ],
       ),
     );

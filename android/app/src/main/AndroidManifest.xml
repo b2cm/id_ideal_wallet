@@ -40,6 +40,7 @@
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
 

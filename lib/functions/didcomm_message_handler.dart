@@ -68,7 +68,16 @@ Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
     initialWebview = asUri.queryParameters['initialWebview'];
   } catch (_) {}
 
-  var plaintext = await getPlaintext(message, wallet);
+  DidcommPlaintextMessage plaintext;
+  try {
+    plaintext = await getPlaintext(message, wallet);
+  } catch (e) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .downloadFailedExplanation);
+    return false;
+  }
   if (plaintext.attachments != null && plaintext.attachments!.isNotEmpty) {
     for (var a in plaintext.attachments!) {
       try {
@@ -205,6 +214,7 @@ Future<DidcommPlaintextMessage> getPlaintext(
               await a.data.resolveData();
             } catch (e) {
               logger.e(e);
+              throw Exception();
             }
           }
         }
@@ -550,7 +560,7 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
         }
       }
 
-      logger.d(res.statusCode);
+      logger.d('${res.statusCode} from $otherEndpoint with $message');
       logger.d(res.body);
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,

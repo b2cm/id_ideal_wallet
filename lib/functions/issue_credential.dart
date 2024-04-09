@@ -99,11 +99,8 @@ Future<bool> handleOfferCredential(
               return PaymentFinished(
                 headline: AppLocalizations.of(context)!.noPaymentMethod,
                 success: false,
-                amount: CurrencyDisplay(
-                    amount: "-$toPay",
-                    symbol: '€',
-                    mainFontSize: 35,
-                    centered: true),
+                amount: const CurrencyDisplay(
+                    amount: "", symbol: '', mainFontSize: 35, centered: true),
                 additionalInfo: Column(children: [
                   const SizedBox(height: 20),
                   Text(

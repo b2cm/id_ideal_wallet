@@ -147,9 +147,9 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
     if (widget.askForBackground) {
       childList.add(CheckboxListTile(
-          title: const Text('Hintergrundabfragen'),
-          subtitle: Text(
-              'Hiermit erlaube ich ${widget.otherEndpoint}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen'),
+          title: Text(AppLocalizations.of(context)!.backgroundPresentation),
+          subtitle: Text(AppLocalizations.of(context)!
+              .backgroundPresentationNote(widget.otherEndpoint)),
           value: backgroundAllow,
           onChanged: (newValue) {
             if (newValue != null) {
