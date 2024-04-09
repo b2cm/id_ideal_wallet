@@ -4,8 +4,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:provider/provider.dart';
 
 class PaymentOverview extends StatelessWidget {
@@ -34,10 +34,11 @@ class PaymentOverview extends StatelessWidget {
                         var cred = wallet.getCredential(
                             allPayments[index].shownAttributes.first);
                         if (cred != null && cred.w3cCredential.isNotEmpty) {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => CredentialDetailView(
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .changePage([6],
                                   credential: VerifiableCredential.fromJson(
-                                      cred.w3cCredential))));
+                                      cred.w3cCredential));
                         }
                       }
                     },
