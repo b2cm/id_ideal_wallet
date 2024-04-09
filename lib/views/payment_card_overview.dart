@@ -9,9 +9,7 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
-import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
-import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:provider/provider.dart';
 
 class PaymentCardOverview extends StatefulWidget {
@@ -98,14 +96,10 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
                         .shownAttributes
                         .first);
                     if (cred != null && cred.w3cCredential.isNotEmpty) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => CredentialDetailView(
-                            credential: VerifiableCredential.fromJson(
-                                cred.w3cCredential),
-                          ),
-                        ),
-                      );
+                      Provider.of<NavigationProvider>(context, listen: false)
+                          .changePage([6],
+                              credential: VerifiableCredential.fromJson(
+                                  cred.w3cCredential));
                     }
                   }
                 },
@@ -114,8 +108,9 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
         content.add(lastPayments);
         if (wallet.getAllPayments(currentSelection).length > 3) {
           var additional = TextButton(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => PaymentOverview(paymentContext: toShow))),
+            onPressed: () =>
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .changePage([12], credential: toShow),
             child: Text(AppLocalizations.of(context)!.showMore,
                 style: Theme.of(context).primaryTextTheme.titleMedium),
           );

@@ -24,7 +24,7 @@ class TransactionPreview extends StatelessWidget {
         children: [
           // title
           Container(
-            width: MediaQuery.of(context).size.width * 0.7,
+            width: MediaQuery.of(context).size.width * 0.65,
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
             child: Text(
               title,

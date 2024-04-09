@@ -15,6 +15,7 @@ import 'package:id_ideal_wallet/views/authorized_apps.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_card_overview.dart';
+import 'package:id_ideal_wallet/views/payment_overview.dart';
 import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/search_new_abo.dart';
 import 'package:id_ideal_wallet/views/send_satoshi_screen.dart';
@@ -130,7 +131,7 @@ class HomeScreen extends StatelessWidget {
                     text: AppLocalizations.of(context)!.payments(0),
                     activeIcon: Icons.credit_card,
                     inactiveIcon: Icons.credit_card_outlined,
-                    activeIndices: const [3, 10, 11],
+                    activeIndices: const [3, 10, 11, 12],
                     navigator: navigator),
                 CustomNavigationItem(
                     text: AppLocalizations.of(context)!.settings,
@@ -202,6 +203,8 @@ class HomeScreen extends StatelessWidget {
         return const SendSatoshiScreen();
       case 11:
         return TopUp(paymentMethod: navigator.credential);
+      case 12:
+        return PaymentOverview(paymentContext: navigator.credential!);
       default:
         return const AboOverview();
     }

@@ -84,7 +84,7 @@
   "noPaymentNote": "Keine passende Zahlungsmethode gefunden",
   "selectPaymentMethod": "Lightning Account auswählen",
   "chargeMoney": "Aufladen",
-  "noPaymentMethodNote": "Sie besitzen kein Wallet. \nBitte legen Sie sich eines an und sorgen für ausreichend Deckung",
+  "noPaymentMethodNote": "Sie besitzen kein Wallet. \nBitte legen Sie sich eines an und\nsorgen für ausreichend Deckung",
   "credentialReceived": "Nachweis empfangen",
   "amountSatoshi": "Betrag in Satoshi",
   "amountEuro": "Betrag in Euro",
