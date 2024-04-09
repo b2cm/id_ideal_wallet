@@ -15,7 +15,7 @@ var applicationEndpoint =
     'https://hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
 var stylingEndpoint = 'https://hidy.app/walletcontext/layouts';
 var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
-String versionNumber = '2.4.8';
+String versionNumber = '2.4.9';
 String baseUrl = 'https://hidy.app';
 bool testBuild = false;
 
