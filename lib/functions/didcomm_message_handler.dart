@@ -181,7 +181,7 @@ Future<bool> handleEmptyMessage(
         if (paymentReq.isNotEmpty) {
           var invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
           logger.d(invoice);
-          payInvoiceInteraction(invoice);
+          payInvoiceInteraction(invoice, isMainnet: invoice.startsWith('lnbc'));
         }
       }
     }
