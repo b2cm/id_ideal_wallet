@@ -66,7 +66,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
         bleState.value = eventArgs.state;
         logger.d('BluetoothState changed: ${eventArgs.state}');
         if (eventArgs.state == BluetoothLowEnergyState.poweredOn &&
-            transmissionState.value == false) {
+            transmissionState.value != 1) {
           startAdvertising();
         }
       },
