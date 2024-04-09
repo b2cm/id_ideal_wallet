@@ -44,6 +44,15 @@ void main() async {
     ],
     child: const App(),
   ));
+
+  // prevent ml-kit to call home (used in mobile scanner)
+  // source: https://github.com/juliansteenbakker/mobile_scanner/issues/553#issuecomment-1691387214
+  if (Platform.isAndroid) {
+    final path = appDocumentDir.parent.path;
+    final file =
+        File('$path/databases/com.google.android.datatransport.events');
+    await file.writeAsString('Fake');
+  }
 }
 
 class App extends StatelessWidget {
