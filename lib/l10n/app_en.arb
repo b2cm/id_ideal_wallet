@@ -192,5 +192,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "finishProcess": "Process completed",
+  "finishProcessNote": "The credential has already been issued to you"
 }
