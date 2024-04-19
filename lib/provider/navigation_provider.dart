@@ -80,7 +80,8 @@ class NavigationProvider extends ChangeNotifier {
     } else if (link.startsWith('lnbc') || link.startsWith('LNBC')) {
       logger.d('LN-Invoice found');
       payInvoiceInteraction(link, isMainnet: true);
-    } else if (link.startsWith('openid-credential-offer')) {
+    } else if (link.startsWith('openid-credential-offer') ||
+        link.startsWith('eudi-openid4ci')) {
       handleOfferOidc(link);
     } else if (link.startsWith('openid-presentation-request')) {
       handlePresentationRequestOidc(link);

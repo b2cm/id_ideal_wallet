@@ -137,9 +137,11 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       var correctSig =
           await verifyDocRequestSignature(docRequest, transcriptHolder);
       logger.d(correctSig);
-      if (!correctSig) {
-        logger.d('One false DocRequest');
-        throw Exception('Invalid DocRequest');
+      if (correctSig != null) {
+        if (!correctSig) {
+          logger.d('One false DocRequest');
+          throw Exception('Invalid DocRequest');
+        }
       }
     }
 

@@ -183,12 +183,14 @@ class MdocProvider extends ChangeNotifier {
 
     // Check Signature
     for (var docRequest in decodedRequest.docRequests) {
-      var correctSig =
-          await verifyDocRequestSignature(docRequest, transcriptHolder);
-      logger.d(correctSig);
-      if (!correctSig) {
-        logger.d('One false DocRequest');
-        throw Exception('Invalid DocRequest');
+      if (docRequest.readerAuthSignature != null) {
+        var correctSig =
+            await verifyDocRequestSignature(docRequest, transcriptHolder);
+        logger.d(correctSig);
+        if (!correctSig!) {
+          logger.d('One false DocRequest');
+          throw Exception('Invalid DocRequest');
+        }
       }
     }
 
