@@ -192,5 +192,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "finishProcess": "Prozess abgeschlossen",
+  "finishProcessNote": "Das Credential wurde bereits an Sie ausgestellt"
 }

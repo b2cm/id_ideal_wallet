@@ -155,6 +155,7 @@ Future<bool> handleOfferCredential(
   if (entry != null) {
     lastMessage = DidcommPlaintextMessage.fromJson(entry.lastMessage);
   }
+  logger.d(lastMessage?.type);
   //No
   if (lastMessage == null ||
       entry?.protocol == DidcommProtocol.discoverFeature.value ||
@@ -254,6 +255,12 @@ Future<bool> handleOfferCredential(
       // TODO: sendMessage(myDid, reply, wallet, problem, message.from!);
       return false;
     }
+  } else if (lastMessage.type == DidcommMessages.requestCredential ||
+      lastMessage.type == DidcommMessages.issueCredential) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.finishProcess,
+        AppLocalizations.of(navigatorKey.currentContext!)!.finishProcessNote);
+    return false;
   }
 
   //check, if we control did
