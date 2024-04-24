@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:base_codecs/base_codecs.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
+import 'package:dart_ssi/util.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -19,6 +20,7 @@ import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 String removeTrailingSlash(String base64Input) {
   while (base64Input.endsWith('/')) {
@@ -80,10 +82,23 @@ Future<void> handleOfferOidc(String offerUri) async {
 
     logger.d(issuerMetaReq.body);
 
-    var metaData = jsonDecode(issuerMetaReq.body);
+    Map metaData = jsonDecode(issuerMetaReq.body);
+
+    var authserver = issuerString;
+    if (metaData.containsKey('authorization_servers')) {
+      var authServerData =
+          (metaData['authorization_servers'] as List).cast<String>();
+      authserver = authServerData.first;
+    }
+
+    if (offer.grants != null &&
+        offer.grants!.containsKey('authorization_code')) {
+      launchUrl(Uri.parse(
+          '$authserver/authorize?response_type=code&client_id=hidy&redirect_uri=${Uri.encodeQueryComponent('https://wallet.bccm.dev')}'));
+    }
 
     var authMetaReq = await get(
-        Uri.parse('$issuerString/.well-known/oauth-authorization-server'),
+        Uri.parse('$authserver/.well-known/oauth-authorization-server'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -183,7 +198,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequestLdp))
+                  body: jsonEncode(credentialRequest))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
@@ -201,7 +216,7 @@ Future<void> handleOfferOidc(String offerUri) async {
             logger.d(signedData.deviceKeyInfo.deviceKey);
             var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
             logger.d(did);
-            var credSubject = {'id': did};
+            var credSubject = <String, dynamic>{'id': did};
             data.items.forEach((key, value) {
               for (var i in value) {
                 credSubject[i.dataElementIdentifier] = i.dataElementValue;
@@ -352,18 +367,26 @@ Future<void> handlePresentationRequestOidc(String request) async {
     if (requestUri == null) {
       throw Exception('requestUri null');
     }
-
+    logger.d(requestUri);
     var requestRaw = await get(Uri.parse(requestUri), headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     });
     logger.d(requestRaw.statusCode);
+    logger.d(requestRaw.headers);
     logger.d(requestRaw.body);
 
-    var requestObject = RequestObject.fromJson(requestRaw.body);
+    var requestObject = RequestObject.fromJson(utf8.decode(
+        base64Decode(addPaddingToBase64((requestRaw.body.split('.')[1])))));
+
+    logger.d(utf8.decode(
+        base64Decode(addPaddingToBase64((requestRaw.body.split('.')[1])))));
 
     logger.d(requestObject.nonce);
     logger.d(requestObject.presentationDefinition);
+    logger.d(requestObject.responseMode);
+    redirectUri = requestObject.redirectUri;
+    logger.d(redirectUri);
     definition = requestObject.presentationDefinition;
     nonce = requestObject.nonce;
   }
@@ -375,6 +398,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
   var allCreds = wallet.allCredentials();
+  var isoCreds = wallet.isoMdocCredentials;
   List<VerifiableCredential> creds = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
@@ -385,6 +409,36 @@ Future<void> handlePresentationRequestOidc(String request) async {
       }
     }
   });
+
+  for (var cred in isoCreds) {
+    var data = IssuerSignedObject.fromCbor(
+        base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
+    var subject = <String, dynamic>{};
+    data.items.forEach((key, value) {
+      var nameSpaceData = <String, dynamic>{};
+      for (var i in value) {
+        nameSpaceData[i.dataElementIdentifier] = i.dataElementValue;
+      }
+      subject[key.replaceAll(
+              'eu.europa.ec.eudi.pid.1', 'eu.europa.ec.eudiw.pid.1')] =
+          nameSpaceData;
+    });
+
+    var w3c = VerifiableCredential.fromJson(cred.w3cCredential);
+    subject['id'] = w3c.credentialSubject['id'];
+
+    logger.d(subject);
+
+    var vc = VerifiableCredential(
+        context: w3c.context,
+        type: w3c.type,
+        issuer: w3c.issuer,
+        credentialSubject: subject,
+        issuanceDate: w3c.issuanceDate);
+
+    logger.d(vc.toJson());
+    creds.add(vc);
+  }
 
   if (definition == null) {
     logger.d('No presentation definition');

@@ -83,7 +83,8 @@ class NavigationProvider extends ChangeNotifier {
     } else if (link.startsWith('openid-credential-offer') ||
         link.startsWith('eudi-openid4ci')) {
       handleOfferOidc(link);
-    } else if (link.startsWith('openid-presentation-request')) {
+    } else if (link.startsWith('openid-presentation-request') ||
+        link.startsWith('eudi-openid4vp')) {
       handlePresentationRequestOidc(link);
     }
     // Handle own App Link

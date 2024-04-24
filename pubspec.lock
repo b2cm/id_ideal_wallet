@@ -284,11 +284,9 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "."
-      ref: didcomm
-      resolved-ref: b514f0ee39e78a59ac70e284ac6a031d07ff7b15
-      url: "https://github.com/b2cm/dart_ssi"
-    source: git
+      path: "../flutter_ssi_wallet"
+      relative: true
+    source: path
     version: "3.1.0"
   dbus:
     dependency: transitive
@@ -578,10 +576,10 @@ packages:
     dependency: "direct main"
     description:
       name: iso_mdoc
-      sha256: "0c95de92a6db5dedded72e5e9864a4810c6cb3cb0ddbe58acae6dde939ae9988"
+      sha256: f3c4e63379c9bd0c82c85111701f59221ffbd7aaa7ec3fc3402ffb50f7ab7a06
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   js:
     dependency: transitive
     description:
@@ -923,10 +921,10 @@ packages:
     dependency: transitive
     description:
       name: pointycastle
-      sha256: "70fe966348fe08c34bf929582f1d8247d9d9408130723206472b4687227e4333"
+      sha256: "79fbafed02cfdbe85ef3fd06c7f4bc2cbcba0177e61b765264853d4253b21744"
       url: "https://pub.dev"
     source: hosted
-    version: "3.8.0"
+    version: "3.9.0"
   printing:
     dependency: "direct main"
     description:

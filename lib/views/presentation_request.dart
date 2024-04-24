@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -18,6 +19,7 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
+import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart';
 
@@ -452,25 +454,40 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
       wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
     }
     List<dynamic> finalSend = [];
+    List<dynamic> finalSendIso = [];
     Set<String> issuerDids = {};
     int outerPos = 0;
     int innerPos = 0;
     for (var result in widget.results) {
       List<VerifiableCredential> credList = [];
+      List<VerifiableCredential> credListIso = [];
       innerPos = 0;
       for (var cred in result.credentials) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
-          credList.add(cred);
+          if (cred.type.contains('IsoMdlCredential')) {
+            credListIso.add(cred);
+          } else {
+            credList.add(cred);
+          }
           issuerDids.add(getIssuerDidFromCredential(cred.toJson()));
         }
         innerPos++;
       }
       outerPos++;
-      finalSend.add(FilterResult(
-          credentials: credList,
-          matchingDescriptorIds: result.matchingDescriptorIds,
-          presentationDefinitionId: result.presentationDefinitionId,
-          submissionRequirement: result.submissionRequirement));
+      if (credListIso.isNotEmpty) {
+        finalSendIso.add(FilterResult(
+            credentials: credListIso,
+            matchingDescriptorIds: result.matchingDescriptorIds,
+            presentationDefinitionId: result.presentationDefinitionId,
+            submissionRequirement: result.submissionRequirement));
+      }
+      if (credList.isNotEmpty) {
+        finalSend.add(FilterResult(
+            credentials: credList,
+            matchingDescriptorIds: result.matchingDescriptorIds,
+            presentationDefinitionId: result.presentationDefinitionId,
+            submissionRequirement: result.submissionRequirement));
+      }
     }
     // logger.d(issuerDids);
     // Set<String> addedCredentials = {};
@@ -493,6 +510,38 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     // logger.d('collected Credentials');
 
     if (widget.isOidc) {
+      if (finalSendIso.isNotEmpty) {
+        List<String> responses = [];
+
+        for (FilterResult entry in finalSendIso) {
+          for (var cred in entry.credentials) {
+            var did = getHolderDidFromCredential(cred.credentialSubject);
+            var isoCred = wallet.getCredential(did);
+            logger.d(isoCred!.plaintextCredential);
+            var issuerAuth = IssuerSignedObject.fromCbor(base64Decode(
+                addPaddingToBase64(
+                    isoCred!.plaintextCredential.replaceAll('isoData:', ''))));
+            var mso =
+                MobileSecurityObject.fromCbor(issuerAuth.issuerAuth.payload);
+
+            var res = DeviceResponse(status: 0, documents: [
+              Document(
+                  docType: mso.docType,
+                  issuerSigned: issuerAuth,
+                  deviceSigned: DeviceSignedObject(nameSpaces: {}))
+            ]);
+
+            responses.add(base64UrlEncode(res.toEncodedCbor()));
+          }
+        }
+
+        var res = await get(Uri.parse(
+            '${widget.otherEndpoint}?vp_token=${Uri.encodeQueryComponent(responses.first)}'));
+
+        logger.d(res.statusCode);
+        logger.d(res.body);
+        return null;
+      }
       var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
           loadDocumentFunction: loadDocumentFast);
       var casted = VerifiablePresentation.fromJson(vp);
@@ -500,10 +549,16 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
       logger.d('send presentation to ${widget.otherEndpoint}');
-      var res = await post(Uri.parse(widget.otherEndpoint),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body:
-              'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+
+      logger.d(
+          '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}');
+
+      var res = await get(Uri.parse(
+          '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}'));
+      // var res = await post(Uri.parse(widget.otherEndpoint),
+      //     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      //     body:
+      //         'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
 
       logger.d(res.statusCode);
       logger.d(res.body);
