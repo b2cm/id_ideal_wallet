@@ -19,6 +19,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../functions/didcomm_message_handler.dart';
 
@@ -502,12 +503,20 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         res = await post(Uri.parse(widget.otherEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body:
-                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
       } else {
         logger.d(
             '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
-        res = await get(Uri.parse(
-            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'));
+
+        var r = await launchUrl(
+            Uri.parse(
+                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
+            mode: LaunchMode.externalApplication);
+        if (r) {
+          res = Response('', 200);
+        } else {
+          res = Response('', 400);
+        }
       }
 
       logger.d(res.statusCode);
