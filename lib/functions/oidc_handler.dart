@@ -191,8 +191,14 @@ Future<void> handleOfferOidc(String offerUri) async {
 
         logger.d(credential);
 
-        var verified = await verifyCredential(credential,
-            loadDocumentFunction: loadDocumentFast);
+        var verified = false;
+        try {
+          verified = await verifyCredential(credential,
+              loadDocumentFunction: loadDocumentFast);
+        } catch (e) {
+          showErrorMessage('Credential nicht verifizierbar');
+          return;
+        }
 
         logger.d(verified);
         if (verified) {
@@ -255,15 +261,20 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var clientId = asUri.queryParameters['client_id'];
   var presDef = asUri.queryParameters['presentation_definition'];
   var presDefUri = asUri.queryParameters['presentation_definition_uri'];
+  var state = asUri.queryParameters['state'];
+  var responseMode = asUri.queryParameters['response_mode'];
+  logger.d('State: $state');
 
   if (clientId == null) {
     throw Exception('client id null');
   }
 
   if (presDef != null) {
+    // Case 1: Every relevant information is in original query-parameters
     logger.d(presDef);
     definition = PresentationDefinition.fromJson(presDef);
   } else if (presDefUri != null) {
+    // Case 2: presentation definition must be fetched
     logger.d(presDefUri);
     var res = await get(Uri.parse(presDefUri), headers: {
       'Content-Type': 'application/json',
@@ -275,6 +286,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       throw Exception('no presentation definition found at $presDefUri');
     }
   } else {
+    // Case 3: the total request must be fetched
     logger.d(requestUri);
     logger.d(clientId);
 
@@ -295,11 +307,15 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(requestObject.presentationDefinition);
     definition = requestObject.presentationDefinition;
     nonce = requestObject.nonce;
+    responseMode = requestObject.responseMode;
   }
 
   if (nonce == null) {
     throw Exception('nonce null');
   }
+
+  logger.d('Response Mode: $responseMode');
+
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
@@ -335,6 +351,8 @@ Future<void> handlePresentationRequestOidc(String request) async {
           results: filtered,
           isOidc: true,
           nonce: nonce,
+          oidcState: state,
+          oidcResponseMode: responseMode,
         ),
       ),
     );

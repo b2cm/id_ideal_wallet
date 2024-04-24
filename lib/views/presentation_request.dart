@@ -31,7 +31,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final String definitionHash;
   final RequestPresentation? message;
   final bool isOidc, askForBackground;
-  final String? nonce;
+  final String? nonce, oidcState, oidcResponseMode;
   final String? lnInvoice;
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
@@ -51,7 +51,9 @@ class PresentationRequestDialog extends StatefulWidget {
       this.nonce,
       this.lnInvoice,
       this.lnInvoiceRequest,
-      this.paymentCards});
+      this.paymentCards,
+      this.oidcResponseMode,
+      this.oidcState});
 
   @override
   PresentationRequestDialogState createState() =>
@@ -495,10 +497,18 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
       logger.d('send presentation to ${widget.otherEndpoint}');
-      var res = await post(Uri.parse(widget.otherEndpoint),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body:
-              'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+      Response res;
+      if (widget.oidcResponseMode == 'direct_post') {
+        res = await post(Uri.parse(widget.otherEndpoint),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body:
+                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+      } else {
+        logger.d(
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+        res = await get(Uri.parse(
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'));
+      }
 
       logger.d(res.statusCode);
       logger.d(res.body);
