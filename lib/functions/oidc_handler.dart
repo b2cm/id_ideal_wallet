@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/oidc.dart';
+import 'package:dart_ssi/util.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -180,7 +181,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequestLdp))
+                  body: jsonEncode(credentialRequest))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
@@ -301,7 +302,17 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(requestRaw.statusCode);
     logger.d(requestRaw.body);
 
-    var requestObject = RequestObject.fromJson(requestRaw.body);
+    RequestObject requestObject;
+    if (isRawJson(requestRaw.body)) {
+      logger.d('raw json');
+      requestObject = RequestObject.fromJson(requestRaw.body);
+    } else {
+      // it is a jwt/jws (as normally expected)
+      logger.d('jwt');
+      var payload = requestRaw.body.split('.')[1];
+      requestObject = RequestObject.fromJson(
+          utf8.decode(base64Decode(addPaddingToBase64(payload))));
+    }
 
     logger.d(requestObject.nonce);
     logger.d(requestObject.presentationDefinition);
@@ -361,5 +372,14 @@ Future<void> handlePresentationRequestOidc(String request) async {
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+  }
+}
+
+bool isRawJson(String json) {
+  try {
+    jsonDecode(json);
+    return true;
+  } catch (e) {
+    return false;
   }
 }
