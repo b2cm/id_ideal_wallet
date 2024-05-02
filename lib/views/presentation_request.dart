@@ -22,6 +22,7 @@ import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../functions/didcomm_message_handler.dart';
 
@@ -34,7 +35,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final String definitionHash;
   final RequestPresentation? message;
   final bool isOidc, askForBackground, isIso;
-  final String? nonce;
+  final String? nonce, oidcState, oidcResponseMode;
   final String? lnInvoice;
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
@@ -57,7 +58,9 @@ class PresentationRequestDialog extends StatefulWidget {
       this.lnInvoice,
       this.lnInvoiceRequest,
       this.paymentCards,
-      this.requesterCert});
+      this.requesterCert,
+      this.oidcResponseMode,
+      this.oidcState});
 
   @override
   PresentationRequestDialogState createState() =>
@@ -549,16 +552,26 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           loadDocumentFunction: loadDocumentFast));
       logger.d(jsonDecode(vp));
       logger.d('send presentation to ${widget.otherEndpoint}');
+      Response res;
+      if (widget.oidcResponseMode == 'direct_post') {
+        res = await post(Uri.parse(widget.otherEndpoint),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body:
+                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
+      } else {
+        logger.d(
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
 
-      logger.d(
-          '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}');
-
-      var res = await get(Uri.parse(
-          '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}'));
-      // var res = await post(Uri.parse(widget.otherEndpoint),
-      //     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      //     body:
-      //         'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp');
+        var r = await launchUrl(
+            Uri.parse(
+                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
+            mode: LaunchMode.externalApplication);
+        if (r) {
+          res = Response('', 200);
+        } else {
+          res = Response('', 400);
+        }
+      }
 
       logger.d(res.statusCode);
       logger.d(res.body);

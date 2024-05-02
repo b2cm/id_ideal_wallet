@@ -476,18 +476,20 @@ Future<bool> handleIssueCredential(
 
         wallet.storeConversation(message, entry.myDid);
 
-        var ack = EmptyMessage(
-            from: entry.myDid,
-            to: [message.from!],
-            ack: [message.id],
-            threadId: message.threadId ?? message.id);
+        if (message.pleaseAck != null && message.pleaseAck!.isNotEmpty) {
+          var ack = EmptyMessage(
+              from: entry.myDid,
+              to: [message.from!],
+              ack: [message.id],
+              threadId: message.threadId ?? message.id);
 
-        sendMessage(
-            entry.myDid,
-            determineReplyUrl(message.replyUrl, message.replyTo),
-            wallet,
-            ack,
-            message.from!);
+          sendMessage(
+              entry.myDid,
+              determineReplyUrl(message.replyUrl, message.replyTo),
+              wallet,
+              ack,
+              message.from!);
+        }
       }
     } else if (message.credentialFulfillment != null) {
       var myDid = message.to!.first;

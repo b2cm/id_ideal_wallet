@@ -102,7 +102,7 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
           widget.issuer.credentialSubject['companyInformation']['legalName'];
     } else {
       if (widget.issuer.startsWith('did:web')) {
-        var didUrl = didWebToUri(widget.issuer['id']);
+        var didUrl = didWebToUri(widget.issuer);
         var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
         issuerName = certInfo?.subjectOrganization ??
             certInfo?.subjectCommonName ??
@@ -227,7 +227,7 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
       }
     } else {
       if (widget.issuer.startsWith('did:web')) {
-        var didUrl = didWebToUri(widget.issuer['id']);
+        var didUrl = didWebToUri(widget.issuer);
         var certInfo = await getCertificateInfoFromUrl(didUrl.toString());
         if (certInfo != null && certInfo.valid!) {
           marker = Icons.verified_outlined;

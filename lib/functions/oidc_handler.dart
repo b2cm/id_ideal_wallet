@@ -275,8 +275,14 @@ Future<void> handleOfferOidc(String offerUri) async {
         } else {
           logger.d(credential);
 
-          var verified = await verifyCredential(credential,
+        var verified = false;
+        try {
+          verified = await verifyCredential(credential,
               loadDocumentFunction: loadDocumentFast);
+        } catch (e) {
+          showErrorMessage('Credential nicht verifizierbar');
+          return;
+        }
 
           logger.d(verified);
           if (verified) {
@@ -341,15 +347,20 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var clientId = asUri.queryParameters['client_id'];
   var presDef = asUri.queryParameters['presentation_definition'];
   var presDefUri = asUri.queryParameters['presentation_definition_uri'];
+  var state = asUri.queryParameters['state'];
+  var responseMode = asUri.queryParameters['response_mode'];
+  logger.d('State: $state');
 
   if (clientId == null) {
     throw Exception('client id null');
   }
 
   if (presDef != null) {
+    // Case 1: Every relevant information is in original query-parameters
     logger.d(presDef);
     definition = PresentationDefinition.fromJson(presDef);
   } else if (presDefUri != null) {
+    // Case 2: presentation definition must be fetched
     logger.d(presDefUri);
     var res = await get(Uri.parse(presDefUri), headers: {
       'Content-Type': 'application/json',
@@ -361,6 +372,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       throw Exception('no presentation definition found at $presDefUri');
     }
   } else {
+    // Case 3: the total request must be fetched
     logger.d(requestUri);
     logger.d(clientId);
 
@@ -376,11 +388,17 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(requestRaw.headers);
     logger.d(requestRaw.body);
 
-    var requestObject = RequestObject.fromJson(utf8.decode(
-        base64Decode(addPaddingToBase64((requestRaw.body.split('.')[1])))));
-
-    logger.d(utf8.decode(
-        base64Decode(addPaddingToBase64((requestRaw.body.split('.')[1])))));
+    RequestObject requestObject;
+    if (isRawJson(requestRaw.body)) {
+      logger.d('raw json');
+      requestObject = RequestObject.fromJson(requestRaw.body);
+    } else {
+      // it is a jwt/jws (as normally expected)
+      logger.d('jwt');
+      var payload = requestRaw.body.split('.')[1];
+      requestObject = RequestObject.fromJson(
+          utf8.decode(base64Decode(addPaddingToBase64(payload))));
+    }
 
     logger.d(requestObject.nonce);
     logger.d(requestObject.presentationDefinition);
@@ -389,11 +407,15 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(redirectUri);
     definition = requestObject.presentationDefinition;
     nonce = requestObject.nonce;
+    responseMode = requestObject.responseMode;
   }
 
   if (nonce == null) {
     throw Exception('nonce null');
   }
+
+  logger.d('Response Mode: $responseMode');
+
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
@@ -460,6 +482,8 @@ Future<void> handlePresentationRequestOidc(String request) async {
           results: filtered,
           isOidc: true,
           nonce: nonce,
+          oidcState: state,
+          oidcResponseMode: responseMode,
         ),
       ),
     );
@@ -468,6 +492,15 @@ Future<void> handlePresentationRequestOidc(String request) async {
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
         AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+  }
+}
+
+bool isRawJson(String json) {
+  try {
+    jsonDecode(json);
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
