@@ -198,7 +198,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ${tokenResponse.accessToken}'
                   },
-                  body: jsonEncode(credentialRequest))
+                  body: jsonEncode(credentialRequestLdp))
               .timeout(const Duration(seconds: 20), onTimeout: () {
         return Response('Timeout', 400);
       });
@@ -275,14 +275,14 @@ Future<void> handleOfferOidc(String offerUri) async {
         } else {
           logger.d(credential);
 
-        var verified = false;
-        try {
-          verified = await verifyCredential(credential,
-              loadDocumentFunction: loadDocumentFast);
-        } catch (e) {
-          showErrorMessage('Credential nicht verifizierbar');
-          return;
-        }
+          var verified = false;
+          try {
+            verified = await verifyCredential(credential,
+                loadDocumentFunction: loadDocumentFast);
+          } catch (e) {
+            showErrorMessage('Credential nicht verifizierbar');
+            return;
+          }
 
           logger.d(verified);
           if (verified) {
@@ -339,7 +339,8 @@ Future<void> handleOfferOidc(String offerUri) async {
 Future<void> handlePresentationRequestOidc(String request) async {
   var asUri = Uri.parse(request);
   PresentationDefinition? definition;
-  String? nonce;
+  String? nonce, responseUri;
+  ClientMetaData? clientMetaData;
 
   nonce = asUri.queryParameters['nonce'];
   var redirectUri = asUri.queryParameters['redirect_uri'];
@@ -396,8 +397,20 @@ Future<void> handlePresentationRequestOidc(String request) async {
       // it is a jwt/jws (as normally expected)
       logger.d('jwt');
       var payload = requestRaw.body.split('.')[1];
+      logger.d(
+          jsonDecode(utf8.decode(base64Decode(addPaddingToBase64(payload)))));
       requestObject = RequestObject.fromJson(
           utf8.decode(base64Decode(addPaddingToBase64(payload))));
+    }
+
+    if (requestObject.clientMetaDataUri != null) {
+      var metaDataResponse =
+          await get(Uri.parse(requestObject.clientMetaDataUri!));
+      if (metaDataResponse.statusCode == 200) {
+        clientMetaData = ClientMetaData.fromJson(metaDataResponse.body);
+      }
+    } else {
+      clientMetaData = requestObject.clientMetaData;
     }
 
     logger.d(requestObject.nonce);
@@ -408,6 +421,8 @@ Future<void> handlePresentationRequestOidc(String request) async {
     definition = requestObject.presentationDefinition;
     nonce = requestObject.nonce;
     responseMode = requestObject.responseMode;
+    responseUri = requestObject.responseUri;
+    state = requestObject.state;
   }
 
   if (nonce == null) {
@@ -441,9 +456,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       for (var i in value) {
         nameSpaceData[i.dataElementIdentifier] = i.dataElementValue;
       }
-      subject[key.replaceAll(
-              'eu.europa.ec.eudi.pid.1', 'eu.europa.ec.eudiw.pid.1')] =
-          nameSpaceData;
+      subject[key] = nameSpaceData;
     });
 
     var w3c = VerifiableCredential.fromJson(cred.w3cCredential);
@@ -476,7 +489,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       MaterialPageRoute(
         builder: (context) => PresentationRequestDialog(
           definitionHash: '',
-          otherEndpoint: redirectUri ?? clientId,
+          otherEndpoint: responseUri ?? redirectUri ?? clientId,
           receiverDid: clientId,
           myDid: 'myDid',
           results: filtered,
@@ -484,6 +497,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
           nonce: nonce,
           oidcState: state,
           oidcResponseMode: responseMode,
+          oidcClientMetadata: clientMetaData,
         ),
       ),
     );

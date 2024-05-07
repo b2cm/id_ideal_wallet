@@ -166,7 +166,7 @@ class MdocProvider extends ChangeNotifier {
     var transcriptHolder = SessionTranscript(
         deviceEngagementBytes: engagement!.toDeviceEngagementBytes(),
         keyBytes: se.eReaderKey.toCoseKeyBytes(),
-        handover: Handover(handoverSelectMessage: handoverSelectMessage!));
+        handover: NFCHandover(handoverSelectMessage: handoverSelectMessage!));
 
     encryptor = SessionEncryptor(
         mdocRole: MdocRole.mdocHolder,

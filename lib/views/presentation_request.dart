@@ -1,8 +1,13 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:base_codecs/base_codecs.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/didcomm.dart';
+import 'package:dart_ssi/oidc.dart';
 import 'package:dart_ssi/util.dart';
+import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -20,9 +25,10 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
+import 'package:json_path/json_path.dart';
 import 'package:provider/provider.dart';
-import 'package:x509b/x509.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:x509b/x509.dart';
 
 import '../functions/didcomm_message_handler.dart';
 
@@ -40,6 +46,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
   final X509Certificate? requesterCert;
+  final ClientMetaData? oidcClientMetadata;
 
   const PresentationRequestDialog(
       {super.key,
@@ -60,7 +67,8 @@ class PresentationRequestDialog extends StatefulWidget {
       this.paymentCards,
       this.requesterCert,
       this.oidcResponseMode,
-      this.oidcState});
+      this.oidcState,
+      this.oidcClientMetadata});
 
   @override
   PresentationRequestDialogState createState() =>
@@ -513,58 +521,191 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     // logger.d('collected Credentials');
 
     if (widget.isOidc) {
+      String vp;
+      PresentationSubmission submission;
+      VerifiablePresentation? casted;
+      String? mdocGeneratedNonce;
       if (finalSendIso.isNotEmpty) {
         List<String> responses = [];
+        String definitionId = '';
+        List<InputDescriptorMappingObject> descriptorMap = [];
 
         for (FilterResult entry in finalSendIso) {
+          definitionId = entry.presentationDefinitionId;
+
           for (var cred in entry.credentials) {
             var did = getHolderDidFromCredential(cred.credentialSubject);
             var isoCred = wallet.getCredential(did);
+            var private = await wallet.getPrivateKeyForCredentialDid(did);
+            var privateKey = CoseKey(
+                d: hexDecode(private!),
+                kty: CoseKeyType.octetKeyPair,
+                crv: CoseCurve.ed25519);
             logger.d(isoCred!.plaintextCredential);
             var issuerAuth = IssuerSignedObject.fromCbor(base64Decode(
                 addPaddingToBase64(
-                    isoCred!.plaintextCredential.replaceAll('isoData:', ''))));
+                    isoCred.plaintextCredential.replaceAll('isoData:', ''))));
             var mso =
                 MobileSecurityObject.fromCbor(issuerAuth.issuerAuth.payload);
 
+            var handover = OID4VPHandover.fromValues(
+                widget.receiverDid, widget.otherEndpoint, widget.nonce!);
+            mdocGeneratedNonce = handover.mdocGeneratedNonce;
+            var transcript = SessionTranscript(handover: handover);
+            var ds = await generateDeviceSignature({}, mso.docType, transcript,
+                signer: SignatureGenerator.get(privateKey));
             var res = DeviceResponse(status: 0, documents: [
               Document(
                   docType: mso.docType,
                   issuerSigned: issuerAuth,
-                  deviceSigned: DeviceSignedObject(nameSpaces: {}))
+                  deviceSigned: ds)
             ]);
 
-            responses.add(base64UrlEncode(res.toEncodedCbor()));
+            responses.add(
+                removePaddingFromBase64(base64UrlEncode(res.toEncodedCbor())));
+            descriptorMap.add(InputDescriptorMappingObject(
+                id: entry.matchingDescriptorIds.first,
+                format: 'iso_mdoc',
+                path: JsonPath(r'$')));
           }
         }
-
-        var res = await get(Uri.parse(
-            '${widget.otherEndpoint}?vp_token=${Uri.encodeQueryComponent(responses.first)}'));
-
-        logger.d(res.statusCode);
-        logger.d(res.body);
-        return null;
+        vp = responses.first;
+        submission = PresentationSubmission(
+            presentationDefinitionId: definitionId,
+            descriptorMap: descriptorMap);
+      } else {
+        vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast);
+        casted = VerifiablePresentation.fromJson(vp);
+        submission = casted.presentationSubmission!;
+        logger.d(await verifyPresentation(vp, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast));
+        logger.d(jsonDecode(vp));
       }
-      var vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
-          loadDocumentFunction: loadDocumentFast);
-      var casted = VerifiablePresentation.fromJson(vp);
-      logger.d(await verifyPresentation(vp, widget.nonce!,
-          loadDocumentFunction: loadDocumentFast));
-      logger.d(jsonDecode(vp));
+
       logger.d('send presentation to ${widget.otherEndpoint}');
       Response res;
       if (widget.oidcResponseMode == 'direct_post') {
         res = await post(Uri.parse(widget.otherEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body:
-                'presentation_submission=${casted.presentationSubmission!.toString()}&vp_token=$vp${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
+                'presentation_submission=${submission.toString()}&vp_token=$vp${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
+      } else if (widget.oidcResponseMode == 'direct_post.jwt') {
+        if (widget.oidcClientMetadata == null) {
+          throw Exception('no client metadata');
+        }
+        if (widget.oidcClientMetadata?.authEncryptedResponseAlg != null &&
+            widget.oidcClientMetadata?.authEncryptedResponseEnc != null) {
+          // we should build jwe
+          List<Map<String, dynamic>>? jwks;
+          if (widget.oidcClientMetadata!.jwksUri != null) {
+            var res = await get(Uri.parse(widget.oidcClientMetadata!.jwksUri!));
+            if (res.statusCode == 200) {
+              var body = jsonDecode(res.body);
+
+              var keys = (body['keys'] as List).cast<Map>();
+              jwks = keys
+                  .map((e) =>
+                      e.map((key, value) => MapEntry(key as String, value)))
+                  .toList();
+            }
+          } else {
+            jwks = widget.oidcClientMetadata!.jwks;
+          }
+          if (jwks == null) {
+            throw Exception('no keys');
+          }
+          var readerKey =
+              jwks.firstWhere((element) => element['alg'] == 'ECDH-ES');
+          var crv = readerKey['crv'];
+
+          logger.d(readerKey);
+          var walletKeyType;
+          if (crv == 'P-256') {
+            walletKeyType = KeyType.p256;
+          } else if (crv == 'X25519') {
+            walletKeyType = KeyType.x25519;
+          } else if (crv == 'P-384') {
+            walletKeyType = KeyType.p384;
+          } else if (crv == 'P521') {
+            walletKeyType = KeyType.p521;
+          } else {
+            walletKeyType = KeyType.secp256k1;
+          }
+          var cDid = await wallet.newConnectionDid(walletKeyType);
+          var myJwk =
+              await wallet.wallet.getPrivateKeyForConnectionDidAsJwk(cDid);
+          logger.d(myJwk);
+          var myJwkPub = resolveDidKey(cDid)
+              .convertAllKeysToJwk()
+              .resolveKeyIds()
+              .verificationMethod!
+              .first
+              .publicKeyJwk;
+
+          var enc = widget.oidcClientMetadata!.authEncryptedResponseEnc!;
+
+          var header = {
+            'alg': widget.oidcClientMetadata!.authEncryptedResponseAlg,
+            'enc': enc,
+            'kid': readerKey['kid'],
+            'apv': base64Encode(utf8.encode(widget.nonce!)),
+            'apu': mdocGeneratedNonce,
+            'epk': myJwkPub
+          };
+
+          logger.d(header);
+
+          if (header['alg'] == 'ECDH-ES') {
+            var sharedSecret = ecdhES(myJwk, readerKey, header['alg'], enc,
+                apu: header['apu'], apv: header['apv']);
+
+            logger.d('$sharedSecret, ${sharedSecret.length}');
+            // direct mode
+            var key = SymmetricKey(keyValue: Uint8List.fromList(sharedSecret));
+            // build aad ( ASCII(BASE64URL(UTF8(JWE Protected Header))) )
+            var aad = ascii.encode(removePaddingFromBase64(
+                base64UrlEncode(utf8.encode(jsonEncode(header)))));
+
+            //data
+            var data = {
+              'vp_token': vp,
+              'presentation_submission': submission,
+              'state': widget.oidcState
+            };
+
+            Encrypter e;
+            if (enc == 'A128CBC-HS256') {
+              e = key.createEncrypter(
+                  algorithms.encryption.aes.cbcWithHmac.sha256);
+            } else {
+              throw Exception('Unknown enc $enc');
+            }
+
+            //6) encrypt and get tag
+            var encrypted = e.encrypt(
+                Uint8List.fromList(utf8.encode(jsonEncode(data))),
+                additionalAuthenticatedData: aad);
+
+            var jwe =
+                '${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(header))))}..${removePaddingFromBase64(base64UrlEncode(encrypted.initializationVector!))}.${removePaddingFromBase64(base64UrlEncode(encrypted.data))}.${removePaddingFromBase64(base64UrlEncode(encrypted.authenticationTag!))}';
+            res = await post(Uri.parse(widget.otherEndpoint),
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body:
+                    'response=${Uri.encodeQueryComponent(jwe)}&state=${Uri.encodeQueryComponent(widget.oidcState!)}');
+          } else {
+            throw Exception('Unsupported alg ${header['alg']}');
+          }
+        } else {
+          throw Exception('signing not supported');
+        }
       } else {
         logger.d(
-            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
 
         var r = await launchUrl(
             Uri.parse(
-                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(casted.presentationSubmission!.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
+                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
             mode: LaunchMode.externalApplication);
         if (r) {
           res = Response('', 200);
@@ -575,7 +716,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       logger.d(res.statusCode);
       logger.d(res.body);
-      if (res.statusCode == 200 || res.statusCode == 201) {
+      if ((res.statusCode == 200 || res.statusCode == 201) && casted != null) {
         for (var cred in casted.verifiableCredential!) {
           wallet.storeExchangeHistoryEntry(
               getHolderDidFromCredential(cred.toJson()),
@@ -612,12 +753,14 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
         //Navigator.of(context).pop();
       } else {
-        for (var cred in casted.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present failed',
-              widget.receiverDid);
+        if (casted != null) {
+          for (var cred in casted.verifiableCredential!) {
+            wallet.storeExchangeHistoryEntry(
+                getHolderDidFromCredential(cred.toJson()),
+                DateTime.now(),
+                'present failed',
+                widget.receiverDid);
+          }
         }
 
         await showModalBottomSheet(
@@ -644,7 +787,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
         // Navigator.of(context).pop();
       }
-      return VerifiablePresentation.fromJson(vp);
+      return casted;
     } else {
       var vp = await buildPresentation(
           finalSend,
