@@ -81,7 +81,7 @@ class NavigationProvider extends ChangeNotifier {
       payInvoiceInteraction(link, isMainnet: true);
     } else if (link.startsWith('openid-credential-offer')) {
       handleOfferOidc(link);
-    } else if (link.startsWith('openid-presentation-request')) {
+    } else if (link.startsWith('openid-presentation-request') || link.startsWith('openid4vp')) {
       handlePresentationRequestOidc(link);
     }
     // Handle own App Link
