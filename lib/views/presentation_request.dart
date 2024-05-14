@@ -19,6 +19,7 @@ import 'package:id_ideal_wallet/basicUi/standard/requester_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/secured_widget.dart';
 import 'package:id_ideal_wallet/constants/kaprion_context.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -91,7 +92,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     int innerPos = 0;
     for (var res in widget.results) {
       innerPos = 0;
-      for (var _ in res.credentials) {
+      for (var _ in res.isoMdocCredentials ?? []) {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
@@ -104,6 +105,20 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
         innerPos++;
       }
+      for (var _ in res.credentials ?? []) {
+        if (innerPos == 0) {
+          selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+        } else {
+          if (res.submissionRequirement?.min != null &&
+              innerPos < res.submissionRequirement!.min!) {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+          } else {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
+          }
+        }
+        innerPos++;
+      }
+
       outerPos++;
     }
 
@@ -182,7 +197,9 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
       if (result.selfIssuable != null && result.selfIssuable!.isNotEmpty) {
         var pos = outerPos;
         dataEntered = false;
-        if (result.credentials.isNotEmpty) {
+        if ((result.credentials != null && result.credentials!.isNotEmpty) ||
+            (result.isoMdocCredentials != null &&
+                result.isoMdocCredentials!.isNotEmpty)) {
           dataEntered = true;
         }
         for (var i in result.selfIssuable!) {
@@ -230,11 +247,12 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     if (widget.results[index].selfIssuable!.isEmpty) {
                       widget.results[index].selfIssuable = null;
                     }
-                    widget.results[index].credentials
-                        .add(VerifiableCredential.fromJson(signed));
+                    var cList = widget.results[index].credentials ?? [];
+                    cList.add(VerifiableCredential.fromJson(signed));
+                    widget.results[index].credentials = cList;
                     logger.d(widget.results);
                     selectedCredsPerResult[
-                            'o${pos}i${widget.results[index].credentials.length - 1}'] =
+                            'o${pos}i${widget.results[index].credentials!.length - 1}'] =
                         true;
                     dataEntered = true;
                     setState(() {});
@@ -252,7 +270,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           );
         }
 
-        if (result.credentials.isNotEmpty) {
+        if (result.credentials != null && result.credentials!.isNotEmpty) {
           outerTileChildList.add(const Text(
             'oder',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -262,7 +280,45 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
       int credCount = result.selfIssuable?.length ?? 0;
       var selectedCredNames = <String>[];
       innerPos = 0;
-      for (var v in result.credentials) {
+
+      // iso credentials
+      for (var v in result.isoMdocCredentials ?? <IssuerSignedObject>[]) {
+        var mso = MobileSecurityObject.fromCbor(v.issuerAuth.payload);
+        Map<String, dynamic> subject = {};
+        for (var k in v.items.keys) {
+          //namespaces
+          var items = v.items[k];
+          for (var i in items!) {
+            subject[i.dataElementIdentifier] = i.dataElementValue;
+          }
+        }
+        var key = 'o${outerPos}i$innerPos';
+        logger.d(key);
+        if (selectedCredsPerResult[key]!) {
+          credCount++;
+          selectedCredNames.add(mso.docType);
+        }
+        outerTileChildList.add(
+          ExpansionTile(
+            leading: Checkbox(
+                activeColor: Colors.greenAccent.shade700,
+                onChanged: (bool? newValue) {
+                  setState(() {
+                    if (newValue != null) {
+                      selectedCredsPerResult[key] = newValue;
+                    }
+                  });
+                },
+                value: selectedCredsPerResult[key]),
+            title: Text(mso.docType),
+            children: buildCredSubject(subject),
+          ),
+        );
+        innerPos++;
+      }
+
+      // w3c VCDM
+      for (var v in result.credentials ?? []) {
         var key = 'o${outerPos}i$innerPos';
         logger.d(key);
         if (selectedCredsPerResult[key]!) {
@@ -464,89 +520,61 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     if (widget.askForBackground && backgroundAllow) {
       wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
     }
-    List<dynamic> finalSend = [];
-    List<dynamic> finalSendIso = [];
+    List<FilterResult> finalSend = [];
     Set<String> issuerDids = {};
     int outerPos = 0;
     int innerPos = 0;
     for (var result in widget.results) {
       List<VerifiableCredential> credList = [];
-      List<VerifiableCredential> credListIso = [];
+      List<IssuerSignedObject> credListIso = [];
       innerPos = 0;
-      for (var cred in result.credentials) {
+      for (var cred in result.isoMdocCredentials ?? []) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
-          if (cred.type.contains('IsoMdlCredential')) {
-            credListIso.add(cred);
-          } else {
-            credList.add(cred);
-          }
+          credListIso.add(cred);
+        }
+        innerPos++;
+      }
+      for (var cred in result.credentials ?? []) {
+        if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
+          credList.add(cred);
+
           issuerDids.add(getIssuerDidFromCredential(cred.toJson()));
         }
         innerPos++;
       }
       outerPos++;
-      if (credListIso.isNotEmpty) {
-        finalSendIso.add(FilterResult(
-            credentials: credListIso,
-            matchingDescriptorIds: result.matchingDescriptorIds,
-            presentationDefinitionId: result.presentationDefinitionId,
-            submissionRequirement: result.submissionRequirement));
-      }
-      if (credList.isNotEmpty) {
-        finalSend.add(FilterResult(
-            credentials: credList,
-            matchingDescriptorIds: result.matchingDescriptorIds,
-            presentationDefinitionId: result.presentationDefinitionId,
-            submissionRequirement: result.submissionRequirement));
-      }
+
+      finalSend.add(FilterResult(
+          credentials: credList,
+          isoMdocCredentials: credListIso,
+          matchingDescriptorIds: result.matchingDescriptorIds,
+          presentationDefinitionId: result.presentationDefinitionId,
+          submissionRequirement: result.submissionRequirement));
     }
-    // logger.d(issuerDids);
-    // Set<String> addedCredentials = {};
-    // for (var d in issuerDids) {
-    //   var entry = wallet.getConfig('certCreds:$d');
-    //   if (entry != null) {
-    //     logger.d(entry);
-    //     var j = jsonDecode(entry) as List;
-    //     for (var c in j) {
-    //       var cred = VerifiableCredential.fromJson(c);
-    //       if (!addedCredentials.contains(cred.id)) {
-    //         finalSend.add(cred);
-    //         addedCredentials.add(cred.id!);
-    //         logger.d(c);
-    //       }
-    //     }
-    //   }
-    // }
-    //
-    // logger.d('collected Credentials');
 
     if (widget.isOidc) {
-      String vp;
-      PresentationSubmission submission;
+      String? vp;
+      PresentationSubmission? submission;
       VerifiablePresentation? casted;
       String? mdocGeneratedNonce;
-      if (finalSendIso.isNotEmpty) {
-        List<String> responses = [];
-        String definitionId = '';
-        List<InputDescriptorMappingObject> descriptorMap = [];
 
-        for (FilterResult entry in finalSendIso) {
-          definitionId = entry.presentationDefinitionId;
+      List<String> responses = [];
+      String definitionId = '';
+      List<InputDescriptorMappingObject> descriptorMap = [];
 
-          for (var cred in entry.credentials) {
-            var did = getHolderDidFromCredential(cred.credentialSubject);
-            var isoCred = wallet.getCredential(did);
+      for (FilterResult entry in finalSend) {
+        definitionId = entry.presentationDefinitionId;
+        if (entry.isoMdocCredentials != null &&
+            entry.isoMdocCredentials!.isNotEmpty) {
+          for (var cred in entry.isoMdocCredentials!) {
+            var mso = MobileSecurityObject.fromCbor(cred.issuerAuth.payload);
+            var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
+
             var private = await wallet.getPrivateKeyForCredentialDid(did);
             var privateKey = CoseKey(
                 d: hexDecode(private!),
                 kty: CoseKeyType.octetKeyPair,
                 crv: CoseCurve.ed25519);
-            logger.d(isoCred!.plaintextCredential);
-            var issuerAuth = IssuerSignedObject.fromCbor(base64Decode(
-                addPaddingToBase64(
-                    isoCred.plaintextCredential.replaceAll('isoData:', ''))));
-            var mso =
-                MobileSecurityObject.fromCbor(issuerAuth.issuerAuth.payload);
 
             var handover = OID4VPHandover.fromValues(
                 widget.receiverDid, widget.otherEndpoint, widget.nonce!);
@@ -556,9 +584,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 signer: SignatureGenerator.get(privateKey));
             var res = DeviceResponse(status: 0, documents: [
               Document(
-                  docType: mso.docType,
-                  issuerSigned: issuerAuth,
-                  deviceSigned: ds)
+                  docType: mso.docType, issuerSigned: cred, deviceSigned: ds)
             ]);
 
             responses.add(
@@ -568,19 +594,19 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 format: 'iso_mdoc',
                 path: JsonPath(r'$')));
           }
+          vp = responses.isNotEmpty ? responses.first : '';
+          submission = PresentationSubmission(
+              presentationDefinitionId: definitionId,
+              descriptorMap: descriptorMap);
+        } else {
+          vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
+              loadDocumentFunction: loadDocumentFast);
+          casted = VerifiablePresentation.fromJson(vp);
+          submission = casted.presentationSubmission!;
+          logger.d(await verifyPresentation(vp, widget.nonce!,
+              loadDocumentFunction: loadDocumentFast));
+          logger.d(jsonDecode(vp));
         }
-        vp = responses.first;
-        submission = PresentationSubmission(
-            presentationDefinitionId: definitionId,
-            descriptorMap: descriptorMap);
-      } else {
-        vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
-            loadDocumentFunction: loadDocumentFast);
-        casted = VerifiablePresentation.fromJson(vp);
-        submission = casted.presentationSubmission!;
-        logger.d(await verifyPresentation(vp, widget.nonce!,
-            loadDocumentFunction: loadDocumentFast));
-        logger.d(jsonDecode(vp));
       }
 
       logger.d('send presentation to ${widget.otherEndpoint}');
@@ -701,7 +727,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
       } else {
         logger.d(
-            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp!)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
 
         var r = await launchUrl(
             Uri.parse(
@@ -716,18 +742,29 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       logger.d(res.statusCode);
       logger.d(res.body);
-      if ((res.statusCode == 200 || res.statusCode == 201) && casted != null) {
-        for (var cred in casted.verifiableCredential!) {
-          wallet.storeExchangeHistoryEntry(
-              getHolderDidFromCredential(cred.toJson()),
-              DateTime.now(),
-              'present',
-              widget.receiverDid);
-        }
-
+      if ((res.statusCode == 200 || res.statusCode == 201)) {
         String type = '';
-        for (var c in casted.verifiableCredential!) {
-          type += '''${getTypeToShow(c.type)}, \n''';
+
+        for (var entry in finalSend) {
+          for (var cred in entry.credentials ?? <VerifiableCredential>[]) {
+            wallet.storeExchangeHistoryEntry(
+                getHolderDidFromCredential(cred.toJson()),
+                DateTime.now(),
+                'present',
+                widget.receiverDid);
+
+            type += '${getTypeToShow(cred.type)}, \n';
+          }
+
+          for (var cred in entry.isoMdocCredentials ?? <IssuerSignedObject>[]) {
+            var mso = MobileSecurityObject.fromCbor(cred.issuerAuth.payload);
+
+            var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
+            wallet.storeExchangeHistoryEntry(
+                did, DateTime.now(), 'present', widget.receiverDid);
+
+            type += '${mso.docType}, \n';
+          }
         }
         type = type.substring(0, type.length - 3);
 

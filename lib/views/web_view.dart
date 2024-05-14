@@ -315,8 +315,8 @@ Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
 
   try {
     VerifiablePresentation? vp;
-    var filtered =
-        searchCredentialsForPresentationDefinition(creds, definition);
+    var filtered = searchCredentialsForPresentationDefinition(definition,
+        credentials: creds);
     logger.d('successfully filtered');
 
     var authorizedApps = wallet.getAuthorizedApps();

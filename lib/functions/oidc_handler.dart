@@ -31,9 +31,9 @@ String removeTrailingSlash(String base64Input) {
 
 Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
-  logger.d(offer.credentials.first);
+  logger.d(offer.credentials);
   List<String> credentialToRequest = [];
-  for (var c in offer.credentials) {
+  for (var c in offer.credentials ?? []) {
     if (c is String) {
       credentialToRequest.add(c);
     } else {
@@ -50,8 +50,17 @@ Future<void> handleOfferOidc(String offerUri) async {
       barrierColor: Colors.white,
       builder: (BuildContext context) => CredentialOfferDialog(
           oidcIssuer: issuerString,
-          requestOidcTan:
-              offer.userPinRequired != null && offer.userPinRequired!,
+          requestOidcTan: offer.grants != null &&
+              offer.grants!.containsKey(
+                  'urn:ietf:params:oauth:grant-type:pre-authorized_code') &&
+              (offer.grants!['urn:ietf:params:oauth:grant-type:pre-authorized_code']
+                          as PreAuthCodeGrant)
+                      .txCode !=
+                  null &&
+              (offer.grants![
+                          'urn:ietf:params:oauth:grant-type:pre-authorized_code']
+                      as PreAuthCodeGrant)
+                  .txCode!,
           credentials: [
             VerifiableCredential(
                 context: [credentialsV1Iri],
@@ -116,222 +125,234 @@ Future<void> handleOfferOidc(String offerUri) async {
 
     logger.d(tokenEndpoint);
 
-    //send token Request
-    var preAuthCode = offer.preAuthCode;
+    OidcTokenResponse tokenResponse;
 
-    logger.d(preAuthCode);
-    logger.d('Token-Endpoint: $tokenEndpoint');
+    if (offer.grants != null &&
+        offer.grants!.containsKey(
+            'urn:ietf:params:oauth:grant-type:pre-authorized_code')) {
+      var preAuthGrant =
+          offer.grants!['urn:ietf:params:oauth:grant-type:pre-authorized_code']
+              as PreAuthCodeGrant;
+      //send token Request
+      var preAuthCode = preAuthGrant.preAuthCode;
 
-    var tokenRes = await post(Uri.parse(tokenEndpoint),
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body:
-                'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode${offer.userPinRequired != null && offer.userPinRequired! ? '&user_pin=$res' : ''}')
-        .timeout(const Duration(seconds: 20), onTimeout: () {
+      logger.d(preAuthCode);
+      logger.d('Token-Endpoint: $tokenEndpoint');
+
+      var tokenRes = await post(Uri.parse(tokenEndpoint),
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+              body:
+                  'grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code&pre-authorized_code=$preAuthCode${preAuthGrant.txCode != null && preAuthGrant.txCode! ? '&user_pin=$res' : ''}')
+          .timeout(const Duration(seconds: 20), onTimeout: () {
+        return Response('Timeout', 400);
+      });
+      if (tokenRes.statusCode == 200) {
+        tokenResponse = OidcTokenResponse.fromJson(tokenRes.body);
+      } else {
+        logger.d(tokenRes.statusCode);
+        logger.d(tokenRes.body);
+
+        showErrorMessage('Authentifizierung fehlgeschlagen');
+        return;
+      }
+    } else {
+      showErrorMessage('Unbekannte Authentifizierungsmethode');
+      return;
+    }
+
+    logger.d('Access-Token : ${tokenResponse.accessToken}');
+
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+
+    var credentialDid = await wallet.newCredentialDid();
+    logger.d(credentialDid);
+
+    // create JWT
+    var header = {
+      'typ': 'openid4vci-proof+jwt',
+      'alg': 'EdDSA',
+      'crv': 'Ed25519',
+      'kid': '$credentialDid#${credentialDid.split(':').last}'
+    };
+
+    var payload = {
+      'aud': offer.credentialIssuer,
+      'iat': DateTime.now().millisecondsSinceEpoch,
+      'nonce': tokenResponse.cNonce
+    };
+
+    var jwt = await signStringOrJson(
+        wallet: wallet.wallet,
+        didToSignWith: credentialDid,
+        toSign: payload,
+        jwsHeader: header,
+        detached: false);
+    //end JWT creation
+
+    // create VP
+    var presentation = VerifiablePresentation(
+        context: [credentialsV1Iri, ed25519ContextIri],
+        type: ['VerifiablePresentation'],
+        holder: credentialDid);
+    var signer = EdDsaSigner(loadDocumentFast);
+    var p = await signer.buildProof(
+        presentation.toJson(), wallet.wallet, credentialDid,
+        challenge: tokenResponse.cNonce,
+        domain: offer.credentialIssuer,
+        proofPurpose: 'authentication');
+    presentation.proof = [LinkedDataProof.fromJson(p)];
+    // end VP creation
+
+    var credentialRequest = {
+      'format': 'ldp_vc',
+      'types': credentialToRequest,
+      'proof': {'proof_type': 'jwt', 'jwt': jwt}
+    };
+
+    var credentialRequestLdp = {
+      'format': 'ldp_vc',
+      'types': credentialToRequest,
+      'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
+    };
+
+    logger.d(credentialRequest);
+    logger.d(credentialRequestLdp);
+
+    var credentialResponse =
+        await post(Uri.parse(metaData['credential_endpoint']),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ${tokenResponse.accessToken}'
+                },
+                body: jsonEncode(credentialRequest))
+            .timeout(const Duration(seconds: 20), onTimeout: () {
       return Response('Timeout', 400);
     });
 
-    if (tokenRes.statusCode == 200) {
-      var tokenResponse = OidcTokenResponse.fromJson(tokenRes.body);
+    if (credentialResponse.statusCode == 200) {
+      logger.d(jsonDecode(credentialResponse.body));
+      var credential = jsonDecode(credentialResponse.body)['credential'];
+      var format = jsonDecode(credentialResponse.body)['format'];
 
-      logger.d('Access-Token : ${tokenResponse.accessToken}');
-
-      var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-          listen: false);
-
-      var credentialDid = await wallet.newCredentialDid();
-      logger.d(credentialDid);
-
-      // create JWT
-      var header = {
-        'typ': 'openid4vci-proof+jwt',
-        'alg': 'EdDSA',
-        'crv': 'Ed25519',
-        'kid': '$credentialDid#${credentialDid.split(':').last}'
-      };
-
-      var payload = {
-        'aud': offer.credentialIssuer,
-        'iat': DateTime.now().millisecondsSinceEpoch,
-        'nonce': tokenResponse.cNonce
-      };
-
-      var jwt = await signStringOrJson(
-          wallet: wallet.wallet,
-          didToSignWith: credentialDid,
-          toSign: payload,
-          jwsHeader: header,
-          detached: false);
-      //end JWT creation
-
-      // create VP
-      var presentation = VerifiablePresentation(
-          context: [credentialsV1Iri, ed25519ContextIri],
-          type: ['VerifiablePresentation'],
-          holder: credentialDid);
-      var signer = EdDsaSigner(loadDocumentFast);
-      var p = await signer.buildProof(
-          presentation.toJson(), wallet.wallet, credentialDid,
-          challenge: tokenResponse.cNonce,
-          domain: offer.credentialIssuer,
-          proofPurpose: 'authentication');
-      presentation.proof = [LinkedDataProof.fromJson(p)];
-      // end VP creation
-
-      var credentialRequest = {
-        'format': 'ldp_vc',
-        'types': credentialToRequest,
-        'proof': {'proof_type': 'jwt', 'jwt': jwt}
-      };
-
-      var credentialRequestLdp = {
-        'format': 'ldp_vc',
-        'types': credentialToRequest,
-        'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
-      };
-
-      logger.d(credentialRequest);
-      logger.d(credentialRequestLdp);
-
-      var credentialResponse =
-          await post(Uri.parse(metaData['credential_endpoint']),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ${tokenResponse.accessToken}'
-                  },
-                  body: jsonEncode(credentialRequestLdp))
-              .timeout(const Duration(seconds: 20), onTimeout: () {
-        return Response('Timeout', 400);
-      });
-
-      if (credentialResponse.statusCode == 200) {
-        logger.d(jsonDecode(credentialResponse.body));
-        var credential = jsonDecode(credentialResponse.body)['credential'];
-
-        if (offer.credentials.first['format'] == 'iso-mdl') {
-          var data = IssuerSignedObject.fromCbor(base64Decode(credential));
-          var verified = await verifyMso(data);
-          if (verified) {
-            var signedData =
-                MobileSecurityObject.fromCbor(data.issuerAuth.payload);
-            logger.d(signedData.deviceKeyInfo.deviceKey);
-            var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
-            logger.d(did);
-            var credSubject = <String, dynamic>{'id': did};
-            data.items.forEach((key, value) {
-              for (var i in value) {
-                credSubject[i.dataElementIdentifier] = i.dataElementValue;
-              }
-            });
-
-            var vc = VerifiableCredential(
-                context: [
-                  credentialsV1Iri,
-                  'schema.org'
-                ],
-                type: [
-                  'IsoMdlCredential',
-                  signedData.docType
-                ],
-                issuer: {
-                  'name': 'IsoMdlIssuer',
-                  'certificate':
-                      base64UrlEncode(data.issuerAuth.unprotected.x509chain!)
-                },
-                credentialSubject: credSubject,
-                issuanceDate: signedData.validityInfo.validFrom,
-                expirationDate: signedData.validityInfo.validUntil);
-
-            var storageCred = wallet.getCredential(did);
-
-            if (storageCred == null) {
-              throw Exception(
-                  'No hd path for credential found. Sure we control it?');
+      if (format == 'iso-mdl') {
+        var data = IssuerSignedObject.fromCbor(base64Decode(credential));
+        var verified = await verifyMso(data);
+        if (verified) {
+          var signedData =
+              MobileSecurityObject.fromCbor(data.issuerAuth.payload);
+          logger.d(signedData.deviceKeyInfo.deviceKey);
+          var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
+          logger.d(did);
+          var credSubject = <String, dynamic>{'id': did};
+          data.items.forEach((key, value) {
+            for (var i in value) {
+              credSubject[i.dataElementIdentifier] = i.dataElementValue;
             }
+          });
 
-            wallet.storeCredential(vc.toString(), storageCred.hdPath,
-                isoMdlData: 'isoData:$credential');
+          var vc = VerifiableCredential(
+              context: [
+                credentialsV1Iri,
+                'schema.org'
+              ],
+              type: [
+                'IsoMdlCredential',
+                signedData.docType
+              ],
+              issuer: {
+                'name': 'IsoMdlIssuer',
+                'certificate':
+                    base64UrlEncode(data.issuerAuth.unprotected.x509chain!)
+              },
+              credentialSubject: credSubject,
+              issuanceDate: signedData.validityInfo.validFrom,
+              expirationDate: signedData.validityInfo.validUntil);
 
-            showModalBottomSheet(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10)),
-                ),
-                context: navigatorKey.currentContext!,
-                builder: (context) {
-                  return ModalDismissWrapper(
-                    child: PaymentFinished(
-                      headline: "Credential empfangen",
-                      success: true,
-                      amount: CurrencyDisplay(
-                          amount: signedData.docType,
-                          symbol: '',
-                          mainFontSize: 35,
-                          centered: true),
-                    ),
-                  );
-                });
-          }
-        } else {
-          logger.d(credential);
+          var storageCred = wallet.getCredential(did);
 
-          var verified = false;
-          try {
-            verified = await verifyCredential(credential,
-                loadDocumentFunction: loadDocumentFast);
-          } catch (e) {
-            showErrorMessage('Credential nicht verifizierbar');
-            return;
+          if (storageCred == null) {
+            throw Exception(
+                'No hd path for credential found. Sure we control it?');
           }
 
-          logger.d(verified);
-          if (verified) {
-            var credDid = getHolderDidFromCredential(credential);
-            logger.d(credDid);
-            var storageCred = wallet.getCredential(credDid.split('#').first);
-            if (storageCred == null) {
-              throw Exception(
-                  'No hd path for credential found. Sure we control it?');
-            }
+          wallet.storeCredential(vc.toString(), storageCred.hdPath,
+              isoMdlData: 'isoData:$credential');
 
-            wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
-            wallet.storeExchangeHistoryEntry(
-                credDid, DateTime.now(), 'issue', offer.credentialIssuer);
-
-            showModalBottomSheet(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10)),
-                ),
-                context: navigatorKey.currentContext!,
-                builder: (context) {
-                  return ModalDismissWrapper(
-                    child: PaymentFinished(
-                      headline:
-                          AppLocalizations.of(context)!.credentialReceived,
-                      success: true,
-                      amount: CurrencyDisplay(
-                          amount: credential['type'].first,
-                          symbol: '',
-                          mainFontSize: 35,
-                          centered: true),
-                    ),
-                  );
-                });
-          }
+          showModalBottomSheet(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: "Credential empfangen",
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: signedData.docType,
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
         }
       } else {
-        logger.d(credentialResponse.statusCode);
-        logger.d(credentialResponse.body);
+        logger.d(credential);
 
-        showErrorMessage('Credential kann nicht runtergeladen werden');
+        var verified = false;
+        try {
+          verified = await verifyCredential(credential,
+              loadDocumentFunction: loadDocumentFast);
+        } catch (e) {
+          showErrorMessage('Credential nicht verifizierbar');
+          return;
+        }
+
+        logger.d(verified);
+        if (verified) {
+          var credDid = getHolderDidFromCredential(credential);
+          logger.d(credDid);
+          var storageCred = wallet.getCredential(credDid.split('#').first);
+          if (storageCred == null) {
+            throw Exception(
+                'No hd path for credential found. Sure we control it?');
+          }
+
+          wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+          wallet.storeExchangeHistoryEntry(
+              credDid, DateTime.now(), 'issue', offer.credentialIssuer);
+
+          showModalBottomSheet(
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10)),
+              ),
+              context: navigatorKey.currentContext!,
+              builder: (context) {
+                return ModalDismissWrapper(
+                  child: PaymentFinished(
+                    headline: AppLocalizations.of(context)!.credentialReceived,
+                    success: true,
+                    amount: CurrencyDisplay(
+                        amount: credential['type'].first,
+                        symbol: '',
+                        mainFontSize: 35,
+                        centered: true),
+                  ),
+                );
+              });
+        }
       }
     } else {
-      logger.d(tokenRes.statusCode);
-      logger.d(tokenRes.body);
+      logger.d(credentialResponse.statusCode);
+      logger.d(credentialResponse.body);
 
-      showErrorMessage('Authentifizierung fehlgeschlagen');
+      showErrorMessage('Credential kann nicht runtergeladen werden');
     }
   }
 }
@@ -437,6 +458,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var allCreds = wallet.allCredentials();
   var isoCreds = wallet.isoMdocCredentials;
   List<VerifiableCredential> creds = [];
+  List<IssuerSignedObject> isoCredsParsed = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
@@ -448,31 +470,8 @@ Future<void> handlePresentationRequestOidc(String request) async {
   });
 
   for (var cred in isoCreds) {
-    var data = IssuerSignedObject.fromCbor(
-        base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
-    var subject = <String, dynamic>{};
-    data.items.forEach((key, value) {
-      var nameSpaceData = <String, dynamic>{};
-      for (var i in value) {
-        nameSpaceData[i.dataElementIdentifier] = i.dataElementValue;
-      }
-      subject[key] = nameSpaceData;
-    });
-
-    var w3c = VerifiableCredential.fromJson(cred.w3cCredential);
-    subject['id'] = w3c.credentialSubject['id'];
-
-    logger.d(subject);
-
-    var vc = VerifiableCredential(
-        context: w3c.context,
-        type: w3c.type,
-        issuer: w3c.issuer,
-        credentialSubject: subject,
-        issuanceDate: w3c.issuanceDate);
-
-    logger.d(vc.toJson());
-    creds.add(vc);
+    isoCredsParsed.add(IssuerSignedObject.fromCbor(
+        base64Decode(cred.plaintextCredential.replaceAll('isoData:', ''))));
   }
 
   if (definition == null) {
@@ -481,9 +480,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
   }
 
   try {
-    var filtered =
-        searchCredentialsForPresentationDefinition(creds, definition);
-    logger.d('successfully filtered');
+    logger.d(isoCredsParsed.length);
+    var filtered = searchCredentialsForPresentationDefinition(definition,
+        credentials: creds, isoMdocCredentials: isoCredsParsed);
+    logger.d(
+        'successfully filtered: isoLength: ${filtered.first.isoMdocCredentials?.length}');
 
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
