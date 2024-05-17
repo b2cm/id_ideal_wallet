@@ -81,8 +81,8 @@ dependencies:
   url_launcher: any
   archive: ^3.4.0
   pkcs7: any
-  iso_mdoc:
-    path: ../cbor_test
+  iso_mdoc: ^1.3.0
+  #  path: ../cbor_test
   json_ld_processor: any
   bluetooth_low_energy: ^5.0.6
   cbor:
