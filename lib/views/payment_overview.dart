@@ -36,7 +36,7 @@ class PaymentOverview extends StatelessWidget {
                         if (cred != null && cred.w3cCredential.isNotEmpty) {
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
-                              .changePage([6],
+                              .changePage([6, 12],
                                   credential: VerifiableCredential.fromJson(
                                       cred.w3cCredential));
                         }

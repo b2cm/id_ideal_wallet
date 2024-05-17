@@ -215,6 +215,8 @@ Future<void> handleOfferOidc(String offerUri) async {
           wallet.storeExchangeHistoryEntry(
               credDid, DateTime.now(), 'issue', offer.credentialIssuer);
 
+          var asVC = VerifiableCredential.fromJson(credential);
+
           showModalBottomSheet(
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
@@ -228,7 +230,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                     headline: AppLocalizations.of(context)!.credentialReceived,
                     success: true,
                     amount: CurrencyDisplay(
-                        amount: credential['type'].first,
+                        amount: getTypeToShow(asVC.type),
                         symbol: '',
                         mainFontSize: 35,
                         centered: true),
