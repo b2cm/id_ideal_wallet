@@ -77,6 +77,7 @@
   "noCredentialsTitle": "Fehlerhafte Anfrage",
   "noCredentialsNote": " Sie haben soeben eine Anfrage erhalten, die nicht verarbeitet werden kann. Entweder werden Funktionen verlangt, die Ihre Anwendung aktuell noch nicht unterstützt oder Ihr Gegenüber hat bei der Erstellung einen Fehler begangen.",
   "paymentSuccessful": "Zahlung erfolgreich",
+  "paymentReceived": "Zahlung eingegangen",
   "paymentFailed": "Zahlung fehlgeschlagen",
   "paymentFailedNote": "Zahlung konnte nicht durchgeführt werden",
   "noPaymentMethod": "Zahlung nicht möglich",
@@ -170,7 +171,7 @@
   },
   "importFailed": "Import fehlgeschlagen",
   "saveError": "Fehler beim Speichern",
-  "saveErrorNote": "Speichern des Credentials nicht möglich.\nBitte wiederhole den Vorgang.",
+  "saveErrorNote": "Speichern des Nachweises nicht möglich.\nBitte wiederhole den Vorgang.",
   "paymentInformation": "Zahlungsinformation",
   "paymentInformationDetail": "Für die Weiterverarbeitung der Daten fallen folgende Kosten an: ",
   "funding1": "Für das Freigeben Ihrer Daten werden Ihnen",
@@ -185,7 +186,7 @@
   "subscribe": "Abonieren",
   "sendSatoshi": "Satoshi senden",
   "backgroundPresentation": "Hintergrundabfragen",
-  "backgroundPresentationNote": "Hiermit erlaube ich {otherParty}, diese Credentials zukünftig ohne meine explizite Zustimmung abzufragen",
+  "backgroundPresentationNote": "Hiermit erlaube ich {otherParty}, diesen Nachweis zukünftig ohne meine explizite Zustimmung abzufragen",
   "@backgroundPresentationNote": {
     "placeholders": {
       "otherParty": {
@@ -194,5 +195,7 @@
     }
   },
   "finishProcess": "Prozess abgeschlossen",
-  "finishProcessNote": "Das Credential wurde bereits an Sie ausgestellt"
+  "finishProcessNote": "Dieser Nachweis wurde bereits an Sie ausgestellt",
+  "authFailed": "Authentifizierung fehlgeschlagen",
+  "credentialDownloadFailed": "Der Nachweis kann nicht heruntergeladen werden"
 }

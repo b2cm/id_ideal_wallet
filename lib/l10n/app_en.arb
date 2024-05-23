@@ -77,6 +77,7 @@
   "noCredentialsTitle": "Incorrect request",
   "noCredentialsNote": "You have just received a request that cannot be processed. Either functions are requested that your application does not currently support or your counterpart made a mistake when creating it.",
   "paymentSuccessful": "payment successful",
+  "paymentReceived": "Payment received",
   "paymentFailed": "payment failed",
   "paymentFailedNote": "Payment could not be performed",
   "noPaymentMethod": "payment not possible",
@@ -194,5 +195,7 @@
     }
   },
   "finishProcess": "Process completed",
-  "finishProcessNote": "The credential has already been issued to you"
+  "finishProcessNote": "The credential has already been issued to you",
+  "authFailed": "Authentication failed",
+  "credentialDownloadFailed": "The credential cannot be downloaded"
 }

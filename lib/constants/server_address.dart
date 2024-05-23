@@ -8,14 +8,14 @@ var relay = 'https://167.235.195.132:8888';
 //var relay = 'http://localhost:8888';
 
 // *****Endpoints for Public release*****
-//
+
 // var contextEndpoint =
 //     'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
 // var applicationEndpoint =
 //     'https://hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
 // var stylingEndpoint = 'https://hidy.app/walletcontext/layouts';
 // var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
-// String versionNumber = '2.4.10';
+// String versionNumber = '2.4.14';
 // String baseUrl = 'https://hidy.app';
 // bool testBuild = false;
 
