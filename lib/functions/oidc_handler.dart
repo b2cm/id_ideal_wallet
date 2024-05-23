@@ -197,7 +197,11 @@ Future<void> handleOfferOidc(String offerUri) async {
           verified = await verifyCredential(credential,
               loadDocumentFunction: loadDocumentFast);
         } catch (e) {
-          showErrorMessage('Credential nicht verifizierbar');
+          showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .wrongCredentialNote,
+          );
           return;
         }
 
@@ -207,8 +211,11 @@ Future<void> handleOfferOidc(String offerUri) async {
           logger.d(credDid);
           var storageCred = wallet.getCredential(credDid.split('#').first);
           if (storageCred == null) {
-            throw Exception(
-                'No hd path for credential found. Sure we control it?');
+            showErrorMessage(
+                AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+                AppLocalizations.of(navigatorKey.currentContext!)!
+                    .saveErrorNote);
+            return;
           }
 
           wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
@@ -242,13 +249,15 @@ Future<void> handleOfferOidc(String offerUri) async {
         logger.d(credentialResponse.statusCode);
         logger.d(credentialResponse.body);
 
-        showErrorMessage('Credential kann nicht runtergeladen werden');
+        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+            .credentialDownloadFailed);
       }
     } else {
       logger.d(tokenRes.statusCode);
       logger.d(tokenRes.body);
 
-      showErrorMessage('Authentifizierung fehlgeschlagen');
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.authFailed);
     }
   }
 }
@@ -269,7 +278,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
   logger.d('State: $state');
 
   if (clientId == null) {
-    throw Exception('client id null');
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    logger.d('client id null');
+    return;
   }
 
   if (presDef != null) {
@@ -286,7 +299,12 @@ Future<void> handlePresentationRequestOidc(String request) async {
     if (res.statusCode == 200) {
       definition = PresentationDefinition.fromJson(res.body);
     } else {
-      throw Exception('no presentation definition found at $presDefUri');
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .downloadFailedExplanation);
+      logger.d('no presentation definition found at $presDefUri');
+      return;
     }
   } else {
     // Case 3: the total request must be fetched
@@ -294,7 +312,12 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(clientId);
 
     if (requestUri == null) {
-      throw Exception('requestUri null');
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .downloadFailedExplanation);
+      logger.d('requestUri null');
+      return;
     }
 
     var requestRaw = await get(Uri.parse(requestUri), headers: {
@@ -324,7 +347,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
   }
 
   if (nonce == null) {
-    throw Exception('nonce null');
+    logger.d('no nonce');
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    return;
   }
 
   logger.d('Response Mode: $responseMode');
@@ -346,7 +373,10 @@ Future<void> handlePresentationRequestOidc(String request) async {
 
   if (definition == null) {
     logger.d('No presentation definition');
-    throw Exception('No presentation definition');
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    return;
   }
 
   try {

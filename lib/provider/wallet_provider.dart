@@ -652,7 +652,8 @@ class WalletProvider extends ChangeNotifier {
             builder: (context) {
               return ModalDismissWrapper(
                 child: PaymentFinished(
-                  headline: "Zahlung eingegangen",
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .paymentReceived,
                   success: true,
                   amount: CurrencyDisplay(
                       amount: "+${amount.toSat()}",
