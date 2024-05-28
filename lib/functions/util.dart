@@ -6,7 +6,7 @@ import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
-import 'package:local_auth_ios/local_auth_ios.dart';
+import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'package:random_password_generator/random_password_generator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x509b/x509.dart' as x509;
