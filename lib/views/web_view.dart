@@ -251,6 +251,9 @@ class WebViewWindowState extends State<WebViewWindow> {
                         Provider.of<NavigationProvider>(context, listen: false)
                             .setWebViewUrl(url.toString());
                         setState(() {
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .setWebViewUrl(url.toString());
                           urlController.text = widget.initialUrl;
                         });
                       },
