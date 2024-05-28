@@ -816,6 +816,7 @@ class WalletProvider extends ChangeNotifier {
     credentials = [];
     contextCredentials = [];
     paymentCredentials = [];
+    isoMdocCredentials = [];
 
     var all = allCredentials();
     for (var cred in all.values) {

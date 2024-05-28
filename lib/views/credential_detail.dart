@@ -97,7 +97,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
                   credId =
                       '${widget.credential.issuanceDate.toIso8601String()}$type';
                 }
-                wallet.deleteCredential(credId);
+                wallet.deleteCredential(credId, true);
                 Navigator.of(context).pop();
                 //Navigator.of(context).pop();
                 if (widget.credential.type.contains('ContextCredential')) {

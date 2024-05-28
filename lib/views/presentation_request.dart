@@ -571,8 +571,12 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
 
             var private = await wallet.getPrivateKeyForCredentialDid(did);
+            if (private == null) {
+              showErrorMessage('Kein privater schlüssel');
+              return null;
+            }
             var privateKey = CoseKey(
-                d: hexDecode(private!),
+                d: hexDecode(private),
                 kty: CoseKeyType.octetKeyPair,
                 crv: CoseCurve.ed25519);
 

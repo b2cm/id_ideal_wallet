@@ -17,7 +17,6 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/iso_credential_request.dart';
 import 'package:json_path/fun_sdk.dart';
-import 'package:json_path/json_path.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
@@ -458,7 +457,7 @@ class ContextCardState extends State<ContextCard> {
   }
 }
 
-class CredentialCard extends StatefulWidget {
+class CredentialCard extends StatelessWidget {
   final VerifiableCredential credential;
   final String? background;
   final bool clickable;
@@ -470,72 +469,22 @@ class CredentialCard extends StatefulWidget {
       this.clickable = true});
 
   @override
-  State<StatefulWidget> createState() => CredentialCardState();
-}
-
-class CredentialCardState extends State<CredentialCard> {
-  Image? image;
-
-  @override
-  void initState() {
-    super.initState();
-    searchImage();
-  }
-
-  Future<void> searchImage() async {
-    try {
-      bool showImg = false;
-      String imgB64 = '';
-
-      widget.credential.credentialSubject.forEach((key, value) {
-        // todo change key to picture
-        if (key == 'data' &&
-            value is String &&
-            value.startsWith('data:image')) {
-          showImg = true;
-          imgB64 = value;
-        }
-      });
-
-      if (showImg) {
-        image = Image.memory(base64Decode(imgB64.split(',')[1]));
-        setState(() {});
-      } else {
-        final parser = JsonPathParser(functions: [IsPicture()]);
-        final path = parser.parse(r'$.credentialSubject..[?image]');
-
-        var result = path.read(widget.credential.toJson());
-        logger.d(result.first.path);
-        if (!result.first.path.contains('background')) {
-          var dataString = result.first.value as String;
-          var imageData = dataString.split(',').last;
-
-          image = Image.memory(base64Decode(imageData));
-        }
-        setState(() {});
-      }
-    } catch (e) {
-      logger.d('cant decode image: $e');
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return InkWell(
-        onLongPress: () => widget.credential.type.contains('ContextCredential')
+        onLongPress: () => credential.type.contains('ContextCredential')
             ? Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([6], credential: widget.credential)
+                .changePage([6], credential: credential)
             : null,
-        onTap: () => widget.clickable
-            ? widget.credential.type.contains('ContextCredential')
+        onTap: () => clickable
+            ? credential.type.contains('ContextCredential')
                 ? Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => CredentialPage(
-                        initialSelection: widget.credential.id!)))
+                    builder: (context) =>
+                        CredentialPage(initialSelection: credential.id!)))
                 : Provider.of<NavigationProvider>(context, listen: false)
-                    .changePage([6], credential: widget.credential)
+                    .changePage([6], credential: credential)
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-          var id = getHolderDidFromCredential(widget.credential.toJson());
+          var id = getHolderDidFromCredential(credential.toJson());
           var revState = wallet.revocationState[id];
           if (revState == RevocationState.expired.index ||
               revState == RevocationState.revoked.index ||
@@ -544,16 +493,16 @@ class CredentialCardState extends State<CredentialCard> {
               foregroundDecoration: const BoxDecoration(
                   color: Color.fromARGB(125, 255, 255, 255)),
               child: IdCard.fromCredential(
-                credential: widget.credential,
+                credential: credential,
                 wallet: wallet,
-                background: widget.background,
+                background: background,
               ),
             );
           } else {
             return IdCard.fromCredential(
-              credential: widget.credential,
+              credential: credential,
               wallet: wallet,
-              background: widget.background,
+              background: background,
             );
           }
         }));

@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:base_codecs/base_codecs.dart';
+import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
 import 'package:crypto_keys/crypto_keys.dart';
 import 'package:dart_ssi/credentials.dart';
@@ -392,25 +391,30 @@ Future<void> handleRedirect(String uri) async {
   }
 }
 
-Future<(String, dynamic)> buildJwt(List<String> algValues,
+Future<(String, dynamic, KeyType)> buildJwt(List<String> algValues,
     WalletProvider wallet, String? cNonce, String credentialIssuer) async {
   String credentialDid, alg, crv;
+  KeyType keyType;
   if (algValues.contains('ES256')) {
     credentialDid = await wallet.newCredentialDid(KeyType.p256);
     alg = 'ES256';
     crv = 'P-256';
+    keyType = KeyType.p256;
   } else if (algValues.contains('ES384')) {
     credentialDid = await wallet.newCredentialDid(KeyType.p384);
     alg = 'ES384';
     crv = 'P-384';
+    keyType = KeyType.p384;
   } else if (algValues.contains('ES512')) {
     credentialDid = await wallet.newCredentialDid(KeyType.p521);
     alg = 'ES512';
     crv = 'P-521';
+    keyType = KeyType.p521;
   } else {
     credentialDid = await wallet.newCredentialDid();
     alg = 'EdDSA';
     crv = 'Ed25519';
+    keyType = KeyType.ed25519;
   }
   // create JWT
   var header = {
@@ -436,7 +440,7 @@ Future<(String, dynamic)> buildJwt(List<String> algValues,
       detached: false);
   //end JWT creation
 
-  return (credentialDid, jwt);
+  return (credentialDid, jwt, keyType);
 }
 
 Future<void> getCredential(
@@ -490,10 +494,11 @@ Future<void> getCredential(
   String proofType;
   String credentialDid;
   dynamic proofValue;
+  KeyType keyType;
 
   if (credentialMetadata.proofTypesSupported == null) {
     proofType = 'jwt';
-    (credentialDid, proofValue) =
+    (credentialDid, proofValue, keyType) =
         await buildJwt([], wallet, tokenResponse.cNonce, credentialIssuer);
   } else if (credentialMetadata.proofTypesSupported!.containsKey('ldp_vp')) {
     proofType = 'ldp_vp';
@@ -512,9 +517,10 @@ Future<void> getCredential(
     presentation.proof = [LinkedDataProof.fromJson(p)];
     // end VP creation
     proofValue = presentation.toJson();
+    keyType = KeyType.ed25519;
   } else if (credentialMetadata.proofTypesSupported!.containsKey('jwt')) {
     proofType = 'jwt';
-    (credentialDid, proofValue) = await buildJwt(
+    (credentialDid, proofValue, keyType) = await buildJwt(
         credentialMetadata.proofTypesSupported?['jwt'] ?? [],
         wallet,
         tokenResponse.cNonce,
@@ -585,6 +591,7 @@ Future<void> getCredential(
   });
 
   if (credentialResponse.statusCode == 200) {
+    dynamic credential;
     logger.d(credentialResponse.body);
     if (decryptionKey != null) {
       logger.d('decryption');
@@ -602,21 +609,38 @@ Future<void> getCredential(
           .createEncrypter(algorithms.encryption.rsa.oaep256);
       var decrypted = encryptor.decrypt(EncryptionResult(encryptedKey));
 
-      return;
+      logger.d(iv);
+
+      var symmetric = SymmetricKey(keyValue: decrypted);
+      var symmetricDecrypt = symmetric
+          .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha256);
+      var decrypted2 = symmetricDecrypt.decrypt(EncryptionResult(cipher,
+          initializationVector: iv,
+          authenticationTag: tag,
+          additionalAuthenticatedData: ascii.encode(split.first)));
+      logger.d(utf8.decode(decrypted2));
+      credential = jsonDecode(utf8.decode(decrypted2))['credential'];
+    } else {
+      credential = jsonDecode(credentialResponse.body)['credential'];
     }
-    var credential = jsonDecode(credentialResponse.body)['credential'];
     var format = credentialMetadata.format;
 
-    if (format == 'iso-mdl') {
-      var data = IssuerSignedObject.fromCbor(base64Decode(credential));
-      var verified = await verifyMso(data);
+    if (format == 'mso_mdoc') {
+      logger.d(cborDecode(base64Decode(credential)));
+      var data = DeviceResponse.fromCbor(base64Decode(credential));
+      var doc = data.documents!.first.issuerSigned;
+      var verified = await verifyMso(doc);
       if (verified) {
-        var signedData = MobileSecurityObject.fromCbor(data.issuerAuth.payload);
+        var signedData = MobileSecurityObject.fromCbor(doc.issuerAuth.payload);
         logger.d(signedData.deviceKeyInfo.deviceKey);
         var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
-        logger.d(did);
-        var credSubject = <String, dynamic>{'id': did};
-        data.items.forEach((key, value) {
+        logger.d('$did == $credentialDid');
+        if (did != credentialDid) {
+          showErrorMessage('Credential wurde für jemand anderen ausgestellt');
+          return;
+        }
+        var credSubject = <String, dynamic>{'id': credentialDid};
+        doc.items.forEach((key, value) {
           for (var i in value) {
             credSubject[i.dataElementIdentifier] = i.dataElementValue;
           }
@@ -634,13 +658,13 @@ Future<void> getCredential(
             issuer: {
               'name': 'IsoMdlIssuer',
               'certificate':
-                  base64UrlEncode(data.issuerAuth.unprotected.x509chain!)
+                  base64UrlEncode(doc.issuerAuth.unprotected.x509chain!)
             },
             credentialSubject: credSubject,
             issuanceDate: signedData.validityInfo.validFrom,
             expirationDate: signedData.validityInfo.validUntil);
 
-        var storageCred = wallet.getCredential(did);
+        var storageCred = wallet.getCredential(credentialDid);
 
         if (storageCred == null) {
           throw Exception(
@@ -648,7 +672,10 @@ Future<void> getCredential(
         }
 
         wallet.storeCredential(vc.toString(), storageCred.hdPath,
-            isoMdlData: 'isoData:$credential');
+            isoMdlData: 'isoData:${base64Encode(doc.toEncodedCbor())}',
+            keyType: keyType);
+        wallet.storeExchangeHistoryEntry(
+            credentialDid, DateTime.now(), 'issue', credentialIssuer);
 
         showModalBottomSheet(
             shape: const RoundedRectangleBorder(
@@ -920,14 +947,33 @@ bool isRawJson(String json) {
 String coseKeyToDid(CoseKey coseKey) {
   var crvInt = coseKey.crv;
 
-  List<int> prefix;
+  Map<String, dynamic> jwk;
   if (crvInt == 6) {
-    prefix = [237, 1];
+    jwk = {
+      'crv': 'Ed25519',
+      'x': removePaddingFromBase64(base64UrlEncode(coseKey.x!))
+    };
+  } else if (crvInt == 1) {
+    jwk = {
+      'crv': 'P-256',
+      'x': removePaddingFromBase64(base64UrlEncode(coseKey.x!)),
+      'y': removePaddingFromBase64(base64UrlEncode(coseKey.y!))
+    };
+  } else if (crvInt == 2) {
+    jwk = {
+      'crv': 'P-384',
+      'x': removePaddingFromBase64(base64UrlEncode(coseKey.x!)),
+      'y': removePaddingFromBase64(base64UrlEncode(coseKey.y!))
+    };
+  } else if (crvInt == 3) {
+    jwk = {
+      'crv': 'P-521',
+      'x': removePaddingFromBase64(base64UrlEncode(coseKey.x!)),
+      'y': removePaddingFromBase64(base64UrlEncode(coseKey.y!))
+    };
   } else {
     throw Exception('Unknown KeyType');
   }
 
-  List<int>? keyBytes = coseKey.x;
-
-  return 'did:key:z${base58BitcoinEncode(Uint8List.fromList(prefix + keyBytes!))}';
+  return 'did:key:${jwkToMultiBase(jwk)}';
 }
