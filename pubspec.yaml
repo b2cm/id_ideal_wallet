@@ -87,6 +87,7 @@ dependencies:
   bluetooth_low_energy: ^5.0.6
   cbor:
   base_codecs:
+  crypto_keys:
 
 
   # The following adds the Cupertino Icons font to your application.

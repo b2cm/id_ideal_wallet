@@ -10,6 +10,7 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
@@ -196,10 +197,12 @@ class WebViewWindowState extends State<WebViewWindow> {
                         var uri = navigationAction.request.url!;
 
                         if ((uri.authority.contains('wallet.id-ideal.de') ||
-                                uri.authority.contains('wallet.bccm.dev')) &&
-                            uri.query.contains('oob')) {
-                          handleDidcommMessage(
-                              '${uri.toString()}&initialWebview=${widget.initialUrl}');
+                            uri.authority.contains('wallet.bccm.dev') ||
+                            uri.scheme == 'eudi-openid4ci')) {
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .handleLink(
+                                  '${uri.toString()}&initialWebview=${widget.initialUrl}');
                           return NavigationActionPolicy.CANCEL;
                         }
 
@@ -244,6 +247,9 @@ class WebViewWindowState extends State<WebViewWindow> {
                       },
                       onUpdateVisitedHistory:
                           (controller, url, androidIsReload) {
+                        logger.d('new Uri: $url');
+                        Provider.of<NavigationProvider>(context, listen: false)
+                            .setWebViewUrl(url.toString());
                         setState(() {
                           urlController.text = widget.initialUrl;
                         });

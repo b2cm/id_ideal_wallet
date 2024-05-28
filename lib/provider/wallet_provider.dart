@@ -947,8 +947,8 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConnection(did);
   }
 
-  Future<String> newCredentialDid() async {
-    return _wallet.getNextCredentialDID(KeyType.ed25519);
+  Future<String> newCredentialDid([KeyType keytype = KeyType.ed25519]) async {
+    return _wallet.getNextCredentialDID(keytype, true);
   }
 
   Credential? getCredential(String did) {
