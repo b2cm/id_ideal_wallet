@@ -10,6 +10,7 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
@@ -245,6 +246,9 @@ class WebViewWindowState extends State<WebViewWindow> {
                       onUpdateVisitedHistory:
                           (controller, url, androidIsReload) {
                         setState(() {
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .setWebViewUrl(url.toString());
                           urlController.text = widget.initialUrl;
                         });
                       },
