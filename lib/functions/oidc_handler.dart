@@ -627,8 +627,8 @@ Future<void> getCredential(
 
     if (format == 'mso_mdoc') {
       logger.d(cborDecode(base64Decode(credential)));
-      var data = DeviceResponse.fromCbor(base64Decode(credential));
-      var doc = data.documents!.first.issuerSigned;
+      var data = IssuerSignedObject.fromCbor(base64Decode(credential));
+      var doc = data;
       var verified = await verifyMso(doc);
       if (verified) {
         var signedData = MobileSecurityObject.fromCbor(doc.issuerAuth.payload);

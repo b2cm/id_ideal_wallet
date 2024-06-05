@@ -11,6 +11,7 @@ import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
@@ -159,6 +160,21 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       var data = IssuerSignedObject.fromCbor(
           base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
       var m = MobileSecurityObject.fromCbor(data.issuerAuth.payload);
+      var coseKey = m.deviceKeyInfo.deviceKey;
+      KeyType keyType;
+      if (coseKey.crv == CoseCurve.ed25519) {
+        keyType = KeyType.ed25519;
+      } else if (coseKey.crv == CoseCurve.p521) {
+        keyType = KeyType.p521;
+      } else if (coseKey.crv == CoseCurve.p384) {
+        keyType = KeyType.p384;
+      } else if (coseKey.crv == CoseCurve.p256) {
+        keyType = KeyType.p256;
+      } else {
+        showErrorMessage('Unbekannter KeyType', 'Das sollte nicht passieren');
+        logger.d(coseKey);
+        return;
+      }
       for (var docRequest in decodedRequest.docRequests) {
         logger.d(
             '${docRequest.itemsRequest.docType} ==? ${m.docType}: ${docRequest.itemsRequest.docType == m.docType}');
@@ -184,9 +200,13 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
             toShow.add(vc);
             var key = await Provider.of<WalletProvider>(context, listen: false)
                 .wallet
-                .getPrivateKey(cred.hdPath, KeyType.ed25519);
-            filterResult.add(IsoRequestedItem(m.docType, {}, data,
-                CoseKey(kty: 1, crv: 6, d: hex.decode(key))));
+                .getPrivateKey(cred.hdPath, keyType);
+            filterResult.add(IsoRequestedItem(
+                m.docType,
+                {},
+                data,
+                CoseKey(
+                    kty: coseKey.kty, crv: coseKey.crv, d: hex.decode(key))));
           }
         }
       }

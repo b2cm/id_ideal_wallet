@@ -32,12 +32,12 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  #  dart_ssi:
-  #    git:
-  #      url: https://github.com/b2cm/dart_ssi
-  #      ref: didcomm
   dart_ssi:
-    path: ../flutter_ssi_wallet
+    git:
+      url: https://github.com/b2cm/dart_ssi
+      ref: development
+  #  dart_ssi:
+  #    path: ../flutter_ssi_wallet
   #dart_ssi: ^3.0.0
   path_provider: ^2.0.12
   local_auth: ^2.2.0
@@ -81,8 +81,8 @@ dependencies:
   url_launcher: any
   archive: ^3.4.0
   pkcs7: any
-  iso_mdoc: #^1.3.0
-    path: ../cbor_test
+  iso_mdoc: ^1.3.0
+  #path: ../cbor_test
   json_ld_processor: any
   bluetooth_low_energy: ^5.0.6
   cbor:
