@@ -197,10 +197,12 @@ class WebViewWindowState extends State<WebViewWindow> {
                         var uri = navigationAction.request.url!;
 
                         if ((uri.authority.contains('wallet.id-ideal.de') ||
-                                uri.authority.contains('wallet.bccm.dev')) &&
-                            uri.query.contains('oob')) {
-                          handleDidcommMessage(
-                              '${uri.toString()}&initialWebview=${widget.initialUrl}');
+                            uri.authority.contains('wallet.bccm.dev') ||
+                            uri.scheme == 'eudi-openid4ci')) {
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .handleLink(
+                                  '${uri.toString()}&initialWebview=${widget.initialUrl}');
                           return NavigationActionPolicy.CANCEL;
                         }
 
@@ -245,6 +247,9 @@ class WebViewWindowState extends State<WebViewWindow> {
                       },
                       onUpdateVisitedHistory:
                           (controller, url, androidIsReload) {
+                        logger.d('new Uri: $url');
+                        Provider.of<NavigationProvider>(context, listen: false)
+                            .setWebViewUrl(url.toString());
                         setState(() {
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
@@ -319,8 +324,8 @@ Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
 
   try {
     VerifiablePresentation? vp;
-    var filtered =
-        searchCredentialsForPresentationDefinition(creds, definition);
+    var filtered = searchCredentialsForPresentationDefinition(definition,
+        credentials: creds);
     logger.d('successfully filtered');
 
     var authorizedApps = wallet.getAuthorizedApps();

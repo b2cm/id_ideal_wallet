@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="servicedesc">Hidy Wallet</string>
+    <string name="aiddescription">type 4</string>
+    <string name="nfc_engagement_service_desc">Hidy</string>
+    <string name="aiddescription2">mdl</string>
+</resources>

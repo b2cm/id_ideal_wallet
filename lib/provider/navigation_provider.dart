@@ -24,6 +24,7 @@ class NavigationProvider extends ChangeNotifier {
   NavigationProvider(this.showWelcome) {
     getInitialUri().then((l) => handleLink(l));
     stream.receiveBroadcastStream().listen((link) => handleLink(link));
+    logger.d('listen link stream');
   }
 
   void finishOnboard() {
@@ -83,9 +84,13 @@ class NavigationProvider extends ChangeNotifier {
     } else if (link.startsWith('lnbc') || link.startsWith('LNBC')) {
       logger.d('LN-Invoice found');
       payInvoiceInteraction(link, isMainnet: true);
-    } else if (link.startsWith('openid-credential-offer')) {
+    } else if (link.startsWith('eudi-openid4ci://authorize')) {
+      handleRedirect(link);
+    } else if (link.startsWith('openid-credential-offer') ||
+        link.startsWith('eudi-openid4vci')) {
       handleOfferOidc(link);
     } else if (link.startsWith('openid-presentation-request') ||
+        link.startsWith('eudi-openid4vp') ||
         link.startsWith('openid4vp')) {
       handlePresentationRequestOidc(link);
     }
@@ -115,6 +120,8 @@ class NavigationProvider extends ChangeNotifier {
             webViewUrl: uriToCall
                 .toString()
                 .replaceAll('wid=', 'wid=${wallet.lndwId}'));
+      } else if (link.contains('redirect')) {
+        handleRedirect(link);
       } else if (link.contains('/invoice')) {
         var uri = Uri.parse(link);
         var invoice = uri.queryParameters['invoice'];

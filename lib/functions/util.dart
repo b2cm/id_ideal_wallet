@@ -89,7 +89,7 @@ String getTypeToShow(List<String> types) {
   return types.firstWhere(
       (element) =>
           element != 'VerifiableCredential' &&
-          (!element.contains('HidyContext')),
+          (!element.contains('HidyContext') && element != 'IsoMdlCredential'),
       orElse: () => '');
 }
 

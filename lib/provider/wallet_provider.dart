@@ -18,8 +18,10 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:pkcs7/pkcs7.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../functions/util.dart' as my_util;
@@ -49,6 +51,7 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> credentials = [];
   List<VerifiableCredential> contextCredentials = [];
   List<VerifiableCredential> paymentCredentials = [];
+  List<Credential> isoMdocCredentials = [];
 
   //[[url, pic-url], [url, pic-url], ...]
   List<Map<String, String>> aboList = [];
@@ -220,6 +223,8 @@ class WalletProvider extends ChangeNotifier {
 
   void openWallet() async {
     if (!_authRunning) {
+      Provider.of<MdocProvider>(navigatorKey.currentContext!, listen: false)
+          .startListening();
       _authRunning = true;
       var isOpen = await my_util.openWallet(_wallet);
       if (!isOpen) {
@@ -239,6 +244,10 @@ class WalletProvider extends ChangeNotifier {
       generateAboGroups();
 
       var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
+      if (lastUpdateCheck != null) {
+        logger.d(
+            'lastUpdate: ${DateTime.now().difference(DateTime.parse(lastUpdateCheck))}');
+      }
       if (lastUpdateCheck == null ||
           DateTime.now().difference(DateTime.parse(lastUpdateCheck)) >=
               const Duration(days: 1)) {
@@ -807,13 +816,18 @@ class WalletProvider extends ChangeNotifier {
     credentials = [];
     contextCredentials = [];
     paymentCredentials = [];
+    isoMdocCredentials = [];
 
     var all = allCredentials();
     for (var cred in all.values) {
       if (cred.w3cCredential == '' || cred.w3cCredential == 'vc') {
         continue;
       }
-      if (cred.plaintextCredential == '') {
+      if (cred.plaintextCredential == '' ||
+          cred.plaintextCredential.startsWith('isoData:')) {
+        if (cred.plaintextCredential.startsWith('isoData:')) {
+          isoMdocCredentials.add(cred);
+        }
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('ContextCredential')) {
           _wallet.storeConfigEntry(
@@ -934,8 +948,8 @@ class WalletProvider extends ChangeNotifier {
     return _wallet.getConnection(did);
   }
 
-  Future<String> newCredentialDid() async {
-    return _wallet.getNextCredentialDID(KeyType.ed25519);
+  Future<String> newCredentialDid([KeyType keytype = KeyType.ed25519]) async {
+    return _wallet.getNextCredentialDID(keytype, true);
   }
 
   Credential? getCredential(String did) {
@@ -943,8 +957,10 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void storeCredential(String vc, String hdPath,
-      {String? newDid, KeyType keyType = KeyType.ed25519}) async {
-    await _wallet.storeCredential(vc, '', hdPath,
+      {String? newDid,
+      String? isoMdlData,
+      KeyType keyType = KeyType.ed25519}) async {
+    await _wallet.storeCredential(vc, isoMdlData ?? '', hdPath,
         keyType: keyType, credDid: newDid);
     _buildCredentialList();
     var vcParsed = VerifiableCredential.fromJson(vc);

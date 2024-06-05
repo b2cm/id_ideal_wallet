@@ -37,10 +37,18 @@ packages:
     dependency: "direct main"
     description:
       name: archive
-      sha256: "6bd38d335f0954f5fad9c79e614604fbf03a0e5b975923dd001b6ea965ef5b4b"
+      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.0"
+    version: "3.6.1"
+  args:
+    dependency: transitive
+    description:
+      name: args
+      sha256: "7cf60b9f0cc88203c5a190b4cd62a99feea42759a7fa695010eb5de1c0b2252a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.0"
   asn1lib:
     dependency: transitive
     description:
@@ -74,7 +82,7 @@ packages:
     source: hosted
     version: "2.0.4"
   base_codecs:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: base_codecs
       sha256: "41701a12ede9912663decd708279924ece5018566daa7d1f484d5f4f10894f91"
@@ -113,6 +121,62 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
+  bluetooth_low_energy:
+    dependency: "direct main"
+    description:
+      name: bluetooth_low_energy
+      sha256: "2d1d9f483c677dca86479935827d15c5d0407f346595ae0fbbe8b75076d19490"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.7"
+  bluetooth_low_energy_android:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_android
+      sha256: "281ca129677e10cd22d4763bbb7a9fb53d801cf25fcc54815e4023073e35f22c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.5"
+  bluetooth_low_energy_darwin:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_darwin
+      sha256: d8c37f27c48ad523e5c32d1002d8e67570b1f4e6d69c54e09bca152a07f6ab3f
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.5"
+  bluetooth_low_energy_linux:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_linux
+      sha256: "2809830a8b67eac5d53fdc6e907aa878ec61884d6e6a42da2b79b826410c8327"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
+  bluetooth_low_energy_platform_interface:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_platform_interface
+      sha256: "5af74eb8f97a896dfdbcff2da284d4fe5b4e2e49ebb2f46f826ac1810f66e4d7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
+  bluetooth_low_energy_windows:
+    dependency: transitive
+    description:
+      name: bluetooth_low_energy_windows
+      sha256: "5a0b22003d14dc84f3f16e73a77f2645df034badb9003f368e6f9bc02e8b249a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.3"
+  bluez:
+    dependency: transitive
+    description:
+      name: bluez
+      sha256: "203a1924e818a9dd74af2b2c7a8f375ab8e5edf0e486bba8f90a0d8a17ed9fce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.2"
   boolean_selector:
     dependency: transitive
     description:
@@ -145,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  cbor:
+    dependency: "direct main"
+    description:
+      name: cbor
+      sha256: "360c7cbb1b334454e334d395df63913e498f51b82b35888fb9774e5e960a71f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.0"
   characters:
     dependency: transitive
     description:
@@ -186,7 +258,7 @@ packages:
     source: hosted
     version: "3.0.3"
   crypto_keys:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto_keys
       sha256: acc19abf34623d990a0e8aec69463d74a824c31f137128f42e2810befc509ad0
@@ -213,11 +285,19 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: didcomm
-      resolved-ref: b514f0ee39e78a59ac70e284ac6a031d07ff7b15
+      ref: development
+      resolved-ref: "19367fe4e9930412e51f8b97d98b5f7dcadc5661"
       url: "https://github.com/b2cm/dart_ssi"
     source: git
-    version: "3.1.0"
+    version: "4.0.0"
+  dbus:
+    dependency: transitive
+    description:
+      name: dbus
+      sha256: "365c771ac3b0e58845f39ec6deebc76e3276aa9922b0cc60840712094d9047ac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.10"
   ed25519_edwards:
     dependency: transitive
     description:
@@ -368,10 +448,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "8cf40eebf5dec866a6d1956ad7b4f7016e6c0cc69847ab946833b7d43743809f"
+      sha256: c6b0b4c05c458e1c01ad9bcc14041dd7b1f6783d487be4386f793f47a8a4d03e
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.19"
+    version: "2.0.20"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -462,6 +542,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  ieee754:
+    dependency: transitive
+    description:
+      name: ieee754
+      sha256: "7d87451c164a56c156180d34a4e93779372edd191d2c219206100b976203128c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
   image:
     dependency: transitive
     description:
@@ -486,6 +574,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.2"
+  iso_mdoc:
+    dependency: "direct main"
+    description:
+      name: iso_mdoc
+      sha256: "739eb8e2dd1e864252f58d1715c7c72ec53e4f171172577e8af94c1728017b12"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.1"
   js:
     dependency: transitive
     description:
@@ -506,10 +602,10 @@ packages:
     dependency: "direct main"
     description:
       name: json_path
-      sha256: "93f2cb012eb37112e62d3b5e5eb535431beb4c2566a9c1987b079b13b308763b"
+      sha256: dc25b4e2297a6bd39fb52b7d122a7787b7dab751fb278d315b54706b98bb76db
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.6"
+    version: "0.7.2"
   json_rpc_2:
     dependency: transitive
     description:
@@ -587,10 +683,10 @@ packages:
     dependency: "direct main"
     description:
       name: local_auth_android
-      sha256: e0e5b1ea247c5a0951c13a7ee13dc1beae69750e6a2e1910d1ed6a3cd4d56943
+      sha256: "48dfb2d954da8ef6a77adfc93a29998f7729e9308eaa817e91dea4500317b2c8"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.38"
+    version: "1.0.39"
   local_auth_darwin:
     dependency: "direct main"
     description:
@@ -615,6 +711,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.10"
+  log_service:
+    dependency: transitive
+    description:
+      name: log_service
+      sha256: "21124936899e227d1779268077921d46d57456e2592d1562e455be273594e2e4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   logger:
     dependency: "direct main"
     description:
@@ -707,10 +811,10 @@ packages:
     dependency: transitive
     description:
       name: path_provider_android
-      sha256: a248d8146ee5983446bf03ed5ea8f6533129a12b11f12057ad1b4a67a2b3b41d
+      sha256: "9c96da072b421e98183f9ea7464898428e764bc0ce5567f27ec8693442e72514"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.4"
+    version: "2.2.5"
   path_provider_foundation:
     dependency: transitive
     description:
@@ -892,10 +996,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: "1ee8bf911094a1b592de7ab29add6f826a7331fb854273d55918693d5364a1f2"
+      sha256: "93d0ec9dd902d85f326068e6a899487d1f65ffcd5798721a95330b26c8131577"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.2"
+    version: "2.2.3"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1025,18 +1129,18 @@ packages:
     dependency: "direct main"
     description:
       name: url_launcher
-      sha256: "6ce1e04375be4eed30548f10a315826fd933c1e493206eab82eed01f438c8d2e"
+      sha256: "21b704ce5fa560ea9f3b525b43601c678728ba46725bab9b01187b4831377ed3"
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.6"
+    version: "6.3.0"
   url_launcher_android:
     dependency: transitive
     description:
       name: url_launcher_android
-      sha256: "17cd5e205ea615e2c6ea7a77323a11712dffa0720a8a90540db57a01347f9ad9"
+      sha256: ceb2625f0c24ade6ef6778d1de0b2e44f2db71fded235eb52295247feba8c5cf
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.2"
+    version: "6.3.3"
   url_launcher_ios:
     dependency: transitive
     description:
@@ -1176,4 +1280,4 @@ packages:
     version: "6.5.0"
 sdks:
   dart: ">=3.4.0 <4.0.0"
-  flutter: ">=3.20.0-7.0.pre.48"
+  flutter: ">=3.22.0"
