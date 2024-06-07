@@ -29,19 +29,20 @@ class WebViewWindow extends StatefulWidget {
 class WebViewWindowState extends State<WebViewWindow> {
   final GlobalKey webViewKey = GlobalKey();
   bool isInAbo = false;
-  ValueNotifier<bool> canAbo = ValueNotifier(false);
   String imageUrl = '';
+  List<String>? trustedSites;
 
   InAppWebViewController? webViewController;
   InAppWebViewSettings settings = InAppWebViewSettings(
       useShouldOverrideUrlLoading: true,
-      mediaPlaybackRequiresUserGesture: false,
-      allowsInlineMediaPlayback: true,
+      allowFileAccess: false,
+      allowBackgroundAudioPlaying: false,
+      mediaPlaybackRequiresUserGesture: true,
+      allowsInlineMediaPlayback: false,
       iframeAllowFullscreen: true);
 
   PullToRefreshController? pullToRefreshController;
   double progress = 0;
-  final urlController = TextEditingController();
 
   @override
   void initState() {
@@ -82,32 +83,45 @@ class WebViewWindowState extends State<WebViewWindow> {
     bool inLocalAboList = allAbos.contains(toCheck);
     logger.d('$allAbos contains? $toCheck');
 
+    Map<String, String> uriToImage = {};
+    List<String> trusted;
+    (trusted, uriToImage) = await initTrustedSites();
+    trustedSites = trusted;
+
     if (inLocalAboList) {
       // we have already an abo
       return;
     }
 
+    logger.d('$trustedSites contains? $toCheck');
+    if (trustedSites!.contains(toCheck)) {
+      imageUrl = uriToImage[toCheck] ?? '';
+      logger.d(imageUrl);
+      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
+          .addAbo(widget.initialUrl, imageUrl, widget.title);
+    }
+  }
+
+  Future<(List<String>, Map<String, String>)> initTrustedSites() async {
     var res = await get(Uri.parse(applicationEndpoint));
     List<Map<String, dynamic>> available = [];
     if (res.statusCode == 200) {
       List dec = jsonDecode(res.body);
       available = dec.map((e) => (e as Map).cast<String, dynamic>()).toList();
     }
+
     Map<String, String> uriToImage = {};
+    List<String> trusted = [];
     if (available.isNotEmpty) {
-      List<String> allowedAbos = available.map((e) {
+      trusted = available.map((e) {
         var u = Uri.parse(e['url']!);
         var correctUri = '${u.scheme}://${u.host}${u.path}';
         uriToImage[correctUri] = e['mainbgimg'];
         return '${u.scheme}://${u.host}${u.path}';
       }).toList();
-      logger.d('$allowedAbos contains? $toCheck');
-      if (allowedAbos.contains(toCheck)) {
-        imageUrl = uriToImage[toCheck] ?? '';
-        logger.d(imageUrl);
-        canAbo.value = true;
-      }
     }
+
+    return (trusted, uriToImage);
   }
 
   @override
@@ -123,24 +137,6 @@ class WebViewWindowState extends State<WebViewWindow> {
       },
       child: Consumer<WalletProvider>(builder: (context, wallet, child) {
         return Scaffold(
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: ValueListenableBuilder(
-            valueListenable: canAbo,
-            builder: (context, value, w) {
-              return value
-                  ? FloatingActionButton.extended(
-                      onPressed: () {
-                        wallet.addAbo(
-                            widget.initialUrl, imageUrl, widget.title);
-                        canAbo.value = false;
-                      },
-                      icon: const Icon(Icons.add),
-                      isExtended: true,
-                      label: Text(AppLocalizations.of(context)!.subscribe),
-                    )
-                  : const SizedBox();
-            },
-          ),
           body: SafeArea(
             child: Column(children: <Widget>[
               Expanded(
@@ -181,11 +177,16 @@ class WebViewWindowState extends State<WebViewWindow> {
                                   args[1],
                                   args[2]);
                             });
+                        webViewController?.addJavaScriptHandler(
+                            handlerName: 'presentationRequestNoSignature',
+                            callback: (args) async {
+                              logger.d(args);
+                              return await requestPresentationNoSign(
+                                  args.first, widget.initialUrl, trustedSites);
+                            });
                       },
                       onLoadStart: (controller, url) {
-                        setState(() {
-                          urlController.text = widget.initialUrl;
-                        });
+                        setState(() {});
                       },
                       onPermissionRequest: (controller, request) async {
                         return PermissionResponse(
@@ -229,9 +230,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                       },
                       onLoadStop: (controller, url) async {
                         pullToRefreshController?.endRefreshing();
-                        setState(() {
-                          urlController.text = widget.initialUrl;
-                        });
+                        setState(() {});
                       },
                       onReceivedError: (controller, request, error) {
                         pullToRefreshController?.endRefreshing();
@@ -242,7 +241,6 @@ class WebViewWindowState extends State<WebViewWindow> {
                         }
                         setState(() {
                           this.progress = progress / 100;
-                          urlController.text = widget.initialUrl;
                         });
                       },
                       onUpdateVisitedHistory:
@@ -254,7 +252,6 @@ class WebViewWindowState extends State<WebViewWindow> {
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
                               .setWebViewUrl(url.toString());
-                          urlController.text = widget.initialUrl;
                         });
                       },
                       onConsoleMessage: (controller, consoleMessage) {
@@ -273,95 +270,160 @@ class WebViewWindowState extends State<WebViewWindow> {
       }),
     );
   }
-}
 
-Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
-    String initialUrl, String nonce, bool askForBackground) async {
-  var definition = PresentationDefinition.fromJson(request);
-  var definitionToHash = PresentationDefinition(
-      inputDescriptors: definition.inputDescriptors
-          .map((e) => InputDescriptor(
-                id: '',
-                constraints: InputDescriptorConstraints(
-                  subjectIsIssuer: e.constraints?.subjectIsIssuer,
-                  fields: e.constraints?.fields
-                      ?.map((eIn) => InputDescriptorField(
-                          path: eIn.path, id: '', filter: eIn.filter))
-                      .toList(),
-                ),
-              ))
-          .toList(),
-      submissionRequirement: definition.submissionRequirement
-          ?.map((e) => SubmissionRequirement(
-              rule: e.rule,
-              count: e.count,
-              from: e.from,
-              max: e.max,
-              min: e.min))
-          .toList(),
-      id: '');
-  var definitionHash = sha256.convert(utf8.encode(definitionToHash.toString()));
+  Future<VerifiablePresentation?> requestPresentationNoSign(
+      dynamic request, String initialUrl, List<String>? trusted) async {
+    var asUri = Uri.parse(initialUrl);
+    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
 
-  var wallet =
-      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+    if (trusted == null || trusted.isEmpty) {
+      (trusted, _) = await initTrustedSites();
+    }
 
-  var allCreds = wallet.allCredentials();
-  List<VerifiableCredential> creds = [];
-  allCreds.forEach((key, value) {
-    if (value.w3cCredential != '') {
-      var vc = VerifiableCredential.fromJson(value.w3cCredential);
-      var type = getTypeToShow(vc.type);
-      if (type != 'PaymentReceipt') {
-        var id = getHolderDidFromCredential(vc.toJson());
-        var status = wallet.revocationState[id];
-        if (status == RevocationState.valid.index ||
-            status == RevocationState.unknown.index) {
-          creds.add(vc);
+    if (testBuild) {
+      trusted.add('https://localhost');
+      trusted.add('http://localhost');
+    }
+
+    logger.d('$trusted contains? $toCheck');
+    if (!trusted.contains(toCheck)) {
+      return null;
+    }
+
+    var definition = PresentationDefinition.fromJson(request);
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+
+    var allCreds = wallet.allCredentials();
+    List<VerifiableCredential> creds = [];
+    allCreds.forEach((key, value) {
+      if (value.w3cCredential != '') {
+        var vc = VerifiableCredential.fromJson(value.w3cCredential);
+        var type = getTypeToShow(vc.type);
+        if (type != 'PaymentReceipt') {
+          var id = getHolderDidFromCredential(vc.toJson());
+          var status = wallet.revocationState[id];
+          if (status == RevocationState.valid.index ||
+              status == RevocationState.unknown.index) {
+            creds.add(vc);
+          }
         }
       }
-    }
-  });
-
-  try {
-    VerifiablePresentation? vp;
+    });
     var filtered = searchCredentialsForPresentationDefinition(definition,
         credentials: creds);
     logger.d('successfully filtered');
-
-    var authorizedApps = wallet.getAuthorizedApps();
-    var authorizedHashes = wallet.getHashesForAuthorizedApp(initialUrl);
-    logger.d(authorizedHashes);
-    logger.d(definitionHash.toString());
-    if (authorizedApps.contains(initialUrl) &&
-        authorizedHashes.contains(definitionHash.toString())) {
-      logger.d('send with no interaction');
-      var tmp = await buildPresentation(filtered, wallet.wallet, nonce,
-          loadDocumentFunction: loadDocumentFast);
-      vp = VerifiablePresentation.fromJson(tmp);
-    } else {
-      vp = await Navigator.of(navigatorKey.currentContext!).push(
-        MaterialPageRoute(
-          builder: (context) => PresentationRequestDialog(
-            definitionHash: definitionHash.toString(),
-            askForBackground: askForBackground,
-            name: definition.name,
-            purpose: definition.purpose,
-            otherEndpoint: initialUrl,
-            receiverDid: '',
-            myDid: '',
-            results: filtered,
-            nonce: nonce,
-          ),
-        ),
-      );
+    List<VerifiableCredential> toSend = [];
+    for (var entry in filtered) {
+      if (entry.fulfilled && entry.credentials != null) {
+        toSend.addAll(entry.credentials!.map((e) {
+          return VerifiableCredential(
+              context: e.context,
+              type: e.type,
+              credentialSubject: e.credentialSubject,
+              issuer: {},
+              issuanceDate: e.issuanceDate);
+        }));
+      }
     }
-
-    return vp;
-  } catch (e) {
-    logger.e(e);
-    showErrorMessage(
-        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
-        AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+    if (toSend.isNotEmpty) {
+      return VerifiablePresentation(
+          context: [credentialsV1Iri],
+          type: ['VerifiablePresentation'],
+          verifiableCredential: toSend);
+    }
     return null;
+  }
+
+  Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
+      String initialUrl, String nonce, bool askForBackground) async {
+    var definition = PresentationDefinition.fromJson(request);
+    var definitionToHash = PresentationDefinition(
+        inputDescriptors: definition.inputDescriptors
+            .map((e) => InputDescriptor(
+                  id: '',
+                  constraints: InputDescriptorConstraints(
+                    subjectIsIssuer: e.constraints?.subjectIsIssuer,
+                    fields: e.constraints?.fields
+                        ?.map((eIn) => InputDescriptorField(
+                            path: eIn.path, id: '', filter: eIn.filter))
+                        .toList(),
+                  ),
+                ))
+            .toList(),
+        submissionRequirement: definition.submissionRequirement
+            ?.map((e) => SubmissionRequirement(
+                rule: e.rule,
+                count: e.count,
+                from: e.from,
+                max: e.max,
+                min: e.min))
+            .toList(),
+        id: '');
+    var definitionHash =
+        sha256.convert(utf8.encode(definitionToHash.toString()));
+
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+
+    var allCreds = wallet.allCredentials();
+    List<VerifiableCredential> creds = [];
+    allCreds.forEach((key, value) {
+      if (value.w3cCredential != '') {
+        var vc = VerifiableCredential.fromJson(value.w3cCredential);
+        var type = getTypeToShow(vc.type);
+        if (type != 'PaymentReceipt') {
+          var id = getHolderDidFromCredential(vc.toJson());
+          var status = wallet.revocationState[id];
+          if (status == RevocationState.valid.index ||
+              status == RevocationState.unknown.index) {
+            creds.add(vc);
+          }
+        }
+      }
+    });
+
+    try {
+      VerifiablePresentation? vp;
+      var filtered = searchCredentialsForPresentationDefinition(definition,
+          credentials: creds);
+      logger.d('successfully filtered');
+
+      var authorizedApps = wallet.getAuthorizedApps();
+      var authorizedHashes = wallet.getHashesForAuthorizedApp(initialUrl);
+      logger.d(authorizedHashes);
+      logger.d(definitionHash.toString());
+      if (authorizedApps.contains(initialUrl) &&
+          authorizedHashes.contains(definitionHash.toString())) {
+        logger.d('send with no interaction');
+        var tmp = await buildPresentation(filtered, wallet.wallet, nonce,
+            loadDocumentFunction: loadDocumentFast);
+        vp = VerifiablePresentation.fromJson(tmp);
+      } else {
+        vp = await Navigator.of(navigatorKey.currentContext!).push(
+          MaterialPageRoute(
+            builder: (context) => PresentationRequestDialog(
+              definitionHash: definitionHash.toString(),
+              askForBackground: askForBackground,
+              name: definition.name,
+              purpose: definition.purpose,
+              otherEndpoint: initialUrl,
+              receiverDid: '',
+              myDid: '',
+              results: filtered,
+              nonce: nonce,
+            ),
+          ),
+        );
+      }
+
+      return vp;
+    } catch (e) {
+      logger.e(e);
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsTitle,
+          AppLocalizations.of(navigatorKey.currentContext!)!.noCredentialsNote);
+      return null;
+    }
   }
 }
