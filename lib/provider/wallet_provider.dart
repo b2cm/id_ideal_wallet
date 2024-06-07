@@ -393,14 +393,12 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
-  void addAbo(String url, String pictureUrl, String title) {
-    var asUri = Uri.parse(url);
-    var toSave =
-        '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+  void addAbo(String url, String pictureUrl, String title,
+      [bool cheat = false, bool notify = true]) {
     aboList.add({'url': url, 'mainbgimage': pictureUrl, 'name': title});
     wallet.storeConfigEntry('aboList', jsonEncode(aboList));
 
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   List<String> getAuthorizedApps() {
@@ -967,51 +965,18 @@ class WalletProvider extends ChangeNotifier {
     var type = vcParsed.type
         .firstWhere((element) => element != 'VerifiableCredential');
     logger.d(type);
-    if (type == 'ContextCredential') {
-      // await restoreCredentialsOfContext(
-      //     vcParsed.id!, vcParsed.credentialSubject['contextId']);
-      // await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
-      _wallet.storeConfigEntry(
-          'contextId_${vcParsed.credentialSubject['contextId']}', vcParsed.id!);
-      if (_wallet.getConfigEntry(vcParsed.id!) == null) {
-        await _wallet.storeConfigEntry(vcParsed.id!, jsonEncode([]));
-      }
-    } else {
-      // search if the credential maybe belongs to a context
-      for (var vcs in contextCredentials) {
-        if (vcs.credentialSubject.containsKey('groupedTypes')) {
-          List groupedTypes =
-              vcs.credentialSubject['groupedTypes'].cast<String>();
-          logger.d(groupedTypes);
-          if (groupedTypes.contains(type)) {
-            var old = jsonDecode(_wallet.getConfigEntry(vcs.id!)!) as List;
-            var id = vcParsed.id ?? getHolderDidFromCredential(vc);
-            if (id == '') {
-              id = '${vcParsed.issuanceDate.toIso8601String()}$type';
-            }
-            old.add(id);
-            logger.d(old);
-            await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
-            await _wallet.storeConfigEntry('${id}_context', vcs.id!);
-            storeExchangeHistoryEntry(vcs.id!, DateTime.now(), 'add',
-                my_util.getTypeToShow(vcParsed.type));
-          }
-        } else if (vcs.credentialSubject.containsKey('contexttype')) {
-          if (vcParsed.type.contains(vcs.credentialSubject['contexttype'])) {
-            var old =
-                jsonDecode(_wallet.getConfigEntry(vcs.id!) ?? '[]') as List;
-            var id = vcParsed.id ?? getHolderDidFromCredential(vc);
-            if (id == '') {
-              id = '${vcParsed.issuanceDate.toIso8601String()}$type';
-            }
-            old.add(id);
-            logger.d(old);
-            await _wallet.storeConfigEntry(vcs.id!, jsonEncode(old));
-            await _wallet.storeConfigEntry('${id}_context', vcs.id!);
-            storeExchangeHistoryEntry(vcs.id!, DateTime.now(), 'add',
-                my_util.getTypeToShow(vcParsed.type));
-          }
-        }
+
+    if (type == 'PieceOfArt') {
+      List<String> allAbos = aboList.map((e) {
+        return e['url']!;
+      }).toList();
+      if (!allAbos.contains('https://test.hidy.app/kigallery')) {
+        addAbo(
+            'https://test.hidy.app/kigallery',
+            'https://hidy.app/styles/kigalerie_contextbg.jpg',
+            'KI-Galerie',
+            true,
+            false);
       }
     }
     await checkValiditySingle(vcParsed);

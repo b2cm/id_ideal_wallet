@@ -119,7 +119,7 @@ class HomeScreen extends StatelessWidget {
                     text: 'Home',
                     activeIcon: Icons.home,
                     inactiveIcon: Icons.home_outlined,
-                    activeIndices: const [0, 9],
+                    activeIndices: const [0],
                     navigator: navigator),
                 CustomNavigationItem(
                     text: 'Credentials',
@@ -150,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                     text: AppLocalizations.of(context)!.settings,
                     activeIcon: Icons.settings,
                     inactiveIcon: Icons.settings_outlined,
-                    activeIndices: const [4, 7, 8],
+                    activeIndices: const [4, 7, 8, 9],
                     navigator: navigator),
               ],
             ),

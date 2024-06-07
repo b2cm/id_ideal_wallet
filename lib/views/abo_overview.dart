@@ -25,7 +25,7 @@ class AboOverviewState extends State<AboOverview>
     super.initState();
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     if (wallet.aboList.isNotEmpty) {
-      for (var a in wallet.aboList) {
+      for (int i = 0; i < wallet.aboList.length + 3; i++) {
         var controller = AnimationController(
           duration: const Duration(milliseconds: 250),
           vsync: this,

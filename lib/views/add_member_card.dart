@@ -64,11 +64,21 @@ class AddMemberCardState extends State<AddMemberCard> {
 
   Future<void> storeCard() async {
     if (formKey.currentState!.validate()) {
-      Provider.of<WalletProvider>(context, listen: false).addMemberCard({
+      var wallet = Provider.of<WalletProvider>(context, listen: false);
+      wallet.addMemberCard({
         'name': nameController.text,
         'barcodeType': currentType.name,
         'number': numberController.text
       });
+      List<String> allAbos = wallet.aboList.map((e) {
+        return e['url']!;
+      }).toList();
+      if (!allAbos.contains('https://test.hidy.app/ccards')) {
+        wallet.addAbo(
+            'https://test.hidy.app/ccards',
+            'https://hidy.app/styles/kundenkarten_contextbg.jpg',
+            'Kundenkarten');
+      }
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
