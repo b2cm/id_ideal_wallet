@@ -47,6 +47,11 @@ class SettingsPageState extends State<SettingsPage> {
             title: const Text('Vertrauenswürdige Anwendungen'),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
                 .changePage([7]),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.newAppTitle),
+            onTap: () => Provider.of<NavigationProvider>(context, listen: false)
+                .changePage([9]),
           )
         ],
       ),
