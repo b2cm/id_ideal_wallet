@@ -108,6 +108,7 @@
   "malformedEncryptedMessage": "An error occurred while decrypting a message.",
   "waiting": "Just a moment, please.",
   "waitingSendPresentation": "Your answer is sent.",
+  "waitingQrData": "The data is being processed.",
   "errorNotEnoughCredentials": "You cannot fulfill the request of your counterpart because you do not have the necessary credentials (selected).\nFind out how you can obtain the missing credentials or select the missing ones.",
   "attention": "Attention",
   "cancelWarning": "Please use 'Cancel' to close",

@@ -318,6 +318,7 @@ class WebViewWindowState extends State<WebViewWindow> {
       if (entry.fulfilled && entry.credentials != null) {
         toSend.addAll(entry.credentials!.map((e) {
           return VerifiableCredential(
+              id: e.id,
               context: e.context,
               type: e.type,
               credentialSubject: e.credentialSubject,

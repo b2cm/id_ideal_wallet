@@ -108,6 +108,7 @@
   "malformedEncryptedMessage": "Beim Entschlüsseln einer Nachricht ist ein Fehler aufgetreten.",
   "waiting": "Einen kleinen Moment bitte.",
   "waitingSendPresentation": "Ihre Antwort wird gesendet.",
+  "waitingQrData": "Die Daten werden verarbeitet.",
   "errorNotEnoughCredentials": "Sie können die Anfrage ihres Gegenübers nicht erfüllen, da Sie nicht die nötigen Nachweise besitzen bzw. ausgewählt haben.\nInformieren Sie sich, wie Sie die fehlenden Nachweise erlangen können oder wählen Sie die fehlenden aus.",
   "attention": "Achtung",
   "cancelWarning": "Zum Beenden 'Abbrechen' verwenden",
