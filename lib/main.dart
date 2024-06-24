@@ -9,10 +9,12 @@ import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
 import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/abo_overview.dart';
+import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:id_ideal_wallet/views/authorized_apps.dart';
 import 'package:id_ideal_wallet/views/credential_detail.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
@@ -40,7 +42,8 @@ void main() async {
       ChangeNotifierProvider(
           create: (context) => WalletProvider(appDocumentDir.path, isInit)),
       ChangeNotifierProvider(create: (context) => NavigationProvider(!isInit)),
-      ChangeNotifierProvider(create: (context) => MdocProvider())
+      ChangeNotifierProvider(create: (context) => MdocProvider()),
+      ChangeNotifierProvider(create: (context) => AusweisProvider())
     ],
     child: const App(),
   ));
@@ -150,7 +153,7 @@ class HomeScreen extends StatelessWidget {
                     text: AppLocalizations.of(context)!.settings,
                     activeIcon: Icons.settings,
                     inactiveIcon: Icons.settings_outlined,
-                    activeIndices: const [4, 7, 8, 9],
+                    activeIndices: const [4, 7, 8, 9, 13],
                     navigator: navigator),
               ],
             ),
@@ -218,6 +221,8 @@ class HomeScreen extends StatelessWidget {
         return TopUp(paymentMethod: navigator.credential);
       case 12:
         return PaymentOverview(paymentContext: navigator.credential!);
+      case 13:
+        return const AusweisView();
       default:
         return const AboOverview();
     }

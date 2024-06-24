@@ -142,122 +142,129 @@ class WebViewWindowState extends State<WebViewWindow> {
               Expanded(
                 child: Stack(
                   children: [
-                    InAppWebView(
-                      key: webViewKey,
-                      initialUrlRequest:
-                          URLRequest(url: WebUri(widget.initialUrl)),
-                      initialSettings: settings,
-                      pullToRefreshController: pullToRefreshController,
-                      // Testing only: accept bad (self signed) certs
-                      onReceivedServerTrustAuthRequest:
-                          (controller, challenge) async {
-                        return ServerTrustAuthResponse(
-                            action: ServerTrustAuthResponseAction.PROCEED);
-                      },
-                      onWebViewCreated: (controller) {
-                        webViewController = controller;
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandlerAsync',
-                            callback: (args) async {
-                              await Future.delayed(const Duration(seconds: 2));
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandler',
-                            callback: (args) {
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestHandler',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationHandler(
-                                  args.first,
-                                  widget.initialUrl,
-                                  args[1],
-                                  args[2]);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestNoSignature',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationNoSign(
-                                  args.first, widget.initialUrl, trustedSites);
-                            });
-                      },
-                      onLoadStart: (controller, url) {
-                        setState(() {});
-                      },
-                      onPermissionRequest: (controller, request) async {
-                        return PermissionResponse(
-                            resources: request.resources,
-                            action: PermissionResponseAction.GRANT);
-                      },
-                      shouldOverrideUrlLoading:
-                          (controller, navigationAction) async {
-                        var uri = navigationAction.request.url!;
+                    Consumer<NavigationProvider>(
+                        builder: (context, nav, child) {
+                      return InAppWebView(
+                        key: webViewKey,
+                        initialUrlRequest:
+                            URLRequest(url: WebUri(nav.webViewUrl)),
+                        initialSettings: settings,
+                        pullToRefreshController: pullToRefreshController,
+                        // Testing only: accept bad (self signed) certs
+                        onReceivedServerTrustAuthRequest:
+                            (controller, challenge) async {
+                          return ServerTrustAuthResponse(
+                              action: ServerTrustAuthResponseAction.PROCEED);
+                        },
+                        onWebViewCreated: (controller) {
+                          webViewController = controller;
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandlerAsync',
+                              callback: (args) async {
+                                await Future.delayed(
+                                    const Duration(seconds: 2));
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandler',
+                              callback: (args) {
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestHandler',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationHandler(
+                                    args.first,
+                                    widget.initialUrl,
+                                    args[1],
+                                    args[2]);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestNoSignature',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationNoSign(
+                                    args.first,
+                                    widget.initialUrl,
+                                    trustedSites);
+                              });
+                        },
+                        onLoadStart: (controller, url) {
+                          setState(() {});
+                        },
+                        onPermissionRequest: (controller, request) async {
+                          return PermissionResponse(
+                              resources: request.resources,
+                              action: PermissionResponseAction.GRANT);
+                        },
+                        shouldOverrideUrlLoading:
+                            (controller, navigationAction) async {
+                          var uri = navigationAction.request.url!;
 
-                        if ((uri.authority.contains('wallet.id-ideal.de') ||
-                            uri.authority.contains('wallet.bccm.dev') ||
-                            uri.scheme == 'eudi-openid4ci')) {
-                          Provider.of<NavigationProvider>(context,
-                                  listen: false)
-                              .handleLink(
-                                  '${uri.toString()}&initialWebview=${widget.initialUrl}');
-                          return NavigationActionPolicy.CANCEL;
-                        }
+                          if ((uri.authority.contains('wallet.id-ideal.de') ||
+                              uri.authority.contains('wallet.bccm.dev') ||
+                              uri.scheme == 'eudi-openid4ci')) {
+                            Provider.of<NavigationProvider>(context,
+                                    listen: false)
+                                .handleLink(
+                                    '${uri.toString()}&initialWebview=${widget.initialUrl}');
+                            return NavigationActionPolicy.CANCEL;
+                          }
 
-                        // if (![
-                        //   "http",
-                        //   "https",
-                        //   "file",
-                        //   "chrome",
-                        //   "data",
-                        //   "javascript",
-                        //   "about"
-                        // ].contains(uri.scheme)) {
-                        //   if (await canLaunchUrl(uri)) {
-                        //     // Launch the App
-                        //     await launchUrl(
-                        //       uri,
-                        //     );
-                        //     // and cancel the request
-                        //     return NavigationActionPolicy.CANCEL;
-                        //   }
-                        // }
+                          // if (![
+                          //   "http",
+                          //   "https",
+                          //   "file",
+                          //   "chrome",
+                          //   "data",
+                          //   "javascript",
+                          //   "about"
+                          // ].contains(uri.scheme)) {
+                          //   if (await canLaunchUrl(uri)) {
+                          //     // Launch the App
+                          //     await launchUrl(
+                          //       uri,
+                          //     );
+                          //     // and cancel the request
+                          //     return NavigationActionPolicy.CANCEL;
+                          //   }
+                          // }
 
-                        return NavigationActionPolicy.ALLOW;
-                      },
-                      onLoadStop: (controller, url) async {
-                        pullToRefreshController?.endRefreshing();
-                        setState(() {});
-                      },
-                      onReceivedError: (controller, request, error) {
-                        pullToRefreshController?.endRefreshing();
-                      },
-                      onProgressChanged: (controller, progress) {
-                        if (progress == 100) {
+                          return NavigationActionPolicy.ALLOW;
+                        },
+                        onLoadStop: (controller, url) async {
                           pullToRefreshController?.endRefreshing();
-                        }
-                        setState(() {
-                          this.progress = progress / 100;
-                        });
-                      },
-                      onUpdateVisitedHistory:
-                          (controller, url, androidIsReload) {
-                        logger.d('new Uri: $url');
-                        Provider.of<NavigationProvider>(context, listen: false)
-                            .setWebViewUrl(url.toString());
-                        setState(() {
+                          setState(() {});
+                        },
+                        onReceivedError: (controller, request, error) {
+                          pullToRefreshController?.endRefreshing();
+                        },
+                        onProgressChanged: (controller, progress) {
+                          if (progress == 100) {
+                            pullToRefreshController?.endRefreshing();
+                          }
+                          setState(() {
+                            this.progress = progress / 100;
+                          });
+                        },
+                        onUpdateVisitedHistory:
+                            (controller, url, androidIsReload) {
+                          logger.d('new Uri: $url');
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
                               .setWebViewUrl(url.toString());
-                        });
-                      },
-                      onConsoleMessage: (controller, consoleMessage) {
-                        logger.d(consoleMessage);
-                      },
-                    ),
+                          setState(() {
+                            Provider.of<NavigationProvider>(context,
+                                    listen: false)
+                                .setWebViewUrl(url.toString());
+                          });
+                        },
+                        onConsoleMessage: (controller, consoleMessage) {
+                          logger.d(consoleMessage);
+                        },
+                      );
+                    }),
                     progress < 1.0
                         ? LinearProgressIndicator(value: progress)
                         : Container(),

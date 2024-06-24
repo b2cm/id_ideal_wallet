@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,7 +8,9 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
+import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:provider/provider.dart';
 
 class NavigationProvider extends ChangeNotifier {
@@ -37,20 +41,26 @@ class NavigationProvider extends ChangeNotifier {
   }
 
   void changePage(List<int> newIndex,
-      {String? webViewUrl, VerifiableCredential? credential}) {
+      {String? webViewUrl,
+      VerifiableCredential? credential,
+      bool track = true}) {
     if (newIndex.first != activeIndex || newIndex.first == 5) {
       canPop = false;
+      logger.d('Before: $activeIndex /${this.webViewUrl}');
       activeIndex = newIndex.first;
       while (pageStack.isNotEmpty && newIndex.contains(pageStack.last)) {
         pageStack.removeLast();
       }
-      pageStack.add(newIndex.first);
+      if (track) {
+        pageStack.add(newIndex.first);
+      }
       if (webViewUrl != null) {
         this.webViewUrl = webViewUrl;
       }
       if (credential != null) {
         this.credential = credential;
       }
+      logger.d('After: $activeIndex /${this.webViewUrl}');
       notifyListeners();
     }
   }
@@ -93,6 +103,16 @@ class NavigationProvider extends ChangeNotifier {
         link.startsWith('eudi-openid4vp') ||
         link.startsWith('openid4vp')) {
       handlePresentationRequestOidc(link);
+    } else if (link.startsWith('eid')) {
+      logger.d(link);
+      var asUri = Uri.parse(link);
+      var tcTokenUrl = asUri.queryParameters['tcTokenURL'] ??
+          asUri.queryParameters['tcTokenUrl'];
+      logger.d(tcTokenUrl);
+      Navigator.of(navigatorKey.currentContext!)
+          .push(MaterialPageRoute(builder: (context) => AusweisView()));
+      Provider.of<AusweisProvider>(navigatorKey.currentContext!, listen: false)
+          .startProgress(tcTokenUrl);
     }
     // Handle own App Link
     else if (link.startsWith('https://wallet.bccm.dev')) {
@@ -116,10 +136,13 @@ class NavigationProvider extends ChangeNotifier {
         var uriToCall = Uri.parse(asUri.queryParameters['url']!);
         var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
             listen: false);
-        changePage([5],
-            webViewUrl: uriToCall
-                .toString()
-                .replaceAll('wid=', 'wid=${wallet.lndwId}'));
+        changePage([1], track: false);
+        Timer(
+            Duration(milliseconds: 10),
+            () => changePage([5],
+                webViewUrl: uriToCall
+                    .toString()
+                    .replaceAll('wid=', 'wid=${wallet.lndwId}')));
       } else if (link.contains('redirect')) {
         handleRedirect(link);
       } else if (link.contains('/invoice')) {

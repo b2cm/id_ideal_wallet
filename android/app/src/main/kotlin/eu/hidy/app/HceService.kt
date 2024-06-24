@@ -11,7 +11,6 @@ class HceService : HostApduService() {
     }
 
     override fun onDeactivated(reason: Int) {
-
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
