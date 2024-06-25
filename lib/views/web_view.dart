@@ -411,6 +411,7 @@ class WebViewWindowState extends State<WebViewWindow> {
         vp = await Navigator.of(navigatorKey.currentContext!).push(
           MaterialPageRoute(
             builder: (context) => PresentationRequestDialog(
+              definition: definition,
               definitionHash: definitionHash.toString(),
               askForBackground: askForBackground,
               name: definition.name,

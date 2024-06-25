@@ -274,6 +274,7 @@ class MdocProvider extends ChangeNotifier {
     var res = await Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
         builder: (context) => PresentationRequestDialog(
+          definition: PresentationDefinition(inputDescriptors: []),
           definitionHash: '',
           otherEndpoint: '',
           receiverDid: '',

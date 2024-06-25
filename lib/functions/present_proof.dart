@@ -180,6 +180,7 @@ Future<bool> handleRequestPresentation(
       Navigator.of(navigatorKey.currentContext!).push(
         MaterialPageRoute(
           builder: (context) => PresentationRequestDialog(
+            definition: definition,
             definitionHash: definitionHash.toString(),
             name: definition.name,
             purpose: definition.purpose,

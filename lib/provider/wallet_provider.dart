@@ -19,6 +19,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart'
     as local;
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
+import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:pkcs7/pkcs7.dart';
 import 'package:provider/provider.dart';
@@ -981,6 +982,15 @@ class WalletProvider extends ChangeNotifier {
     }
     await checkValiditySingle(vcParsed);
     notifyListeners();
+    var nav = Provider.of<NavigationProvider>(navigatorKey.currentContext!,
+        listen: false);
+    if (nav.redirectWebViewUrl != null) {
+      nav.changePage([1], track: false);
+      Timer(const Duration(milliseconds: 10), () {
+        nav.changePage([5], webViewUrl: nav.redirectWebViewUrl);
+        nav.redirectWebViewUrl = null;
+      });
+    }
   }
 
   Future<String> getContextDid(String contextId) async {

@@ -38,6 +38,7 @@ Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
 
   var issuerString = removeTrailingSlash(offer.credentialIssuer);
+  logger.d('$issuerString/.well-known/openid-credential-issuer');
 
   // get metadata
   var issuerMetaReq = await get(
@@ -67,6 +68,9 @@ Future<void> handleOfferOidc(String offerUri) async {
       c as CredentialsSupportedObject;
       offeredCredentials.add(c);
     }
+  }
+  for (var s in issuerMetadata.credentialsSupported.values) {
+    logger.d(s.toJson());
   }
   for (String t in credentialToRequest) {
     var credConfig = issuerMetadata.credentialsSupported[t];
@@ -126,7 +130,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           '${const Uuid().v4().toString()}-${const Uuid().v4().toString()}';
       String pkceCodeChallenge = removePaddingFromBase64(
           base64UrlEncode(sha256.convert(utf8.encode(pkceCodeVerifier)).bytes));
-
+      logger.d(offeredCredentials.map((e) => e.toJson()).toList());
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
           .storeConfig(
               state,
@@ -521,7 +525,7 @@ Future<void> getCredential(
   } else if (credentialMetadata.proofTypesSupported!.containsKey('jwt')) {
     proofType = 'jwt';
     (credentialDid, proofValue, keyType) = await buildJwt(
-        credentialMetadata.proofTypesSupported?['jwt'] ?? [],
+        credentialMetadata.proofTypesSupported?['jwt']?.cast<String>() ?? [],
         wallet,
         tokenResponse.cNonce,
         credentialIssuer);
@@ -914,6 +918,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
         builder: (context) => PresentationRequestDialog(
+          definition: definition!,
           definitionHash: '',
           otherEndpoint: responseUri ?? redirectUri ?? clientId,
           receiverDid: clientId,

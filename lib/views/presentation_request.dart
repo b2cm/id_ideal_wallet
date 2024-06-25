@@ -13,6 +13,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/footer_buttons.dart';
+import 'package:id_ideal_wallet/basicUi/standard/issuance_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/basicUi/standard/requester_info.dart';
@@ -48,6 +49,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final List<VerifiableCredential>? paymentCards;
   final X509Certificate? requesterCert;
   final ClientMetaData? oidcClientMetadata;
+  final PresentationDefinition definition;
 
   const PresentationRequestDialog(
       {super.key,
@@ -56,6 +58,7 @@ class PresentationRequestDialog extends StatefulWidget {
       required this.myDid,
       required this.otherEndpoint,
       required this.definitionHash,
+      required this.definition,
       this.askForBackground = false,
       this.name,
       this.purpose,
@@ -355,6 +358,13 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
       if (credCount < minCount) {
         logger.d('less creds: $credCount < $minCount');
         fulfillable = false;
+      }
+
+      if (!fulfillable) {
+        outerTileExpanded = true;
+        outerTileChildList.add(IssuanceInfo(
+            definition: widget.definition,
+            descriptorIds: result.matchingDescriptorIds));
       }
 
       var outerTile = ExpansionTile(

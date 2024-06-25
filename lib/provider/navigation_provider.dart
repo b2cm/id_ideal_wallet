@@ -17,6 +17,7 @@ class NavigationProvider extends ChangeNotifier {
   int activeIndex = 0;
   List<int> pageStack = [];
   String webViewUrl = 'https://hidy.app';
+  String? redirectWebViewUrl;
   VerifiableCredential? credential;
   bool canPop = true;
   bool showWelcome;
