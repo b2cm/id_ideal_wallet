@@ -124,7 +124,7 @@ Future<bool> handleRequestPresentation(
     invoice = paymentReq.first.data.json?['lnInvoice'];
     logger.d('invoice: $invoice');
     if (invoice != null) {
-      paymentCards = wallet.getSuitablePaymentCredentials(invoice);
+      paymentCards = wallet.paymentCredentials;
       if (paymentCards.isEmpty) {
         showErrorMessage(
             AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);
@@ -139,8 +139,7 @@ Future<bool> handleRequestPresentation(
     invoiceReq = lnInvoiceReq.first.data.json;
     logger.d('invoice request: $invoiceReq');
     if (invoiceReq != null) {
-      paymentCards =
-          wallet.getSuitablePaymentCredentialsForNetwork(invoiceReq['network']);
+      paymentCards = wallet.paymentCredentials;
       if (paymentCards.isEmpty) {
         showErrorMessage(
             AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod);

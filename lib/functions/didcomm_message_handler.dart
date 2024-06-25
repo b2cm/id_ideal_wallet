@@ -157,11 +157,6 @@ Future<bool> handleDidcommMessage(String message, [String? replyUrl]) async {
 Future<bool> handleEmptyMessage(
     DidcommPlaintextMessage message, WalletProvider wallet) async {
   logger.d('got empty message');
-  if (message.to != null && message.to!.isNotEmpty) {
-    for (var d in message.to!) {
-      wallet.removeRelayedDid(d);
-    }
-  }
 
   if (message.ack != null && message.ack!.isNotEmpty) {
     var pId = message.threadId ?? message.id;
@@ -181,7 +176,7 @@ Future<bool> handleEmptyMessage(
         if (paymentReq.isNotEmpty) {
           var invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
           logger.d(invoice);
-          payInvoiceInteraction(invoice, isMainnet: invoice.startsWith('lnbc'));
+          payInvoiceInteraction(invoice);
         }
       }
     }
@@ -502,10 +497,8 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
           logger.d('have to pay invoice');
           var paymentId = paymentCards.first.id!;
           var lnAdminKey = wallet.getLnAdminKey(paymentId);
-          var paymentType = paymentCards.first.credentialSubject['paymentType'];
           try {
-            await payInvoice(lnAdminKey!, lnInvoice,
-                isMainnet: paymentType == 'LightningMainnetPayment');
+            await payInvoice(lnAdminKey!, lnInvoice);
             logger.d('invoice paid');
           } catch (e) {
             showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
@@ -539,7 +532,6 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
       } else {
         //we assume we get message over relay
         logger.d('need relay: $myDid');
-        wallet.addRelayedDid(myDid);
       }
     } else {
       if (message is Presentation) {

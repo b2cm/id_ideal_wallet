@@ -77,7 +77,7 @@ Future<bool> handleOfferCredential(
   //payment requested?
   String? toPay;
   String? invoice;
-  String? paymentId, lnInKey, lnAdminKey, paymentType;
+  String? paymentId, lnInKey, lnAdminKey;
 
   if (message.attachments!.length > 1) {
     logger.d('with payment (or credential manifest + fulfillment)');
@@ -86,7 +86,7 @@ Future<bool> handleOfferCredential(
     if (paymentReq.isNotEmpty) {
       invoice = paymentReq.first.data.json!['lnInvoice'] ?? '';
 
-      var paymentTypes = wallet.getSuitablePaymentCredentials(invoice!);
+      var paymentTypes = wallet.paymentCredentials;
 
       if (paymentTypes.isEmpty) {
         await showModalBottomSheet(
@@ -129,25 +129,17 @@ Future<bool> handleOfferCredential(
           return false;
         } else {
           paymentId = paymentTypes[selectedIndex].id!;
-          paymentType =
-              paymentTypes[selectedIndex].credentialSubject['paymentType'];
         }
       } else {
         paymentId = paymentTypes.first.id!;
-        paymentType = paymentTypes.first.credentialSubject['paymentType'];
       }
 
-      if (paymentType != 'SimulatedPayment') {
-        lnInKey = wallet.getLnInKey(paymentId);
-        lnAdminKey = wallet.getLnAdminKey(paymentId);
-        var decoded = await decodeInvoice(lnInKey!, invoice,
-            isMainnet: paymentType == 'LightningMainnetPayment');
-        toPay = decoded.amount.toSat().toString();
-        logger.d(toPay);
-        logger.d(decoded.amount.milliSatoshi);
-      } else {
-        toPay = invoice;
-      }
+      lnInKey = wallet.getLnInKey(paymentId);
+      lnAdminKey = wallet.getLnAdminKey(paymentId);
+      var decoded = await decodeInvoice(lnInKey!, invoice!);
+      toPay = decoded.amount.toSat().toString();
+      logger.d(toPay);
+      logger.d(decoded.amount.milliSatoshi);
     }
   }
   Map<String, String> paymentDetails = {};
@@ -182,11 +174,11 @@ Future<bool> handleOfferCredential(
       if (invoice != null) {
         try {
           if (lnAdminKey != null) {
-            await payInvoice(lnAdminKey, invoice,
-                isMainnet: paymentType == 'LightningMainnetPayment');
+            await payInvoice(lnAdminKey, invoice);
             wallet.getLnBalance(paymentId!);
           } else {
-            wallet.fakePay(paymentId!, double.parse(toPay!));
+            showErrorMessage('Fatel error', 'kein Zahlungskonto gefunden');
+            return false;
           }
           logger.d('erfolgreich bezahlt');
           paymentDetails['paymentId'] = paymentId;

@@ -66,7 +66,6 @@ bool testBuild = true;
 var tosEndpoint =
     'https://hidy.eu/${AppLocalizations.of(navigatorKey.currentContext!)!.localeName}/terms';
 
-var lnTestNetEndpoint = 'https://testpayments.pixeldev.eu';
 var lnMainnetEndpoint = 'https://payments.pixeldev.eu';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

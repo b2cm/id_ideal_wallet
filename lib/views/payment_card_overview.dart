@@ -5,10 +5,9 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
-import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:provider/provider.dart';
 
@@ -128,27 +127,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
       }
       return StyledScaffoldTitle(
         useBackSwipe: false,
-        title: wallet.paymentCredentials.isEmpty
-            ? const Text('Zahlkarten')
-            : DropdownButton(
-                isExpanded: true,
-                value: currentSelection,
-                items: wallet.paymentCredentials
-                    .map((e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(
-                            e.credentialSubject['name'] ??
-                                getTypeToShow(e.type),
-                            maxLines: 2,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (String? value) {
-                  setState(() {
-                    currentSelection = value!;
-                  });
-                },
-              ),
+        title: 'Lightning Wallet',
         fab: wallet.paymentCredentials.isEmpty && !adding
             ? FloatingActionButton.extended(
                 onPressed: () async {
@@ -156,7 +135,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
                     adding = true;
                   });
                   var did = await wallet.newCredentialDid();
-                  issueLNTestNetContext(
+                  issueLNPaymentCard(
                       wallet,
                       {
                         "name": "Lightning Wallet",
@@ -171,7 +150,6 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
                         "services": [],
                         "vclayout": {}
                       },
-                      isMainnet: true,
                       externalDid: did);
 
                   currentSelection = did;
@@ -201,4 +179,32 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
       );
     });
   }
+}
+
+Future<void> issueLNPaymentCard(
+    WalletProvider wallet, Map<String, dynamic> content,
+    {String? externalDid}) async {
+  var did = externalDid ?? await wallet.newCredentialDid();
+  var contextCred = VerifiableCredential(
+      context: [credentialsV1Iri, schemaOrgIri],
+      type: ['VerifiableCredential', 'ContextCredential', 'PaymentContext'],
+      issuer: did,
+      id: did,
+      credentialSubject: {
+        'id': did,
+        'contextId': '2',
+        'paymentType': 'LightningMainnetPayment',
+        ...content
+      },
+      issuanceDate: DateTime.now());
+
+  var signed = await signCredential(wallet.wallet, contextCred.toJson());
+
+  await createLNWallet(did);
+  await Future.delayed(const Duration(seconds: 1));
+
+  var storageCred = wallet.getCredential(did);
+
+  wallet.storeCredential(signed, storageCred!.hdPath);
+  wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
 }

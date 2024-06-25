@@ -87,22 +87,6 @@ class IdCard extends StatelessWidget {
             issuer: credential.issuer,
             selfIssued: credential.isSelfIssued(),
           ));
-    } else if (credential.type.contains('ChallengeSolvedCredential') ||
-        credential.type.contains('Losticket') ||
-        credential.type.contains('JuniorDiplom')) {
-      return LNDWCard(
-          cardTitle: credential.credentialSubject['icon'] ?? '',
-          backgroundImage: background != null
-              ? Image.memory(base64Decode(background.split(',').last)).image
-              : null,
-          subjectName: credential.credentialSubject['stand'] ??
-              getTypeToShow(credential.type),
-          bottomLeftText: const SizedBox(
-            width: 0,
-          ),
-          bottomRightText: const SizedBox(
-            width: 0,
-          ));
     } else if (credential.type.contains('PkPass')) {
       var map = {
         'PKBarcodeFormatQR': BarcodeType.QrCode,
@@ -135,21 +119,13 @@ class IdCard extends StatelessWidget {
       VerifiableCredential? certCred;
       if (wallet != null && wallet.credentialStyling.containsKey(type)) {
         layout = wallet.credentialStyling[type];
-      } else {
-        var id =
-            credential.id ?? getHolderDidFromCredential(credential.toJson());
-        if (id == '') {
-          id = '${credential.issuanceDate.toIso8601String()}$type';
-        }
-        var context = wallet?.getContextForCredential(id);
-        layout = context?.credentialSubject['vclayouts']?[type];
+      }
 
-        var issuer = getIssuerDidFromCredential(credential);
-        var cCreds = wallet?.getConfig('certCreds:$issuer');
-        if (cCreds != null) {
-          certCred =
-              VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
-        }
+      var issuer = getIssuerDidFromCredential(credential);
+      var cCreds = wallet?.getConfig('certCreds:$issuer');
+      if (cCreds != null) {
+        certCred =
+            VerifiableCredential.fromJson((jsonDecode(cCreds) as List).first);
       }
       if (layout != null) {
         return XmlCard(
@@ -570,60 +546,6 @@ class ContextCredentialCardBack extends IdCard {
           )
         ],
       ),
-    );
-  }
-}
-
-class LNDWCard extends IdCard {
-  const LNDWCard(
-      {super.key,
-      required super.cardTitle,
-      required super.subjectName,
-      required super.bottomLeftText,
-      required super.bottomRightText,
-      super.backgroundImage});
-
-  @override
-  Widget buildCenterOverlay() {
-    return Padding(
-        padding: const EdgeInsets.only(left: 30, right: 15),
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          cardTitle.isEmpty
-              ? const SizedBox(
-                  width: 0,
-                )
-              : Image(
-                  width: 40,
-                  height: 60,
-                  image: Image.memory(base64Decode(cardTitle.split(',').last))
-                      .image),
-          Text(Uri.decodeFull(subjectName),
-              //overflow: TextOverflow.clip,
-              softWrap: true,
-              overflow: TextOverflow.visible,
-              maxLines: 3,
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                backgroundColor: Colors.transparent,
-                color: Colors.white,
-                fontSize: 25,
-                fontWeight: FontWeight.bold,
-              ))
-        ]));
-  }
-
-  @override
-  Widget buildFooter() {
-    return const SizedBox(
-      height: 0,
-    );
-  }
-
-  @override
-  Widget buildHeader() {
-    return const SizedBox(
-      height: 0,
     );
   }
 }

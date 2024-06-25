@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
@@ -14,7 +13,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/add_context_credential.dart';
 import 'package:id_ideal_wallet/views/iso_credential_request.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:printing/printing.dart';
@@ -30,59 +28,32 @@ class CredentialPage extends StatefulWidget {
 }
 
 class CredentialPageState extends State<CredentialPage> {
-  String currentSelection = 'all';
-
   @override
   void initState() {
     super.initState();
-    currentSelection = widget.initialSelection;
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
       if (wallet.isOpen()) {
-        var itemList = [
-          DropdownMenuItem(
-            value: 'all',
-            child: Text(AppLocalizations.of(context)!.allCredentials),
-          ),
-          ...wallet.contextCredentials.map((e) => DropdownMenuItem(
-                value: e.id,
-                child: Text(
-                  e.credentialSubject['name'] ?? getTypeToShow(e.type),
-                  maxLines: 2,
-                ),
-              ))
-        ];
-
-        var credentialList = currentSelection == 'all'
-            ? wallet.credentials
-            : wallet.getCredentialsForContext(currentSelection);
+        var credentialList = wallet.credentials;
         return StyledScaffoldTitle(
             currentlyActive: 0,
-            title: DropdownButton(
-              isExpanded: true,
-              value: currentSelection,
-              items: itemList,
-              onChanged: (String? value) {
-                setState(() {
-                  currentSelection = value!;
-                });
-              },
-            ),
-            appBarActions: [
-              InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => IsoCredentialRequest()));
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //     const SnackBar(content: Text('Coming soon')));
-                  },
-                  child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Icon(Icons.search, size: 30)))
-            ],
+            title: AppLocalizations.of(context)!.allCredentials,
+            appBarActions: wallet.isoMdocCredentials.isNotEmpty
+                ? [
+                    InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) =>
+                                  const IsoCredentialRequest()));
+                        },
+                        child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Icon(Icons.qr_code_2, size: 30)))
+                  ]
+                : [],
             child: credentialList.isEmpty
                 ? Center(
                     child:
@@ -124,6 +95,15 @@ class CredentialPageState extends State<CredentialPage> {
   }
 }
 
+bool isBinaryList(List<dynamic> value) {
+  try {
+    value.cast<int>();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
   List<Widget> children = [];
   subject.forEach((key, value) {
@@ -134,18 +114,23 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
       } else if (value is List) {
         var index = 0;
         var primitiveString = '';
-        for (var v in value) {
-          if (v is Map) {
-            List<Widget> subs =
-                buildCredSubject(v.cast<String, dynamic>(), '$key.$index');
-            children.addAll(subs);
-          } else if (v is List) {
-            List<Widget> subs = buildCredSubject({index.toString(): v}, key);
-            children.addAll(subs);
-          } else {
-            primitiveString += '${uriDecode(v)}, ';
+        logger.d(value.runtimeType);
+        if (isBinaryList(value)) {
+          primitiveString = '<Binärdaten>';
+        } else {
+          for (var v in value) {
+            if (v is Map) {
+              List<Widget> subs =
+                  buildCredSubject(v.cast<String, dynamic>(), '$key.$index');
+              children.addAll(subs);
+            } else if (v is List) {
+              List<Widget> subs = buildCredSubject({index.toString(): v}, key);
+              children.addAll(subs);
+            } else {
+              primitiveString += '${uriDecode(v)}, ';
+            }
+            index++;
           }
-          index++;
         }
         if (primitiveString.isNotEmpty) {
           children.add(generateTile(before, key,
@@ -289,7 +274,6 @@ class ContextCardState extends State<ContextCard> {
                 }
 
                 wallet.deleteCredential(credId, true);
-                wallet.removeFromFavorites(credId);
                 Navigator.of(context).pop();
               },
               child: Text(AppLocalizations.of(context)!.delete))
@@ -336,17 +320,6 @@ class ContextCardState extends State<ContextCard> {
                       ? PaymentCard(
                           key: const ValueKey(false),
                           deleteOnTap: _deleteCredential,
-                          onUpdateTap: wallet.hasUpdate.contains(
-                                  '${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}_${widget.context.id!}')
-                              ? () async {
-                                  var download = await get(Uri.parse(
-                                      '$contextEndpoint&contextid=${widget.context.credentialSubject['paymentType'] == 'LightningMainnetPayment' ? '2' : '3'}'));
-                                  if (download.statusCode == 200) {
-                                    wallet.reIssuePaymentContext(widget.context,
-                                        jsonDecode(download.body));
-                                  }
-                                }
-                              : null,
                           // onReturnTap: () => setState(() {
                           //   back = !back;
                           // }),
@@ -380,27 +353,10 @@ class ContextCardState extends State<ContextCard> {
                           credential: widget.context,
                           key: const ValueKey(false),
                           deleteOnTap: _deleteCredential,
-                          onUpdateTap: wallet.hasUpdate.contains(
-                                  widget.context.credentialSubject['contextId'])
-                              ? () async {
-                                  var download = await get(Uri.parse(
-                                      '$contextEndpoint&contextid=${widget.context.credentialSubject['contextId']}'));
-                                  if (download.statusCode == 200) {
-                                    issueContext(
-                                        wallet,
-                                        jsonDecode(download.body),
-                                        widget.context
-                                            .credentialSubject['contextId'],
-                                        true);
-                                  }
-                                }
-                              : null,
-                          // onReturnTap: () => setState(() {
-                          //       back = !back;
-                          //     }),
                           cardTitle: '',
                           cardTitleColor:
-                              widget.context.credentialSubject['overlaycolor'] != null
+                              widget.context.credentialSubject['overlaycolor'] !=
+                                      null
                                   ? HexColor.fromHex(widget.context
                                       .credentialSubject['overlaycolor'])
                                   : Colors.black,
@@ -431,7 +387,8 @@ class ContextCardState extends State<ContextCard> {
                       cardTitle: '',
                       cardTitleColor:
                           widget.context.credentialSubject['overlaycolor'] != null
-                              ? HexColor.fromHex(widget.context.credentialSubject['overlaycolor'])
+                              ? HexColor.fromHex(
+                                  widget.context.credentialSubject['overlaycolor'])
                               : const Color.fromARGB(255, 255, 255, 255),
                       backgroundImage: widget.context.credentialSubject['backgroundImage'] != null
                           ? Image.memory(base64Decode(widget.context.credentialSubject['backgroundImage'].split(',').last)).image

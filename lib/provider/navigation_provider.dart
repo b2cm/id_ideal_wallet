@@ -89,12 +89,11 @@ class NavigationProvider extends ChangeNotifier {
     // Handle Custom Schemes
     if (link.startsWith('LNURL') || link.startsWith('lnurl')) {
       handleLnurl(link);
-    } else if (link.startsWith('lntb')) {
-      logger.d('LN-Invoice (testnet) found');
-      payInvoiceInteraction(link);
     } else if (link.startsWith('lnbc') || link.startsWith('LNBC')) {
       logger.d('LN-Invoice found');
-      payInvoiceInteraction(link, isMainnet: true);
+      payInvoiceInteraction(
+        link,
+      );
     } else if (link.startsWith('eudi-openid4ci://authorize')) {
       handleRedirect(link);
     } else if (link.startsWith('openid-credential-offer') ||
@@ -111,7 +110,7 @@ class NavigationProvider extends ChangeNotifier {
           asUri.queryParameters['tcTokenUrl'];
       logger.d(tcTokenUrl);
       Navigator.of(navigatorKey.currentContext!)
-          .push(MaterialPageRoute(builder: (context) => AusweisView()));
+          .push(MaterialPageRoute(builder: (context) => const AusweisView()));
       Provider.of<AusweisProvider>(navigatorKey.currentContext!, listen: false)
           .startProgress(tcTokenUrl);
     }
@@ -139,7 +138,7 @@ class NavigationProvider extends ChangeNotifier {
             listen: false);
         changePage([1], track: false);
         Timer(
-            Duration(milliseconds: 10),
+            const Duration(milliseconds: 10),
             () => changePage([5],
                 webViewUrl: uriToCall
                     .toString()
@@ -150,8 +149,9 @@ class NavigationProvider extends ChangeNotifier {
         var uri = Uri.parse(link);
         var invoice = uri.queryParameters['invoice'];
         if (invoice != null) {
-          payInvoiceInteraction(invoice,
-              isMainnet: invoice.toLowerCase().startsWith('lnbc'));
+          payInvoiceInteraction(
+            invoice,
+          );
         } else if (uri.queryParameters.containsKey('lnurl')) {
           handleLnurl(uri.queryParameters['lnurl']!);
         }

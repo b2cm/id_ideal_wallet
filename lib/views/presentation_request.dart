@@ -862,14 +862,11 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           logger.d('generate invoice');
           var paymentId = widget.paymentCards!.first.id!;
           var lnInKey = wallet.getLnInKey(paymentId);
-          var paymentType =
-              widget.paymentCards!.first.credentialSubject['paymentType'];
           var invoice = await createInvoice(
               lnInKey!,
               SatoshiAmount.fromUnitAndValue(
                   widget.lnInvoiceRequest!['amount'], SatoshiUnit.sat),
-              memo: widget.lnInvoiceRequest!['memo'] ?? '',
-              isMainnet: paymentType == 'LightningMainnetPayment');
+              memo: widget.lnInvoiceRequest!['memo'] ?? '');
           var index = invoice['checking_id'];
           logger.d(index);
           wallet.newPayment(

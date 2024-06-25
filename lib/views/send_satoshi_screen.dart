@@ -46,9 +46,7 @@ class SendSatoshiScreenState extends State<SendSatoshiScreen> {
                   if (controller.text.isNotEmpty) {
                     Provider.of<NavigationProvider>(context, listen: false)
                         .goBack();
-                    payInvoiceInteraction(controller.text,
-                        isMainnet:
-                            controller.text.toLowerCase().startsWith('lnbc'));
+                    payInvoiceInteraction(controller.text);
                   }
                 },
                 child: Text(AppLocalizations.of(context)!.send))
