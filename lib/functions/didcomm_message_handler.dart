@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 Future<bool> handleOobUrl(String url) async {
+  logger.d(url);
   var asUri = Uri.parse(url);
   var oobUrl = asUri.queryParameters['_ooburl'];
   if (oobUrl != null) {

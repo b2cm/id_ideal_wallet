@@ -125,50 +125,50 @@ packages:
     dependency: "direct main"
     description:
       name: bluetooth_low_energy
-      sha256: "2d1d9f483c677dca86479935827d15c5d0407f346595ae0fbbe8b75076d19490"
+      sha256: abee9946f1e542df21ba18a567385b75dd2a7de8b682fe724379845852a667a9
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.7"
+    version: "6.0.1"
   bluetooth_low_energy_android:
     dependency: transitive
     description:
       name: bluetooth_low_energy_android
-      sha256: "281ca129677e10cd22d4763bbb7a9fb53d801cf25fcc54815e4023073e35f22c"
+      sha256: "97cac5169a392f3872cbb416cc11cf0b2287567c0ceca4d975f2fc5bdd2b1e6f"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.5"
+    version: "6.0.2"
   bluetooth_low_energy_darwin:
     dependency: transitive
     description:
       name: bluetooth_low_energy_darwin
-      sha256: d8c37f27c48ad523e5c32d1002d8e67570b1f4e6d69c54e09bca152a07f6ab3f
+      sha256: "849ba53f7d34845ad7491cd9cdb3784301aa54fe682c91cab804ed55cfd259d5"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.5"
+    version: "6.0.0"
   bluetooth_low_energy_linux:
     dependency: transitive
     description:
       name: bluetooth_low_energy_linux
-      sha256: "2809830a8b67eac5d53fdc6e907aa878ec61884d6e6a42da2b79b826410c8327"
+      sha256: "4d1aaaede517f95320dcf9ad271091ab42c4ad8ba5bfa0e822744d850dcf0048"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.2"
+    version: "6.0.0"
   bluetooth_low_energy_platform_interface:
     dependency: transitive
     description:
       name: bluetooth_low_energy_platform_interface
-      sha256: "5af74eb8f97a896dfdbcff2da284d4fe5b4e2e49ebb2f46f826ac1810f66e4d7"
+      sha256: bc2e8d97c141653e5747bcb3cdc9fe956541b6ecc6e5f158b99a2f3abc2d946a
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.2"
+    version: "6.0.0"
   bluetooth_low_energy_windows:
     dependency: transitive
     description:
       name: bluetooth_low_energy_windows
-      sha256: "5a0b22003d14dc84f3f16e73a77f2645df034badb9003f368e6f9bc02e8b249a"
+      sha256: "4904530cb3e7e1dd7a66919b4c926f8a03ed9924c3c2ce068aef7e0e10ced555"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.3"
+    version: "6.0.0"
   bluez:
     dependency: transitive
     description:
@@ -542,6 +542,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  hybrid_logging:
+    dependency: transitive
+    description:
+      name: hybrid_logging
+      sha256: "54248d52ce68c14702a42fbc4083bac5c6be30f6afad8a41be4bbadd197b8af5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   ieee754:
     dependency: transitive
     description:
@@ -711,14 +719,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.10"
-  log_service:
-    dependency: transitive
-    description:
-      name: log_service
-      sha256: "21124936899e227d1779268077921d46d57456e2592d1562e455be273594e2e4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   logger:
     dependency: "direct main"
     description:
@@ -851,10 +851,10 @@ packages:
     dependency: "direct main"
     description:
       name: pdf
-      sha256: "243f05342fc0bdf140eba5b069398985cdbdd3dbb1d776cf43d5ea29cc570ba6"
+      sha256: "81d5522bddc1ef5c28e8f0ee40b71708761753c163e0c93a40df56fd515ea0f0"
       url: "https://pub.dev"
     source: hosted
-    version: "3.10.8"
+    version: "3.11.0"
   pdf_widget_wrapper:
     dependency: transitive
     description:
@@ -923,10 +923,10 @@ packages:
     dependency: "direct main"
     description:
       name: printing
-      sha256: "1c99cab90ebcc1fff65831d264627d5b529359d563e53f33ab9b8117f2d280bc"
+      sha256: ad41e2b29b273ae9cc539370028dd61195a79cae750a2a9b8be3439fe8022143
       url: "https://pub.dev"
     source: hosted
-    version: "5.12.0"
+    version: "5.13.0"
   provider:
     dependency: "direct main"
     description:

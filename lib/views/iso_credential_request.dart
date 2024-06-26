@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:base_codecs/base_codecs.dart';
@@ -37,9 +38,10 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   late final StreamSubscription characteristicWrittenSubscription;
   late final StreamSubscription characteristicNotifyStateChangedSubscription;
   late final UUID serviceUuid;
-  late final GattService mdocService;
+  late final GATTService mdocService;
   late final DeviceEngagement engagement;
   late final CoseKey myPrivateKey;
+  late final PeripheralManager peripheralManager;
   List<int> readBuffer = [];
   SessionEncryptor? encryptor;
   Central? connectedDevice;
@@ -47,25 +49,34 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   @override
   void initState() {
     super.initState();
-
+    peripheralManager = PeripheralManager();
     bleState = ValueNotifier(BluetoothLowEnergyState.unknown);
     transmissionState = ValueNotifier(0);
     qrData = ValueNotifier('');
     serviceUuid = UUID.fromString(const Uuid().v4().toString());
-    mdocService = GattService(uuid: serviceUuid, characteristics: [
-      mdocPeripheralState,
-      mdocPeripheralClient2Server,
-      mdocPeripheralServer2Client
-    ]);
+    mdocService = GATTService(
+        uuid: serviceUuid,
+        characteristics: [
+          mdocPeripheralState,
+          mdocPeripheralClient2Server,
+          mdocPeripheralServer2Client
+        ],
+        isPrimary: true,
+        includedServices: []);
 
     setBleState();
 
     generateDeviceEngagement();
 
-    stateChangedSubscription = PeripheralManager.instance.stateChanged.listen(
-      (eventArgs) {
+    stateChangedSubscription = peripheralManager.stateChanged.listen(
+      (eventArgs) async {
         bleState.value = eventArgs.state;
         logger.d('BluetoothState changed: ${eventArgs.state}');
+        if (Platform.isAndroid &&
+            eventArgs.state == BluetoothLowEnergyState.unauthorized) {
+          await peripheralManager.authorize();
+          startAdvertising();
+        }
         if (eventArgs.state == BluetoothLowEnergyState.poweredOn &&
             transmissionState.value != 1) {
           startAdvertising();
@@ -74,11 +85,13 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     );
 
     characteristicWrittenSubscription =
-        PeripheralManager.instance.characteristicWritten.listen(
+        peripheralManager.characteristicWriteRequested.listen(
       (eventArgs) async {
         final central = eventArgs.central;
         final characteristic = eventArgs.characteristic;
-        final value = eventArgs.value;
+        final request = eventArgs.request;
+        final offset = request.offset;
+        final value = request.value;
         logger.d('${characteristic.uuid} : (${value.length}) $value ');
         // connectedDevice = central;
         if (characteristic.uuid == mdocPeripheralClient2Server.uuid) {
@@ -99,7 +112,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     );
 
     characteristicNotifyStateChangedSubscription =
-        PeripheralManager.instance.characteristicNotifyStateChanged.listen(
+        peripheralManager.characteristicNotifyStateChanged.listen(
       (eventArgs) async {
         final central = eventArgs.central;
         final characteristic = eventArgs.characteristic;
@@ -256,17 +269,17 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
       var responseToSend =
           SessionData(encryptedData: encryptedResponse).toEncodedCbor();
 
-      const fragmentSize = 509;
+      var fragmentSize =
+          await peripheralManager.getMaximumNotifyLength(connectedDevice!);
       var start = 0;
       while (start < responseToSend.length) {
         final end = start + fragmentSize;
         final fragmentedValue = end < responseToSend.length
             ? [1] + responseToSend.sublist(start, end)
             : [0] + responseToSend.sublist(start);
-        await PeripheralManager.instance.writeCharacteristic(
-            mdocPeripheralServer2Client,
-            value: Uint8List.fromList(fragmentedValue),
-            central: connectedDevice!);
+        await peripheralManager.notifyCharacteristic(
+            connectedDevice!, mdocPeripheralServer2Client,
+            value: Uint8List.fromList(fragmentedValue));
         logger.d('write $start - $end');
         start = end;
       }
@@ -275,7 +288,8 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   }
 
   setBleState() async {
-    var s = await PeripheralManager.instance.getState();
+    var s = peripheralManager.state;
+    logger.d(s);
     bleState.value = s;
   }
 
@@ -303,22 +317,22 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     var encodedEngagement = engagement.toUri();
     logger.d(encodedEngagement);
     qrData.value = encodedEngagement;
-    startAdvertising();
+    //startAdvertising();
   }
 
   Future<void> startAdvertising() async {
-    await PeripheralManager.instance.clearServices();
-    await PeripheralManager.instance.addService(mdocService);
+    await peripheralManager.removeAllServices();
+    await peripheralManager.addService(mdocService);
     final advertisement = Advertisement(
       name: 'mdoc',
       serviceUUIDs: [serviceUuid],
     );
-    await PeripheralManager.instance.startAdvertising(advertisement);
+    await peripheralManager.startAdvertising(advertisement);
     transmissionState.value = 1; // advertising mode
   }
 
   Future<void> stopAdvertising() async {
-    await PeripheralManager.instance.stopAdvertising();
+    await peripheralManager.stopAdvertising();
     transmissionState.value = 2;
   }
 
@@ -369,25 +383,41 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
   }
 }
 
-final GattCharacteristic mdocPeripheralState = GattCharacteristic(
+final GATTCharacteristic mdocPeripheralState = GATTCharacteristic.mutable(
     uuid: UUID.fromString('00000001-A123-48CE-896B-4C76973373E6'),
     properties: [
-      GattCharacteristicProperty.notify,
-      GattCharacteristicProperty.writeWithoutResponse
+      GATTCharacteristicProperty.notify,
+      GATTCharacteristicProperty.writeWithoutResponse
     ],
-    descriptors: []);
+    descriptors: [],
+    permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
 
-final GattCharacteristic mdocPeripheralClient2Server = GattCharacteristic(
-    uuid: UUID.fromString('00000002-A123-48CE-896B-4C76973373E6'),
-    properties: [GattCharacteristicProperty.writeWithoutResponse],
-    descriptors: []);
-
-final GattCharacteristic mdocPeripheralServer2Client = GattCharacteristic(
-    uuid: UUID.fromString('00000003-A123-48CE-896B-4C76973373E6'),
-    properties: [
-      GattCharacteristicProperty.notify,
+final GATTCharacteristic mdocPeripheralClient2Server =
+    GATTCharacteristic.mutable(
+        uuid: UUID.fromString('00000002-A123-48CE-896B-4C76973373E6'),
+        properties: [
+      GATTCharacteristicProperty.writeWithoutResponse
     ],
-    descriptors: []);
+        descriptors: [],
+        permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
+
+final GATTCharacteristic mdocPeripheralServer2Client =
+    GATTCharacteristic.mutable(
+        uuid: UUID.fromString('00000003-A123-48CE-896B-4C76973373E6'),
+        properties: [
+      GATTCharacteristicProperty.notify,
+    ],
+        descriptors: [],
+        permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
 
 class IsoRequestedItem {
   CoseKey privateKey;

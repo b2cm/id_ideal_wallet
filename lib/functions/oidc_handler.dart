@@ -153,7 +153,7 @@ Future<void> handleOfferOidc(String offerUri) async {
 
       String clientId = clientMetaData['client_id'];
       String redirectUri =
-          clientMetaData['redirect_uri'] ?? 'https:/wallet.bccm.dev/redirect';
+          clientMetaData['redirect_uri'] ?? 'https://wallet.bccm.dev/redirect';
 
       authServerMetaData = await getAuthServerMetaData(authserver);
       if (authServerMetaData == null) {
@@ -360,7 +360,7 @@ Future<void> handleRedirect(String uri) async {
 
   String clientId = clientMetaData['client_id'];
   String redirectUri =
-      clientMetaData['redirect_uri'] ?? 'https:/wallet.bccm.dev/redirect';
+      clientMetaData['redirect_uri'] ?? 'https://wallet.bccm.dev/redirect';
 
   var authServerMetaData = await getAuthServerMetaData(authServer);
   String tokenEndpoint =
@@ -383,7 +383,7 @@ Future<void> handleRedirect(String uri) async {
 
   if (tokenRes.statusCode == 200) {
     logger.d(
-        'sucessful token request: ${jsonDecode(tokenRes.body).keys.toList()}');
+        'successful token request: ${jsonDecode(tokenRes.body).keys.toList()}');
     var decoded = OidcTokenResponse.fromJson(tokenRes.body);
     var payload = decoded.accessToken!.split('.')[1];
     logger.d(
@@ -425,7 +425,7 @@ Future<(String, dynamic, KeyType)> buildJwt(List<String> algValues,
     'typ': 'openid4vci-proof+jwt',
     'alg': alg,
     'crv': crv,
-    'kid': '$credentialDid' //#${credentialDid.split(':').last
+    'kid': credentialDid //#${credentialDid.split(':').last
   };
 
   var payload = {
