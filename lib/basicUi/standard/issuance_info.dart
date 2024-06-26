@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/constants/property_names.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_schema/json_schema.dart';
@@ -20,13 +23,12 @@ class IssuanceInfo extends StatefulWidget {
 
 class IssuanceInfoState extends State<IssuanceInfo> {
   Widget information = Text(
-      'Wir haben leider nicht herausgefunden, wie Du Dir die fehlenden Nachweise besorgen kannst.');
+      AppLocalizations.of(navigatorKey.currentContext!)!.issuanceInfoNotFound);
+  Set<String> types = {};
 
   @override
   void initState() {
     super.initState();
-
-    Set<String> types = {};
 
     for (var descriptorId in widget.descriptorIds) {
       var descriptor = widget.definition.inputDescriptors
@@ -52,7 +54,10 @@ class IssuanceInfoState extends State<IssuanceInfo> {
         }
       }
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     var layouts =
         Provider.of<WalletProvider>(context, listen: false).credentialStyling;
 
@@ -74,24 +79,18 @@ class IssuanceInfoState extends State<IssuanceInfo> {
               backgroundColor: Colors.white,
               minimumSize: const Size.fromHeight(40),
             ),
-            child: Text(type)));
-        buttons.add(Text('oder'));
+            child: Text(propertyNames[type] ?? type)));
       }
     }
 
     if (buttons.isNotEmpty) {
-      buttons.removeLast();
       information = Column(
         children: [
-          Text('Hier kannst Du Dir die fehlenden Nachweise besorgen:'),
+          Text(AppLocalizations.of(context)!.issuanceInfoFound),
           ...buttons
         ],
       );
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(5),

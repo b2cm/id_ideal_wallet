@@ -16,5 +16,9 @@ final propertyNames = {
   'countryName': AppLocalizations.of(navigatorKey.currentContext!)!.countryName,
   'stateOrProvinceName':
       AppLocalizations.of(navigatorKey.currentContext!)!.stateOrProvinceName,
-  'commonName': AppLocalizations.of(navigatorKey.currentContext!)!.commonName
+  'commonName': AppLocalizations.of(navigatorKey.currentContext!)!.commonName,
+  'HsmwEmployeeCard':
+      AppLocalizations.of(navigatorKey.currentContext!)!.hsmwEmployeeCard,
+  'HsmwStudentCard':
+      AppLocalizations.of(navigatorKey.currentContext!)!.hsmwStudentCard,
 };

@@ -9,24 +9,27 @@ class ErrorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AusweisProvider>(builder: (context, ausweis, child) {
       return Scaffold(
-        body: Column(
-          children: [
-            Text(
-              'Vorgang fehlgeschlagen',
-              style: Theme.of(context).primaryTextTheme.headlineLarge,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Text(
-              ausweis.errorDescription,
-              style: Theme.of(context).primaryTextTheme.titleLarge,
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Text(ausweis.errorMessage)
-          ],
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            children: [
+              Text(
+                'Vorgang fehlgeschlagen',
+                style: Theme.of(context).primaryTextTheme.headlineLarge,
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                ausweis.errorDescription,
+                style: Theme.of(context).primaryTextTheme.titleLarge,
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(ausweis.errorMessage)
+            ],
+          ),
         ),
         persistentFooterButtons: [
           ElevatedButton(
@@ -37,7 +40,7 @@ class ErrorPage extends StatelessWidget {
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(45),
               ),
-              child: Text('Ok')),
+              child: const Text('Ok')),
         ],
       );
     });

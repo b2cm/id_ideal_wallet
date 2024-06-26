@@ -177,13 +177,15 @@ class AusweisProvider extends ChangeNotifier {
           'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#error') {
         if (message.minor ==
             'http://www.bsi.bund.de/ecard/api/1.1/resultminor/sal#cancellationByUser') {
-          reset();
-        } else {
-          errorDescription =
-              message.description ?? 'Es ist ein Fehler aufgetreten';
-          errorMessage =
-              message.message ?? 'Es liegt keine Beschreibung des Fehlers vor';
-          screen = AusweisScreen.error;
+          if (message.reason == 'User_Cancelled') {
+            reset();
+          } else {
+            errorDescription =
+                message.description ?? 'Es ist ein Fehler aufgetreten';
+            errorMessage = message.message ??
+                'Es liegt keine Beschreibung des Fehlers vor';
+            screen = AusweisScreen.error;
+          }
         }
       }
     } else if (message is StatusMessage) {

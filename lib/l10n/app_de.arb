@@ -198,5 +198,9 @@
   "finishProcess": "Prozess abgeschlossen",
   "finishProcessNote": "Dieser Nachweis wurde bereits an Sie ausgestellt",
   "authFailed": "Authentifizierung fehlgeschlagen",
-  "credentialDownloadFailed": "Der Nachweis kann nicht heruntergeladen werden"
+  "credentialDownloadFailed": "Der Nachweis kann nicht heruntergeladen werden",
+  "issuanceInfoNotFound": "Wir haben leider nicht herausgefunden, wie Du Dir die fehlenden Nachweise besorgen kannst.",
+  "issuanceInfoFound": "Hier kannst Du Dir die fehlenden Nachweise besorgen:",
+  "hsmwEmployeeCard": "Mitarbeiterausweis (HSMW)",
+  "hsmwStudentCard": "Studierendenausweis (HSMW)"
 }

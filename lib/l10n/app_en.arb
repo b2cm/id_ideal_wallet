@@ -198,5 +198,9 @@
   "finishProcess": "Process completed",
   "finishProcessNote": "The credential has already been issued to you",
   "authFailed": "Authentication failed",
-  "credentialDownloadFailed": "The credential cannot be downloaded"
+  "credentialDownloadFailed": "The credential cannot be downloaded",
+  "issuanceInfoNotFound": "Unfortunately, we have not found out how you can obtain the missing credentials.",
+  "issuanceInfoFound": "You can obtain the missing credentials here:",
+  "hsmwEmployeeCard": "Employee-Card (HSMW)",
+  "hsmwStudentCard": "Student-Card (HSMW)"
 }
