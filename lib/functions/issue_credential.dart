@@ -89,28 +89,11 @@ Future<bool> handleOfferCredential(
       var paymentTypes = wallet.paymentCredentials;
 
       if (paymentTypes.isEmpty) {
-        await showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return PaymentFinished(
-                headline: AppLocalizations.of(context)!.noPaymentMethod,
-                success: false,
-                amount: const CurrencyDisplay(
-                    amount: "", symbol: '', mainFontSize: 35, centered: true),
-                additionalInfo: Column(children: [
-                  const SizedBox(height: 20),
-                  Text(
-                      AppLocalizations.of(navigatorKey.currentContext!)!
-                          .noPaymentMethodNote,
-                      style: const TextStyle(color: Colors.red),
-                      overflow: TextOverflow.ellipsis),
-                ]),
-              );
-            });
+        showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.noPaymentMethod,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .noPaymentMethodNote,
+        );
         return false;
       }
 
@@ -440,27 +423,10 @@ Future<bool> handleIssueCredential(
             wallet.storeExchangeHistoryEntry(
                 credDid, DateTime.now(), 'issue', message.from!);
 
-            showModalBottomSheet(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10)),
-                ),
-                context: navigatorKey.currentContext!,
-                builder: (context) {
-                  return ModalDismissWrapper(
-                    child: PaymentFinished(
-                      headline:
-                          AppLocalizations.of(context)!.credentialReceived,
-                      success: true,
-                      amount: CurrencyDisplay(
-                          amount: type,
-                          symbol: '',
-                          mainFontSize: 18,
-                          centered: true),
-                    ),
-                  );
-                });
+            showSuccessMessage(
+                AppLocalizations.of(navigatorKey.currentContext!)!
+                    .credentialReceived,
+                type);
           }
         } else {
           throw Exception('Credential signature is wrong');
@@ -555,25 +521,10 @@ Future<bool> handleIssueCredential(
         wallet.storeExchangeHistoryEntry(
             myDid, DateTime.now(), 'issue', message.from!);
 
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(context)!.credentialReceived,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: getTypeToShow(myCred!.type),
-                      symbol: '',
-                      mainFontSize: 18,
-                      centered: true),
-                ),
-              );
-            });
+        showSuccessMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .credentialReceived,
+            getTypeToShow(myCred!.type));
       } catch (e) {
         logger.d(e);
         showErrorMessage(

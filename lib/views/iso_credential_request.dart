@@ -270,7 +270,7 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
           SessionData(encryptedData: encryptedResponse).toEncodedCbor();
 
       var fragmentSize =
-          await peripheralManager.getMaximumNotifyLength(connectedDevice!);
+          await peripheralManager.getMaximumNotifyLength(connectedDevice!) - 3;
       var start = 0;
       while (start < responseToSend.length) {
         final end = start + fragmentSize;
@@ -317,14 +317,15 @@ class IsoCredentialRequestState extends State<IsoCredentialRequest>
     var encodedEngagement = engagement.toUri();
     logger.d(encodedEngagement);
     qrData.value = encodedEngagement;
-    //startAdvertising();
+
+    if (bleState.value == BluetoothLowEnergyState.poweredOn) startAdvertising();
   }
 
   Future<void> startAdvertising() async {
     await peripheralManager.removeAllServices();
     await peripheralManager.addService(mdocService);
     final advertisement = Advertisement(
-      name: 'mdoc',
+      //name: 'mdoc',
       serviceUUIDs: [serviceUuid],
     );
     await peripheralManager.startAdvertising(advertisement);

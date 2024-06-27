@@ -471,27 +471,10 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
         type = type.substring(0, type.length - 3);
 
         if (!silent) {
-          showModalBottomSheet(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline:
-                        AppLocalizations.of(context)!.presentationSuccessful,
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: type,
-                        symbol: '',
-                        mainFontSize: 18,
-                        centered: true),
-                  ),
-                );
-              });
+          showSuccessMessage(
+              AppLocalizations.of(navigatorKey.currentContext!)!
+                  .presentationSuccessful,
+              type);
         }
 
         if (lnInvoice != null && paymentCards != null) {
@@ -591,6 +574,25 @@ void showErrorMessage(String headline, [String? subtext]) {
                 symbol: '',
                 mainFontSize: 18,
                 centered: true),
+          ),
+        );
+      });
+}
+
+void showSuccessMessage(String headline, [String? subtext]) {
+  showModalBottomSheet(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+      ),
+      context: navigatorKey.currentContext!,
+      builder: (context) {
+        return ModalDismissWrapper(
+          child: PaymentFinished(
+            headline: headline,
+            success: true,
+            amount: CurrencyDisplay(
+                amount: subtext, symbol: '', mainFontSize: 18, centered: true),
           ),
         );
       });

@@ -11,9 +11,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
-import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
-import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -681,25 +678,10 @@ Future<void> getCredential(
         wallet.storeExchangeHistoryEntry(
             credentialDid, DateTime.now(), 'issue', credentialIssuer);
 
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Credential empfangen",
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: signedData.docType,
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
+        showSuccessMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .credentialReceived,
+            signedData.docType);
       }
     } else {
       logger.d(credential);
@@ -735,25 +717,10 @@ Future<void> getCredential(
 
         var asVC = VerifiableCredential.fromJson(credential);
 
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(context)!.credentialReceived,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: getTypeToShow(asVC.type),
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
+        showSuccessMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .credentialReceived,
+            getTypeToShow(asVC.type));
       }
     }
   } else {

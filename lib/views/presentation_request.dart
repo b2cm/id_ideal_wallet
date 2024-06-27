@@ -782,26 +782,11 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
         type = type.substring(0, type.length - 3);
 
-        await showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
-                      .presentationSuccessful,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: type,
-                      symbol: '',
-                      mainFontSize: 18,
-                      centered: true),
-                ),
-              );
-            });
+        showSuccessMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .presentationSuccessful,
+            type);
+
         //Navigator.of(context).pop();
       } else {
         if (casted != null) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:base_codecs/base_codecs.dart';
@@ -7,6 +8,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -101,12 +103,12 @@ class MdocProvider extends ChangeNotifier {
             type: utf8.encode('Hs'),
             payload: hex.decode('15D10209616301013001046D646F63'),
             basicType: NdefBasicType.wellKnown);
+
         myPrivateKey = CoseKey.generate(CoseCurve.p256);
         engagement = DeviceEngagement(
             security: Security(
                 deviceKeyBytes:
                     myPrivateKey!.toPublicKey().toCoseKeyBytes().bytes));
-
         var mdocRecord = NdefRecordData(
             type: utf8.encode('iso.org:18013:deviceengagement'),
             payload: Uint8List.fromList(engagement!.toEncodedCbor()),
@@ -287,6 +289,7 @@ class MdocProvider extends ChangeNotifier {
     );
 
     if (res) {
+      String type = '';
       List<Document> content = [];
       for (var entry in filterResult) {
         var signedData = await generateDeviceSignature(
@@ -299,6 +302,7 @@ class MdocProvider extends ChangeNotifier {
             issuerSigned: entry.issuerSigned,
             deviceSigned: signedData);
         content.add(docToSend);
+        type += '${entry.docType},';
       }
 
       // Generate Response
@@ -315,6 +319,13 @@ class MdocProvider extends ChangeNotifier {
       logger.d('responseLength: $responseLength');
       sendApdu(
           hex.decode('5382$responseLength') + responseToSend + apduResponseOk);
+
+      Timer(
+          const Duration(seconds: 5),
+          () => showSuccessMessage(
+              AppLocalizations.of(navigatorKey.currentContext!)!
+                  .presentationSuccessful,
+              type.substring(0, type.length - 1)));
     }
   }
 
