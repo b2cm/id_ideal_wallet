@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:base_codecs/base_codecs.dart';
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:cbor/cbor.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
+import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,17 +15,25 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/iso_credential_request.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart';
 
+enum BleMdocTransmissionState {
+  uninitialized,
+  advertising,
+  connected,
+  disconnected,
+  send
+}
+
 class MdocProvider extends ChangeNotifier {
   static const platform = MethodChannel('app.channel.hce');
   static const stream = EventChannel('app.channel.hce/events');
 
+  // NFC
   String? selectedFile;
   Uint8List? handoverSelectMessage;
   SessionEncryptor? encryptor;
@@ -30,8 +41,183 @@ class MdocProvider extends ChangeNotifier {
   SessionTranscript? transcript;
   DeviceEngagement? engagement;
 
+  // BLE
+  BluetoothLowEnergyState bleState = BluetoothLowEnergyState.unknown;
+  String qrData = '';
+  BleMdocTransmissionState transmissionState =
+      BleMdocTransmissionState.uninitialized;
+  StreamSubscription? stateChangedSubscription;
+  StreamSubscription? characteristicReadSubscription;
+  StreamSubscription? characteristicWrittenSubscription;
+  StreamSubscription? characteristicNotifyStateChangedSubscription;
+  UUID? serviceUuid;
+  GATTService? mdocService;
+  PeripheralManager? peripheralManager;
+  List<int> readBuffer = [];
+  Central? connectedDevice;
+
   MdocProvider();
 
+  // BLE
+  void startBle() {
+    peripheralManager = PeripheralManager();
+    serviceUuid = UUID.fromString(const Uuid().v4().toString());
+    mdocService = GATTService(
+        uuid: serviceUuid!,
+        characteristics: [
+          mdocPeripheralState,
+          mdocPeripheralClient2Server,
+          mdocPeripheralServer2Client
+        ],
+        isPrimary: true,
+        includedServices: []);
+
+    setBleState();
+
+    generateDeviceEngagement();
+
+    stateChangedSubscription = peripheralManager!.stateChanged.listen(
+      (eventArgs) async {
+        bleState = eventArgs.state;
+        logger.d('BluetoothState changed: ${eventArgs.state}');
+        if (Platform.isAndroid &&
+            eventArgs.state == BluetoothLowEnergyState.unauthorized) {
+          await peripheralManager!.authorize();
+          startAdvertising();
+        }
+        if (eventArgs.state == BluetoothLowEnergyState.poweredOn &&
+            transmissionState != BleMdocTransmissionState.advertising) {
+          startAdvertising();
+        }
+        notifyListeners();
+      },
+    );
+
+    characteristicWrittenSubscription =
+        peripheralManager!.characteristicWriteRequested.listen(
+      (eventArgs) async {
+        final central = eventArgs.central;
+        final characteristic = eventArgs.characteristic;
+        final request = eventArgs.request;
+        final offset = request.offset;
+        final value = request.value;
+        logger.d('${characteristic.uuid} : (${value.length}) $value ');
+        // connectedDevice = central;
+        if (characteristic.uuid == mdocPeripheralClient2Server.uuid) {
+          readBuffer.addAll(value.sublist(1));
+          if (value.first == 0) {
+            sendResponse();
+          }
+        }
+        if (characteristic.uuid == mdocPeripheralState.uuid) {
+          if (value.first == 1) {
+            logger.d('Start Signal recieved');
+          } else if (value.first == 2) {
+            logger.d('End Signal received');
+            transmissionState = BleMdocTransmissionState.disconnected;
+          }
+        }
+      },
+    );
+
+    characteristicNotifyStateChangedSubscription =
+        peripheralManager!.characteristicNotifyStateChanged.listen(
+      (eventArgs) async {
+        final central = eventArgs.central;
+        final characteristic = eventArgs.characteristic;
+        final state = eventArgs.state;
+        logger.d('${characteristic.uuid} : $state');
+        if (state) {
+          connectedDevice = central;
+          stopAdvertising();
+        }
+      },
+    );
+
+    notifyListeners();
+  }
+
+  setBleState() async {
+    var s = peripheralManager?.state;
+    logger.d(s);
+    bleState = s ?? BluetoothLowEnergyState.unknown;
+  }
+
+  generateDeviceEngagement() async {
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    var mdocDid = await wallet.newConnectionDid(KeyType.p256);
+    var deviceEphemeralCosePub = await didToCosePublicKey(mdocDid);
+    myPrivateKey = deviceEphemeralCosePub;
+    myPrivateKey!.d = base64Decode(addPaddingToBase64((await wallet.wallet
+        .getPrivateKeyForConnectionDidAsJwk(mdocDid))!['d']));
+    engagement = DeviceEngagement(
+        security: Security(
+            cipherSuiteIdentifier: 1,
+            deviceKeyBytes: deviceEphemeralCosePub.toCoseKeyBytes().bytes),
+        deviceRetrievalMethods: [
+          DeviceRetrievalMethod(
+              type: 2,
+              options: BLEOptions(
+                  supportPeripheralServerMode: true,
+                  supportCentralClientMode: false,
+                  peripheralModeId: serviceUuid!.value))
+        ]);
+
+    // Encode for Qr-Code
+    var encodedEngagement = engagement!.toUri();
+    logger.d(encodedEngagement);
+    qrData = encodedEngagement;
+
+    if (bleState == BluetoothLowEnergyState.poweredOn) startAdvertising();
+  }
+
+  Future<void> startAdvertising() async {
+    await peripheralManager?.removeAllServices();
+    await peripheralManager?.addService(mdocService!);
+    final advertisement = Advertisement(
+      //name: 'mdoc',
+      serviceUUIDs: [serviceUuid!],
+    );
+    await peripheralManager?.startAdvertising(advertisement);
+    transmissionState =
+        BleMdocTransmissionState.advertising; // advertising mode
+  }
+
+  Future<void> stopAdvertising() async {
+    await peripheralManager?.stopAdvertising();
+    transmissionState = BleMdocTransmissionState.connected;
+    notifyListeners();
+  }
+
+  Future<void> sendResponse() async {
+    List<int>? responseToSend;
+    String? type;
+
+    (responseToSend, type) = await handleMdocRequest(readBuffer);
+
+    if (responseToSend != null) {
+      var fragmentSize =
+          await peripheralManager!.getMaximumNotifyLength(connectedDevice!) - 3;
+      var start = 0;
+      while (start < responseToSend.length) {
+        final end = start + fragmentSize;
+        final fragmentedValue = end < responseToSend.length
+            ? [1] + responseToSend.sublist(start, end)
+            : [0] + responseToSend.sublist(start);
+        await peripheralManager!.notifyCharacteristic(
+            connectedDevice!, mdocPeripheralServer2Client,
+            value: Uint8List.fromList(fragmentedValue));
+        logger.d('write $start - $end');
+        start = end;
+      }
+
+      transmissionState = BleMdocTransmissionState.send;
+    }
+    notifyListeners();
+  }
+
+  //NFC
   void startListening() {
     stream.receiveBroadcastStream().listen((apdu) => handleApdu(apdu));
     logger.d('listen hce stream');
@@ -164,7 +350,38 @@ class MdocProvider extends ChangeNotifier {
 
     var realContent = content.sublist(4);
 
-    var se = SessionEstablishment.fromCbor(realContent);
+    List<int>? responseToSend;
+    String? type = '';
+
+    (responseToSend, type) = await handleMdocRequest(realContent);
+
+    if (responseToSend != null) {
+      var responseLength =
+          responseToSend.length.toRadixString(16).padLeft(4, '0');
+      logger.d('responseLength: $responseLength');
+      sendApdu(
+          hex.decode('5382$responseLength') + responseToSend + apduResponseOk);
+
+      Timer(
+          const Duration(seconds: 5),
+          () => showSuccessMessage(
+              AppLocalizations.of(navigatorKey.currentContext!)!
+                  .presentationSuccessful,
+              type?.substring(0, type.length - 1) ?? ''));
+    }
+  }
+
+  sendApdu(List<int> data) {
+    logger.d('send apdu: ${hex.encode(Uint8List.fromList(data))}');
+    try {
+      platform.invokeMethod('sendData', Uint8List.fromList(data));
+    } on PlatformException catch (e) {
+      logger.d('Failed to send apdu to Android: ${e.message}.');
+    }
+  }
+
+  Future<(List<int>?, String?)> handleMdocRequest(List<int> request) async {
+    var se = SessionEstablishment.fromCbor(request);
 
     var transcriptHolder = SessionTranscript(
         deviceEngagementBytes: engagement!.toDeviceEngagementBytes(),
@@ -227,7 +444,7 @@ class MdocProvider extends ChangeNotifier {
       } else {
         showErrorMessage('Unbekannter KeyType', 'Das sollte nicht passieren');
         logger.d(coseKey);
-        return;
+        return (null, null);
       }
       for (var docRequest in decodedRequest.docRequests) {
         logger.d(
@@ -311,31 +528,12 @@ class MdocProvider extends ChangeNotifier {
       // Encrypt Response
       var encryptedResponse =
           await encryptor!.encrypt(response.toEncodedCbor());
-      var responseToSend =
-          SessionData(encryptedData: encryptedResponse).toEncodedCbor();
-
-      var responseLength =
-          responseToSend.length.toRadixString(16).padLeft(4, '0');
-      logger.d('responseLength: $responseLength');
-      sendApdu(
-          hex.decode('5382$responseLength') + responseToSend + apduResponseOk);
-
-      Timer(
-          const Duration(seconds: 5),
-          () => showSuccessMessage(
-              AppLocalizations.of(navigatorKey.currentContext!)!
-                  .presentationSuccessful,
-              type.substring(0, type.length - 1)));
+      return (
+        SessionData(encryptedData: encryptedResponse).toEncodedCbor(),
+        type
+      );
     }
-  }
-
-  sendApdu(List<int> data) {
-    logger.d('send apdu: ${hex.encode(Uint8List.fromList(data))}');
-    try {
-      platform.invokeMethod('sendData', Uint8List.fromList(data));
-    } on PlatformException catch (e) {
-      logger.d('Failed to send apdu to Android: ${e.message}.');
-    }
+    return (null, null);
   }
 }
 
@@ -436,4 +634,86 @@ Uint8List buildNdefMessage(List<NdefRecordData> data) {
   }
 
   return Uint8List.fromList(message);
+}
+
+final GATTCharacteristic mdocPeripheralState = GATTCharacteristic.mutable(
+    uuid: UUID.fromString('00000001-A123-48CE-896B-4C76973373E6'),
+    properties: [
+      GATTCharacteristicProperty.notify,
+      GATTCharacteristicProperty.writeWithoutResponse
+    ],
+    descriptors: [],
+    permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
+
+final GATTCharacteristic mdocPeripheralClient2Server =
+    GATTCharacteristic.mutable(
+        uuid: UUID.fromString('00000002-A123-48CE-896B-4C76973373E6'),
+        properties: [
+      GATTCharacteristicProperty.writeWithoutResponse
+    ],
+        descriptors: [],
+        permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
+
+final GATTCharacteristic mdocPeripheralServer2Client =
+    GATTCharacteristic.mutable(
+        uuid: UUID.fromString('00000003-A123-48CE-896B-4C76973373E6'),
+        properties: [
+      GATTCharacteristicProperty.notify,
+    ],
+        descriptors: [],
+        permissions: [
+      GATTCharacteristicPermission.read,
+      GATTCharacteristicPermission.write,
+    ]);
+
+class IsoRequestedItem {
+  CoseKey privateKey;
+  Map<String, Map<String, dynamic>> revealedData;
+  IssuerSignedObject issuerSigned;
+  String docType;
+
+  IsoRequestedItem(
+      this.docType, this.revealedData, this.issuerSigned, this.privateKey);
+}
+
+Future<CoseKey> didToCosePublicKey(String did) async {
+  var didDoc = await resolveDidDocument(did);
+  didDoc = didDoc.resolveKeyIds().convertAllKeysToJwk();
+
+  var keyAsJwk = didDoc.verificationMethod!.first.publicKeyJwk;
+
+  print(keyAsJwk);
+
+  CoseKey cose;
+
+  if (did.startsWith('did:key:z6Mk')) {
+    cose = CoseKey(
+        kty: CoseKeyType.octetKeyPair,
+        crv: CoseCurve.ed25519,
+        x: base64Decode(addPaddingToBase64(keyAsJwk!['x']))); // x : pub key
+  } else {
+    int crv;
+    if (did.startsWith('did:key:zDn')) {
+      crv = CoseCurve.p256;
+    } else if (did.startsWith('did:key:z82')) {
+      crv = CoseCurve.p384;
+    } else {
+      crv = CoseCurve.p521;
+    }
+
+    cose = CoseKey(
+        kty: CoseKeyType.ec2,
+        crv: crv,
+        x: base64Decode(addPaddingToBase64(keyAsJwk!['x'])), // x : pub key
+        y: base64Decode(addPaddingToBase64(keyAsJwk['y'])) // y: pub key
+        );
+  }
+
+  return cose;
 }

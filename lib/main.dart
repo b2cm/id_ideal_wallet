@@ -234,7 +234,7 @@ class HomeScreen extends StatelessWidget {
             builder: (context, navigator, child) {
           return PopScope(
               canPop: navigator.canPop,
-              onPopInvoked: (_) => navigator.goBack(),
+              onPopInvokedWithResult: (_, b) => navigator.goBack(),
               child: Scaffold(
                   body: Stack(children: [
                     Column(
