@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 
 class CustomNavigationItem extends StatelessWidget {
   final String text;
   final IconData activeIcon, inactiveIcon;
-  final List<int> activeIndices;
+  final List<NavigationPage> activeIndices;
   final NavigationProvider navigator;
 
   const CustomNavigationItem(

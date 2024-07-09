@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
@@ -64,7 +65,8 @@ class _TopUpState extends State<TopUp> {
                 Future.delayed(const Duration(seconds: 1), () {
                   Navigator.pop(context);
                   Provider.of<NavigationProvider>(context, listen: false)
-                      .changePage([3, 11]);
+                      .changePage(
+                          [NavigationPage.paymentCard, NavigationPage.topUp]);
                 });
                 return const SizedBox(
                   height: 10,

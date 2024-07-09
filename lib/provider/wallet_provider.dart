@@ -14,6 +14,7 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
@@ -720,9 +721,10 @@ class WalletProvider extends ChangeNotifier {
     var nav = Provider.of<NavigationProvider>(navigatorKey.currentContext!,
         listen: false);
     if (nav.redirectWebViewUrl != null) {
-      nav.changePage([1], track: false);
+      nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        nav.changePage([5], webViewUrl: nav.redirectWebViewUrl);
+        nav.changePage([NavigationPage.webView],
+            webViewUrl: nav.redirectWebViewUrl);
         nav.redirectWebViewUrl = null;
       });
     }

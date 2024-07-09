@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -430,7 +431,8 @@ class CredentialCard extends StatelessWidget {
     return InkWell(
         onLongPress: () => credential.type.contains('ContextCredential')
             ? Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([6], credential: credential)
+                .changePage([NavigationPage.credentialDetail],
+                    credential: credential)
             : null,
         onTap: () => clickable
             ? credential.type.contains('ContextCredential')
@@ -438,7 +440,8 @@ class CredentialCard extends StatelessWidget {
                     builder: (context) =>
                         CredentialPage(initialSelection: credential.id!)))
                 : Provider.of<NavigationProvider>(context, listen: false)
-                    .changePage([6], credential: credential)
+                    .changePage([NavigationPage.credentialDetail],
+                        credential: credential)
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           var id = getHolderDidFromCredential(credential.toJson());

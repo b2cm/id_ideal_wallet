@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
@@ -153,7 +154,7 @@ class AboOverviewState extends State<AboOverview>
                           onTap: () {
                             Provider.of<NavigationProvider>(context,
                                     listen: false)
-                                .changePage([5],
+                                .changePage([NavigationPage.webView],
                                     webViewUrl: e['url'].toString().replaceAll(
                                         'wid=', 'wid=${wallet.lndwId}'));
                           },

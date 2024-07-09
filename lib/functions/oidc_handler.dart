@@ -12,6 +12,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -219,7 +220,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           logger.d(authRequest);
           Provider.of<NavigationProvider>(navigatorKey.currentContext!,
                   listen: false)
-              .changePage([5], webViewUrl: authRequest);
+              .changePage([NavigationPage.webView], webViewUrl: authRequest);
           //launchUrl(Uri.parse(authRequest));
           return;
         } else {

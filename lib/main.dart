@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/custom_navigation_item.dart';
 import 'package:id_ideal_wallet/basicUi/standard/theme.dart';
 import 'package:id_ideal_wallet/basicUi/standard/top_up.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
@@ -120,13 +121,16 @@ class HomeScreen extends StatelessWidget {
                     text: 'Home',
                     activeIcon: Icons.home,
                     inactiveIcon: Icons.home_outlined,
-                    activeIndices: const [0],
+                    activeIndices: const [NavigationPage.abo],
                     navigator: navigator),
                 CustomNavigationItem(
                     text: 'Credentials',
                     activeIcon: Icons.co_present,
                     inactiveIcon: Icons.co_present_outlined,
-                    activeIndices: const [1, 6],
+                    activeIndices: const [
+                      NavigationPage.credential,
+                      NavigationPage.credentialDetail
+                    ],
                     navigator: navigator),
                 const SizedBox(
                   width: 20,
@@ -145,13 +149,24 @@ class HomeScreen extends StatelessWidget {
                     text: AppLocalizations.of(context)!.payments(0),
                     activeIcon: Icons.credit_card,
                     inactiveIcon: Icons.credit_card_outlined,
-                    activeIndices: const [3, 10, 11, 12],
+                    activeIndices: const [
+                      NavigationPage.paymentOverview,
+                      NavigationPage.sendSatoshi,
+                      NavigationPage.topUp,
+                      NavigationPage.paymentCard
+                    ],
                     navigator: navigator),
                 CustomNavigationItem(
                     text: AppLocalizations.of(context)!.settings,
                     activeIcon: Icons.settings,
                     inactiveIcon: Icons.settings_outlined,
-                    activeIndices: const [4, 7, 8, 9, 13],
+                    activeIndices: const [
+                      NavigationPage.settings,
+                      NavigationPage.authorizedApps,
+                      NavigationPage.license,
+                      NavigationPage.searchNewAbo,
+                      NavigationPage.ausweis
+                    ],
                     navigator: navigator),
               ],
             ),
@@ -171,7 +186,11 @@ class HomeScreen extends StatelessWidget {
         child: FittedBox(
           child: FloatingActionButton(
             onPressed: () {
-              navigator.changePage([2, 10, 11]);
+              navigator.changePage([
+                NavigationPage.qrScanner,
+                NavigationPage.sendSatoshi,
+                NavigationPage.topUp
+              ]);
             },
             backgroundColor: Colors.grey.shade300,
             shape: const CircleBorder(),
@@ -186,23 +205,23 @@ class HomeScreen extends StatelessWidget {
 
   Widget getContent(NavigationProvider navigator, WalletProvider wallet) {
     switch (navigator.activeIndex) {
-      case 0:
+      case NavigationPage.abo:
         return const AboOverview();
-      case 1:
+      case NavigationPage.credential:
         return const CredentialPage(initialSelection: 'all');
-      case 2:
+      case NavigationPage.qrScanner:
         return const QrScanner();
-      case 3:
+      case NavigationPage.paymentCard:
         return const PaymentCardOverview();
-      case 4:
+      case NavigationPage.settings:
         return const SettingsPage();
-      case 5:
+      case NavigationPage.webView:
         return WebViewWindow(initialUrl: navigator.webViewUrl, title: '');
-      case 6:
+      case NavigationPage.credentialDetail:
         return CredentialDetailView(credential: navigator.credential!);
-      case 7:
+      case NavigationPage.authorizedApps:
         return const AuthorizedAppsManger();
-      case 8:
+      case NavigationPage.license:
         return LicensePage(
           applicationName: 'Hidy',
           applicationVersion: versionNumber,
@@ -211,15 +230,15 @@ class HomeScreen extends StatelessWidget {
             height: 100,
           ),
         );
-      case 9:
+      case NavigationPage.searchNewAbo:
         return const SearchNewAbo();
-      case 10:
+      case NavigationPage.sendSatoshi:
         return const SendSatoshiScreen();
-      case 11:
+      case NavigationPage.topUp:
         return TopUp(paymentMethod: navigator.credential);
-      case 12:
+      case NavigationPage.paymentOverview:
         return PaymentOverview(paymentContext: navigator.credential!);
-      case 13:
+      case NavigationPage.ausweis:
         return const AusweisView();
       default:
         return const AboOverview();

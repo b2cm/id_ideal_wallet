@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -36,7 +37,7 @@ class SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: Text(AppLocalizations.of(context)!.license),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([8]),
+                .changePage([NavigationPage.license]),
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.settings),
@@ -49,12 +50,12 @@ class SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: const Text('Vertrauenswürdige Anwendungen'),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([7]),
+                .changePage([NavigationPage.authorizedApps]),
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.newAppTitle),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([9]),
+                .changePage([NavigationPage.searchNewAbo]),
           ),
           if (Platform.isAndroid)
             ListTile(
