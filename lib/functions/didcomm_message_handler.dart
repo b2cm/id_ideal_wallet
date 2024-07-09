@@ -592,7 +592,10 @@ void showSuccessMessage(String headline, [String? subtext]) {
             headline: headline,
             success: true,
             amount: CurrencyDisplay(
-                amount: subtext, symbol: '', mainFontSize: 18, centered: true),
+                amount: subtext ?? '',
+                symbol: '',
+                mainFontSize: 18,
+                centered: true),
           ),
         );
       });

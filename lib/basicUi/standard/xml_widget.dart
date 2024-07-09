@@ -113,18 +113,31 @@ class XmlWidget extends StatelessWidget {
                   : null),
         );
       case 'image':
-        return Image.memory(
-          imageData!,
-          height: attributes.containsKey('height')
-              ? (attributes['height'] as String).endsWith('%')
-                  ? (MediaQuery.of(context).size.width - 27) *
-                      aspectRatioInverse *
-                      double.parse(attributes['height'].replaceAll('%', '')) /
-                      100
-                  : double.parse(
-                      (attributes['height'] as String).replaceAll('px', ''))
-              : null,
-        );
+        return ClipRRect(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(
+                  double.parse(attributes['radiusBottomLeft'] ?? '0.0')),
+              bottomRight: Radius.circular(
+                  double.parse(attributes['radiusBottomRight'] ?? '0.0')),
+              topRight: Radius.circular(
+                  double.parse(attributes['radiusTopRight'] ?? '0.0')),
+              topLeft: Radius.circular(
+                  double.parse(attributes['radiusTopLeft'] ?? '0.0')),
+            ),
+            child: Image.memory(
+              imageData!,
+              fit: BoxFit.fitWidth,
+              height: attributes.containsKey('height')
+                  ? (attributes['height'] as String).endsWith('%')
+                      ? (MediaQuery.of(context).size.width - 27) *
+                          aspectRatioInverse *
+                          double.parse(
+                              attributes['height'].replaceAll('%', '')) /
+                          100
+                      : double.parse(
+                          (attributes['height'] as String).replaceAll('px', ''))
+                  : null,
+            ));
       case 'error':
         return const SizedBox();
       default:

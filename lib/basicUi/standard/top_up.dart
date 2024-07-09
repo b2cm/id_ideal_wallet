@@ -143,6 +143,8 @@ class _TopUpState extends State<TopUp> {
                   TextField(
                       controller: _amountControllerSats,
                       keyboardType: TextInputType.number,
+                      onTapOutside: (event) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
                         labelText: AppLocalizations.of(context)!.amountSatoshi,
@@ -151,6 +153,8 @@ class _TopUpState extends State<TopUp> {
                   : // toogle button to switch between fiat and sats
                   TextField(
                       controller: _amountControllerFiat,
+                      onTapOutside: (event) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
@@ -161,6 +165,8 @@ class _TopUpState extends State<TopUp> {
               if (_selectedReceiveOption[0])
                 TextField(
                   controller: _memoController,
+                  onTapOutside: (event) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   maxLines: 4, //or null
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),

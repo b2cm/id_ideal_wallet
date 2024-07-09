@@ -28,6 +28,7 @@ class WelcomeScreenState extends State<WelcomeScreen> {
   bool versionLoad = false;
   bool error = false;
   String version = '1.0.0';
+  String url = 'https://hidy.eu/terms.html';
 
   @override
   void initState() {
@@ -42,7 +43,12 @@ class WelcomeScreenState extends State<WelcomeScreen> {
     var res = await get(Uri.parse(termsVersionEndpoint));
     if (res.statusCode == 200) {
       var json = jsonDecode(res.body);
-      version = json['version'];
+      if (json['version'] != null) {
+        version = json['version'];
+      }
+      if (json['url'] != null) {
+        url = json['url'];
+      }
     }
     versionLoad = true;
     setState(() {});
@@ -167,13 +173,13 @@ class WelcomeScreenState extends State<WelcomeScreen> {
                             text: AppLocalizations.of(context)!
                                 .termsOfServiceNote1),
                         TextSpan(
-                            text: tosEndpoint,
+                            text: url,
                             style: const TextStyle(
                                 color: Colors.blue,
                                 decoration: TextDecoration.underline),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {
-                                launchUrl(Uri.parse(tosEndpoint),
+                                launchUrl(Uri.parse(url),
                                     mode: LaunchMode.externalApplication);
                               }),
                         TextSpan(

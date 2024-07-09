@@ -59,6 +59,7 @@ class CredentialPageState extends State<CredentialPage> {
                     child:
                         Text(AppLocalizations.of(context)!.noteNoCredentials))
                 : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: bottomPadding),
                     itemCount: credentialList.length,
                     itemBuilder: (context, index) {
                       var cred = credentialList[index];
@@ -114,9 +115,8 @@ List<Widget> buildCredSubject(Map<String, dynamic> subject, [String? before]) {
       } else if (value is List) {
         var index = 0;
         var primitiveString = '';
-        logger.d(value.runtimeType);
         if (isBinaryList(value)) {
-          primitiveString = '<Binärdaten>';
+          primitiveString = '<Binärdaten>  ';
         } else {
           for (var v in value) {
             if (v is Map) {

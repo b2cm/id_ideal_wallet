@@ -94,6 +94,8 @@ class AddMemberCardState extends State<AddMemberCard> {
             child: Column(
               children: [
                 TextFormField(
+                  onTapOutside: (event) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Kartentyp',
@@ -134,6 +136,8 @@ class AddMemberCardState extends State<AddMemberCard> {
                   height: 15,
                 ),
                 TextFormField(
+                  onTapOutside: (event) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Kundennummer',

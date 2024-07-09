@@ -125,18 +125,18 @@ packages:
     dependency: "direct main"
     description:
       name: bluetooth_low_energy
-      sha256: abee9946f1e542df21ba18a567385b75dd2a7de8b682fe724379845852a667a9
+      sha256: "057c146c3d5378f6a048b6a792cee7029bb185c7b3392dfb1605228325a5e336"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.1"
+    version: "6.0.2"
   bluetooth_low_energy_android:
     dependency: transitive
     description:
       name: bluetooth_low_energy_android
-      sha256: "97cac5169a392f3872cbb416cc11cf0b2287567c0ceca4d975f2fc5bdd2b1e6f"
+      sha256: f8cbef16b980f96c09df5d1d46b61be9f05683866151440e9987796607a4e7d8
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.2"
+    version: "6.0.3"
   bluetooth_low_energy_darwin:
     dependency: transitive
     description:
@@ -213,10 +213,10 @@ packages:
     dependency: "direct main"
     description:
       name: cbor
-      sha256: "1fa146951b36462887aaca20abece4c1c49f56f3ba5a40f7e7bf4bbfb0a945a0"
+      sha256: d4cc788d82f20d91e7992379957cd564841945141d0bd00cda93b0ff07376987
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.0"
+    version: "6.3.1"
   characters:
     dependency: transitive
     description:
@@ -284,11 +284,9 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "."
-      ref: development
-      resolved-ref: d8e91be914cdeaa2f988e4e8db512de12d469778
-      url: "https://github.com/b2cm/dart_ssi"
-    source: git
+      path: "../flutter_ssi_wallet"
+      relative: true
+    source: path
     version: "4.0.0"
   dbus:
     dependency: transitive
@@ -651,18 +649,18 @@ packages:
     dependency: transitive
     description:
       name: leak_tracker
-      sha256: "7f0df31977cb2c0b88585095d168e689669a2cc9b97c309665e3386f3e9d341a"
+      sha256: "3f87a60e8c63aecc975dda1ceedbc8f24de75f09e4856ea27daf8958f2f0ce05"
       url: "https://pub.dev"
     source: hosted
-    version: "10.0.4"
+    version: "10.0.5"
   leak_tracker_flutter_testing:
     dependency: transitive
     description:
       name: leak_tracker_flutter_testing
-      sha256: "06e98f569d004c1315b991ded39924b21af84cf14cc94791b8aea337d25b57f8"
+      sha256: "932549fb305594d82d7183ecd9fa93463e9914e1b67cacc34bc40906594a1806"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.3"
+    version: "3.0.5"
   leak_tracker_testing:
     dependency: transitive
     description:
@@ -691,10 +689,10 @@ packages:
     dependency: "direct main"
     description:
       name: local_auth_android
-      sha256: b77dc490fef9214e785c326bf11fa733feaa47675d0433f05f48b5caa486c8f7
+      sha256: "6b60f9f545af5b5a11a90af3c2ab4361c47fff170134fa1c6d4c7d52e6537174"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.40"
+    version: "1.0.41"
   local_auth_darwin:
     dependency: "direct main"
     description:
@@ -747,10 +745,10 @@ packages:
     dependency: transitive
     description:
       name: material_color_utilities
-      sha256: "0e0a020085b65b6083975e499759762399b4475f766c21668c4ecca34ea74e5a"
+      sha256: f7142bb1154231d7ea5f96bc7bde4bda2a0945d2806bb11670e30b850d56bdec
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.11.1"
   maybe_just_nothing:
     dependency: transitive
     description:
@@ -763,10 +761,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "7687075e408b093f36e6bbf6c91878cc0d4cd10f409506f7bc996f68220b9136"
+      sha256: "25dfcaf170a0190f47ca6355bdd4552cb8924b430512ff0cafb8db9bd41fe33b"
       url: "https://pub.dev"
     source: hosted
-    version: "1.12.0"
+    version: "1.14.0"
   mobile_scanner:
     dependency: "direct main"
     description:
@@ -923,10 +921,10 @@ packages:
     dependency: "direct main"
     description:
       name: printing
-      sha256: ad41e2b29b273ae9cc539370028dd61195a79cae750a2a9b8be3439fe8022143
+      sha256: cc4b256a5a89d5345488e3318897b595867f5181b8c5ed6fc63bfa5f2044aec3
       url: "https://pub.dev"
     source: hosted
-    version: "5.13.0"
+    version: "5.13.1"
   provider:
     dependency: "direct main"
     description:
@@ -1105,10 +1103,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "9955ae474176f7ac8ee4e989dadfb411a58c30415bcfb648fa04b2b8a03afa7f"
+      sha256: "2419f20b0c8677b2d67c8ac4d1ac7372d862dc6c460cdbb052b40155408cd794"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.0"
+    version: "0.7.1"
   typed_data:
     dependency: transitive
     description:
@@ -1209,10 +1207,10 @@ packages:
     dependency: transitive
     description:
       name: vm_service
-      sha256: "3923c89304b715fb1eb6423f017651664a03bf5f4b29983627c4da791f74a4ec"
+      sha256: "7475cb4dd713d57b6f7464c0e13f06da0d535d8b2067e188962a59bac2cf280b"
       url: "https://pub.dev"
     source: hosted
-    version: "14.2.1"
+    version: "14.2.2"
   wallet:
     dependency: transitive
     description:

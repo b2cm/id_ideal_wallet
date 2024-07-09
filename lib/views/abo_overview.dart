@@ -24,23 +24,21 @@ class AboOverviewState extends State<AboOverview>
   void initState() {
     super.initState();
     var wallet = Provider.of<WalletProvider>(context, listen: false);
-    if (wallet.aboList.isNotEmpty) {
-      for (int i = 0; i < wallet.aboList.length + 3; i++) {
-        var controller = AnimationController(
-          duration: const Duration(milliseconds: 250),
-          vsync: this,
-        );
-        late final Animation<Offset> offsetAnimation = Tween<Offset>(
-          begin: Offset.zero,
-          end: const Offset(0.0, -0.05),
-        ).animate(CurvedAnimation(
-          parent: controller,
-          curve: Curves.linear,
-        ));
-        controllers.add(controller);
-        animations.add(offsetAnimation);
-        cardKeys.add(GlobalKey());
-      }
+    for (int i = 0; i < wallet.aboList.length + 3; i++) {
+      var controller = AnimationController(
+        duration: const Duration(milliseconds: 250),
+        vsync: this,
+      );
+      late final Animation<Offset> offsetAnimation = Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(0.0, -0.05),
+      ).animate(CurvedAnimation(
+        parent: controller,
+        curve: Curves.linear,
+      ));
+      controllers.add(controller);
+      animations.add(offsetAnimation);
+      cardKeys.add(GlobalKey());
     }
   }
 

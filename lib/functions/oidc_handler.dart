@@ -4,6 +4,7 @@ import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
 import 'package:crypto_keys/crypto_keys.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
@@ -48,7 +49,11 @@ Future<void> handleOfferOidc(String offerUri) async {
   });
 
   if (issuerMetaReq.statusCode != 200) {
-    throw Exception('Bad Status code: ${issuerMetaReq.statusCode}');
+    logger.d(
+        'Bad Status code: ${issuerMetaReq.statusCode} /${issuerMetaReq.body}');
+    showErrorMessage('Keine Issuer-Metadaten',
+        'Issuer-Metadaten können nicht heruntergeladen werden.');
+    return;
   }
 
   var issuerMetadata = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
@@ -121,6 +126,14 @@ Future<void> handleOfferOidc(String offerUri) async {
       authserver = removeTrailingSlash(authserver);
 
       logger.d('auth server: $authserver');
+      // get MetaData
+      Map? authServerMetaData;
+      Map? clientMetaData = knownAuthServer[authserver.trim()];
+      logger.d('authServer: ${knownAuthServer.keys}');
+      if (clientMetaData == null) {
+        showErrorMessage('Unbekannter Authorization Server');
+        return;
+      }
 
       var state = const Uuid().v4();
       String pkceCodeVerifier =
@@ -138,15 +151,6 @@ Future<void> handleOfferOidc(String offerUri) async {
                     offeredCredentials.map((e) => e.toJson()).toList(),
                 'codeVerifier': pkceCodeVerifier
               }));
-
-      // get MetaData
-      Map? authServerMetaData;
-      Map? clientMetaData = knownAuthServer[authserver.trim()];
-      logger.d('authServer: ${knownAuthServer.keys}');
-      if (clientMetaData == null) {
-        showErrorMessage('Unbekannter Authorization Server');
-        return;
-      }
 
       String clientId = clientMetaData['client_id'];
       String redirectUri =
@@ -196,6 +200,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         var parResponse = await post(Uri.parse(parEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: body);
+
         if (parResponse.statusCode == 201 || parResponse.statusCode == 200) {
           logger.d(parResponse.body);
           var decoded = jsonDecode(parResponse.body);
@@ -237,22 +242,10 @@ Future<void> handleOfferOidc(String offerUri) async {
       }
     } else if (offer.grants != null &&
         offer.grants!.containsKey(GrantType.preAuthType)) {
-      var authMetaReq = await get(
-          Uri.parse('$authserver/.well-known/oauth-authorization-server'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }).timeout(const Duration(seconds: 20), onTimeout: () {
-        return Response('Timeout', 400);
-      });
+      var authServerMeta = await getAuthServerMetaData(authserver);
 
-      if (authMetaReq.statusCode != 200) {
-        throw Exception(
-            'Bad Status code: ${authMetaReq.statusCode} / ${authMetaReq.body}');
-      }
-
-      var jsonBody = jsonDecode(authMetaReq.body);
-      var tokenEndpoint = jsonBody['token_endpoint'];
+      var tokenEndpoint =
+          authServerMeta?['token_endpoint'] ?? '$authserver/token';
 
       logger.d(tokenEndpoint);
 
@@ -272,6 +265,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         return Response('Timeout', 400);
       });
       if (tokenRes.statusCode == 200) {
+        logger.d(jsonDecode(tokenRes.body));
         OidcTokenResponse tokenResponse =
             OidcTokenResponse.fromJson(tokenRes.body);
 
@@ -418,16 +412,24 @@ Future<(String, dynamic, KeyType)> buildJwt(List<String> algValues,
     keyType = KeyType.ed25519;
   }
   // create JWT
+  var ddo = resolveDidKey(credentialDid).convertAllKeysToJwk().resolveKeyIds();
+  var jwk = ddo.verificationMethod!.first.publicKeyJwk!;
+  jwk.remove('kid');
   var header = {
     'typ': 'openid4vci-proof+jwt',
     'alg': alg,
     'crv': crv,
-    'kid': credentialDid //#${credentialDid.split(':').last
+    'kid': credentialDid,
+    //   'did:jwk:${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(jwk))))}#0',
+    //'jwk': ddo.verificationMethod!.first.publicKeyJwk
+    //#${credentialDid.split(':').last
   };
 
   var payload = {
     'aud': credentialIssuer,
-    'iat': DateTime.now().millisecondsSinceEpoch,
+    'iss': credentialDid,
+    //'did:jwk:${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(jwk))))}',
+    'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
   };
   if (cNonce != null) {
     payload['nonce'] = cNonce;
@@ -469,6 +471,7 @@ Future<void> getCredential(
   }
 
   if (tokenResponse.cNonce == null) {
+    logger.d('need new c_nonce');
     // send false cred request to get cNonce
     var credentialRequest = OidcCredentialRequest(
       format: credentialMetadata.format,
@@ -489,6 +492,8 @@ Future<void> getCredential(
       tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
     }
   }
+
+  logger.d('c_nonce: ${tokenResponse.cNonce}');
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
@@ -538,21 +543,6 @@ Future<void> getCredential(
       proof:
           CredentialRequestProof(proofType: proofType, proofValue: proofValue));
 
-  // var credentialRequest = {
-  //   'format': credentialMetadata.format,
-  //   'doctype': credentialMetadata.credentialType!.first,
-  //   'types': credentialMetadata.credentialType,
-  //   'proof': {'proof_type': 'jwt', 'jwt': jwt}
-  // };
-  //
-  // var credentialRequestLdp = {
-  //   'format': credentialMetadata.format,
-  //   'types': credentialMetadata.credentialType,
-  //   'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
-  // };
-  //
-  // logger.d(credentialRequest);
-  // logger.d(credentialRequestLdp);
   KeyPair? decryptionKey;
   if (metadata.credentialResponseEncryptionRequired ?? false) {
     var alg = metadata.credentialResponseEncryptionAlgSupported!;
@@ -580,6 +570,8 @@ Future<void> getCredential(
   }
 
   logger.d(credentialRequest.toJson());
+
+  logger.d('credential Endpoint: ${metadata.credentialEndpoint}');
 
   var credentialResponse = await post(Uri.parse(metadata.credentialEndpoint),
           headers: {
@@ -613,8 +605,24 @@ Future<void> getCredential(
       logger.d(iv);
 
       var symmetric = SymmetricKey(keyValue: decrypted);
-      var symmetricDecrypt = symmetric
-          .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha256);
+      Encrypter symmetricDecrypt;
+      var enc = header['enc'];
+      if (enc == 'A128CBC-HS256') {
+        symmetricDecrypt = symmetric
+            .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha256);
+      } else if (enc == 'A192CBC-HS384') {
+        symmetricDecrypt = symmetric
+            .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha384);
+      } else if (enc == 'A256CBC-HS512') {
+        symmetricDecrypt = symmetric
+            .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha512);
+      } else if (enc == 'A128GCM' || enc == 'A192GCM' || enc == 'A256GCM') {
+        symmetricDecrypt =
+            symmetric.createEncrypter(algorithms.encryption.aes.gcm);
+      } else {
+        showErrorMessage('Verschlüsselung unbekannt');
+        return;
+      }
       var decrypted2 = symmetricDecrypt.decrypt(EncryptionResult(cipher,
           initializationVector: iv,
           authenticationTag: tag,
@@ -725,6 +733,7 @@ Future<void> getCredential(
     }
   } else {
     logger.d(credentialResponse.statusCode);
+    logger.d(credentialResponse.headers);
     logger.d(credentialResponse.body);
 
     showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!

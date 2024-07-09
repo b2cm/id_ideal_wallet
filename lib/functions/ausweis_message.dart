@@ -46,6 +46,8 @@ class AusweisMessage {
       return UnknownCommandMessage.fromJson(jsonData);
     } else if (type == 'DISCONNECT') {
       return DisconnectMessage();
+    } else if (type == 'PAUSE') {
+      return PauseMessage();
     } else {
       return AusweisMessage(type: type ?? '');
     }
@@ -444,6 +446,19 @@ class StatusMessage extends AusweisMessage {
         workflow: data['workflow'],
         progress: data['progress'],
         state: data['state']);
+  }
+}
+
+class PauseMessage extends AusweisMessage {
+  String? cause;
+
+  PauseMessage({this.cause}) : super(type: 'PAUSE');
+
+  factory PauseMessage.fromJson(dynamic jsonData) {
+    var data = _toJsonMap(jsonData);
+    return PauseMessage(
+      cause: data['cause'],
+    );
   }
 }
 

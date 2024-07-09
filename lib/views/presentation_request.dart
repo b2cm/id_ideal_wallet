@@ -718,6 +718,16 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             if (enc == 'A128CBC-HS256') {
               e = key.createEncrypter(
                   algorithms.encryption.aes.cbcWithHmac.sha256);
+            } else if (enc == 'A192CBC-HS384') {
+              e = key.createEncrypter(
+                  algorithms.encryption.aes.cbcWithHmac.sha384);
+            } else if (enc == 'A256CBC-HS512') {
+              e = key.createEncrypter(
+                  algorithms.encryption.aes.cbcWithHmac.sha512);
+            } else if (enc == 'A128GCM' ||
+                enc == 'A192GCM' ||
+                enc == 'A256GCM') {
+              e = key.createEncrypter(algorithms.encryption.aes.gcm);
             } else {
               throw Exception('Unknown enc $enc');
             }

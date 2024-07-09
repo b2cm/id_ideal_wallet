@@ -164,7 +164,10 @@ class CredentialDetailState extends State<CredentialDetailView> {
         const SizedBox(
           height: 10,
         ),
-        HistoryEntries(credential: widget.credential)
+        HistoryEntries(credential: widget.credential),
+        const SizedBox(
+          height: bottomPadding,
+        )
       ],
     ));
   }

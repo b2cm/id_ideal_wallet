@@ -42,6 +42,7 @@ class AusweisProvider extends ChangeNotifier {
   String? tcTokenUrl;
   bool selfInfo = true;
   bool connected = false;
+  bool pause = false;
 
   AusweisProvider();
 
@@ -57,6 +58,7 @@ class AusweisProvider extends ChangeNotifier {
     errorDescription = '';
     errorMessage = '';
     selfInfo = true;
+    pause = false;
     disconnectSdk();
     notifyListeners();
   }
@@ -116,6 +118,10 @@ class AusweisProvider extends ChangeNotifier {
       } else {
         screen = AusweisScreen.insertCard;
       }
+    } else if (message is PauseMessage) {
+      screen = AusweisScreen.insertCard;
+      pause = true;
+      logger.d('set pause: $pause');
     } else if (message is EnterPinMessage) {
       screen = AusweisScreen.enterPin;
       pinRetry = message.reader?.cardRetryCounter ?? 3;
@@ -191,6 +197,20 @@ class AusweisProvider extends ChangeNotifier {
       }
       if (message.cardRetryCounter != null) {
         pinRetry = 3;
+      }
+      logger.d(pause);
+      if (pause) {
+        if (message.cardRetryCounter != null &&
+            message.cardDeactivated != null &&
+            message.cardInoperative != null) {
+          sendContinue();
+          if (pinEntered) {
+            screen = AusweisScreen.finish;
+          } else {
+            screen = AusweisScreen.main;
+          }
+          pause = false;
+        }
       }
     } else if (message is DisconnectMessage) {
       logger.d('Successfully disconnected');
@@ -427,6 +447,14 @@ class AusweisProvider extends ChangeNotifier {
   void interrupt() {
     try {
       method.invokeMethod('sendCommand', jsonEncode({'cmd': 'INTERRUPT'}));
+    } on PlatformException catch (e) {
+      logger.d('Failed to connect to sdk: ${e.message}.');
+    }
+  }
+
+  void sendContinue() {
+    try {
+      method.invokeMethod('sendCommand', jsonEncode({'cmd': 'CONTINUE'}));
     } on PlatformException catch (e) {
       logger.d('Failed to connect to sdk: ${e.message}.');
     }

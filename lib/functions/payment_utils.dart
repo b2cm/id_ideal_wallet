@@ -307,6 +307,11 @@ Future<void> handleLnurl(String lnurl) async {
   var url = utf8.decode(fromWords(decoded.data));
 
   var dataResponse = await get(Uri.parse(url));
+  if (dataResponse.statusCode != 200) {
+    logger.d(dataResponse.body);
+    showErrorMessage('Fehlerhafte LNURL');
+    return;
+  }
   var parsed = jsonDecode(dataResponse.body);
 
   if (parsed['status'] == 'ERROR') {

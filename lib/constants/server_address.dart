@@ -71,6 +71,7 @@ var lnMainnetEndpoint = 'https://payments.pixeldev.eu';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 var logger = Logger();
+const double bottomPadding = 30;
 
 class DevHttpOverrides extends HttpOverrides {
   @override
