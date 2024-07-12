@@ -305,14 +305,20 @@ void payInvoiceInteraction(String invoice,
 Future<void> handleLnurl(String lnurl) async {
   var decoded = const Bech32Codec().decode(lnurl, lnurl.length);
   var url = utf8.decode(fromWords(decoded.data));
-
-  var dataResponse = await get(Uri.parse(url));
-  if (dataResponse.statusCode != 200) {
-    logger.d(dataResponse.body);
-    showErrorMessage('Fehlerhafte LNURL');
+  Map parsed;
+  try {
+    var dataResponse = await get(Uri.parse(url));
+    if (dataResponse.statusCode != 200) {
+      logger.d(dataResponse.body);
+      showErrorMessage('Fehlerhafte LNURL');
+      return;
+    }
+    parsed = jsonDecode(dataResponse.body);
+  } catch (e) {
+    logger.d(e);
+    showErrorMessage('Ungültige Lnurl', testBuild ? '$e' : '');
     return;
   }
-  var parsed = jsonDecode(dataResponse.body);
 
   if (parsed['status'] == 'ERROR') {
     showErrorMessage('Keine lnurl', parsed['reason']);
@@ -359,6 +365,77 @@ Future<void> handleLnurl(String lnurl) async {
 
     var invoice = invoiceParsed['pr'];
     payInvoiceInteraction(invoice);
+  } else if (parsed['tag'] == 'withdrawRequest') {
+    String? callback = parsed['callback'];
+    int minAmount = parsed['minWithdrawable'];
+    int maxAmount = parsed['maxWithdrawable'];
+    String description = parsed['defaultDescription'] ?? '';
+    String? k1 = parsed['k1'];
+
+    if (k1 == null) {
+      showErrorMessage('Wallet identifier fehlt');
+      return;
+    }
+    if (callback == null) {
+      showErrorMessage('Kein Callback');
+      return;
+    }
+
+    var amountToSend = minAmount;
+    if (maxAmount != minAmount) {
+      var a = await Navigator.of(navigatorKey.currentContext!)
+          .push(MaterialPageRoute(
+              builder: (context) => AmountSelection(
+                    minAmount: minAmount,
+                    maxAmount: maxAmount,
+                    description: description,
+                  )));
+      if (a == null) {
+        return;
+      } else {
+        amountToSend = a;
+      }
+    }
+
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!);
+    var paymentId = wallet.paymentCredentials.first.id!;
+
+    var invoiceMap = await createInvoice(
+        wallet.getLnInKey(paymentId)!, SatoshiAmount(amountToSend),
+        memo: description);
+
+    var index = invoiceMap['checking_id'];
+    var invoice = invoiceMap['payment_request'];
+    if (invoice == null || index == null) {
+      showErrorMessage('Invoice erstellen fehlgeschlagen');
+      return;
+    }
+
+    String toCall =
+        '$callback${callback.contains('?') ? '&' : '?'}k1=$k1&pr=$invoice';
+    Response res;
+    try {
+      res = await get(Uri.parse(toCall));
+    } catch (e) {
+      showErrorMessage('Auszahlung fehlgeschlagen', testBuild ? '$e' : '');
+      return;
+    }
+    if (res.statusCode == 200) {
+      var body = jsonDecode(res.body);
+      String status = body['status'];
+      if (status.toLowerCase() == 'ok') {
+        wallet.newPayment(
+            paymentId, index, description, SatoshiAmount(amountToSend));
+      } else {
+        showErrorMessage(
+            'Auszahlung fehlgeschlagen', 'Grund: ${body['reason']}');
+      }
+    } else {
+      showErrorMessage('Auszahlung fehlgeschlagen');
+    }
+  } else {
+    showErrorMessage(
+        'Unbekannte lnurl Funktion', '${parsed['tag']} wird nicht unterstützt');
   }
 }
 

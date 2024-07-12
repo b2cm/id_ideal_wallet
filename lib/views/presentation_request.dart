@@ -775,27 +775,45 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 getHolderDidFromCredential(cred.toJson()),
                 DateTime.now(),
                 'present',
-                widget.receiverDid);
+                widget.otherEndpoint);
 
             type += '${getTypeToShow(cred.type)}, \n';
           }
+          logger.d(type);
 
           for (var cred in entry.isoMdocCredentials ?? <IssuerSignedObject>[]) {
             var mso = MobileSecurityObject.fromCbor(cred.issuerAuth.payload);
 
             var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
             wallet.storeExchangeHistoryEntry(
-                did, DateTime.now(), 'present', widget.receiverDid);
+                did, DateTime.now(), 'present', widget.otherEndpoint);
 
             type += '${mso.docType}, \n';
           }
+          logger.d(type);
         }
         type = type.substring(0, type.length - 3);
-
-        showSuccessMessage(
-            AppLocalizations.of(navigatorKey.currentContext!)!
-                .presentationSuccessful,
-            type);
+        logger.d(type);
+        await showModalBottomSheet(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+            ),
+            context: navigatorKey.currentContext!,
+            builder: (context) {
+              return ModalDismissWrapper(
+                child: PaymentFinished(
+                  headline: AppLocalizations.of(navigatorKey.currentContext!)!
+                      .presentationSuccessful,
+                  success: true,
+                  amount: CurrencyDisplay(
+                      amount: type,
+                      symbol: '',
+                      mainFontSize: 18,
+                      centered: true),
+                ),
+              );
+            });
 
         //Navigator.of(context).pop();
       } else {
@@ -805,7 +823,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 getHolderDidFromCredential(cred.toJson()),
                 DateTime.now(),
                 'present failed',
-                widget.receiverDid);
+                widget.otherEndpoint);
           }
         }
 
@@ -892,7 +910,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             getHolderDidFromCredential(cred.toJson()),
             DateTime.now(),
             'present',
-            widget.receiverDid);
+            widget.otherEndpoint);
       }
 
       // Navigator.of(context).pop();

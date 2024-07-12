@@ -89,7 +89,9 @@ class NavigationProvider extends ChangeNotifier {
       return;
     }
     // Handle Custom Schemes
-    if (link.startsWith('LNURL') || link.startsWith('lnurl')) {
+    if (link.startsWith('lightning:')) {
+      handleLink(link.replaceAll('lightning:', ''));
+    } else if (link.startsWith('LNURL') || link.startsWith('lnurl')) {
       handleLnurl(link);
     } else if (link.startsWith('lnbc') || link.startsWith('LNBC')) {
       logger.d('LN-Invoice found');

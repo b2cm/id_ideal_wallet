@@ -60,8 +60,8 @@ class SettingsPageState extends State<SettingsPage> {
           if (Platform.isAndroid)
             ListTile(
               title: Text('Ausweis'),
-              onTap: () => Navigator.of(navigatorKey.currentContext!)
-                  .push(MaterialPageRoute(builder: (context) => AusweisView())),
+              onTap: () => Navigator.of(navigatorKey.currentContext!).push(
+                  MaterialPageRoute(builder: (context) => const AusweisView())),
             )
         ],
       ),
