@@ -23,6 +23,7 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/self_issuance.dart';
@@ -522,7 +523,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     return childList;
   }
 
-  Future<VerifiablePresentation?> sendAnswer() async {
+  Future<dynamic> sendAnswer() async {
     setState(() {
       send = true;
     });
@@ -562,6 +563,10 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           submissionRequirement: result.submissionRequirement));
     }
 
+    if (widget.isIso) {
+      return finalSend;
+    }
+
     if (widget.isOidc) {
       String? vp;
       PresentationSubmission? submission;
@@ -585,10 +590,8 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
               showErrorMessage('Kein privater schlüssel');
               return null;
             }
-            var privateKey = CoseKey(
-                d: hexDecode(private),
-                kty: CoseKeyType.octetKeyPair,
-                crv: CoseCurve.ed25519);
+            var privateKey = await didToCosePublicKey(did);
+            privateKey.d = hexDecode(private);
 
             var handover = OID4VPHandover.fromValues(
                 widget.receiverDid, widget.otherEndpoint, widget.nonce!);
@@ -971,13 +974,9 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  if (widget.isIso) {
-                    Navigator.of(context).pop(true);
-                  } else {
-                    var vp = await Future.delayed(
-                        const Duration(milliseconds: 50), sendAnswer);
-                    Navigator.of(context).pop(vp);
-                  }
+                  var vp = await Future.delayed(
+                      const Duration(milliseconds: 50), sendAnswer);
+                  Navigator.of(context).pop(vp);
                 },
               )
           ],

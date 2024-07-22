@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
@@ -40,6 +41,11 @@ class MdocProvider extends ChangeNotifier {
   CoseKey? myPrivateKey;
   SessionTranscript? transcript;
   DeviceEngagement? engagement;
+  List<int> nfcMessage = [];
+  int leMax = 0;
+  int bytesSend = 0;
+  List<int>? responseToSend;
+  String? typeToShow;
 
   // BLE
   BluetoothLowEnergyState bleState = BluetoothLowEnergyState.unknown;
@@ -253,6 +259,8 @@ class MdocProvider extends ChangeNotifier {
     } else if (instruction == 195) {
       // envelope
       handleEnvelope(apdu);
+    } else if (instruction == 192) {
+      handleGetResponse(apdu);
     } else {
       sendApdu(apduResponseInstructionNotSupported);
     }
@@ -284,6 +292,9 @@ class MdocProvider extends ChangeNotifier {
       sendApdu(ndefCapability + apduResponseOk);
     } else if (selectedFile == 'E104') {
       if (expectedLength == 2) {
+        bytesSend = 0;
+        responseToSend = [];
+        nfcMessage = [];
         // generate stuff and send length
         var nfcForumRecord = NdefRecordData(
             type: utf8.encode('Hs'),
@@ -334,41 +345,118 @@ class MdocProvider extends ChangeNotifier {
   }
 
   handleEnvelope(Uint8List apdu) async {
-    var length = apdu.sublist(4, 7);
-    logger.d('envelope content length hex: ${hex.encode(length)}');
-    var lengthInt = int.parse(hex.encode(length), radix: 16);
+    var cla = apdu[0];
+    bool extendedLength = false;
+    if (cla == 16) {
+      extendedLength = true;
+    } else if (cla != 0) {
+      logger.d('unknown cla');
+      sendApdu(apduResponseFileNotFound);
+      return;
+    }
+    int length = apdu[4];
+    int offset = 5;
+    if (length == 0) {
+      offset = 7;
+      var lengthHex = hex.encode(apdu.sublist(5, 7));
+      logger.d('envelope content length hex: $lengthHex');
+      length = int.parse(lengthHex, radix: 16);
+      logger.d('envelope content length: $length');
+    }
 
-    logger.d('envelope content length: $lengthInt');
-    var content = apdu.sublist(7, 7 + lengthInt);
-
+    var content = apdu.sublist(offset, offset + length);
     logger.d('envelope content: ${hex.encode(content)}');
 
-    var contentHeader = content.sublist(0, 2);
-    logger.d('content header: ${hex.encode(contentHeader)}');
+    var le = apdu.sublist(offset + length);
+    logger.d('le: $le');
+    nfcMessage += content;
+    if (extendedLength) {
+      if (le.first == 0) {
+        sendApdu(apduResponseOk);
+      }
+    } else {
+      leMax = int.parse(hex.encode(le), radix: 16);
+      logger.d(leMax);
+      if (offset == 5) {
+        logger.d('short message; maybe end of communication');
+        return;
+      }
+      handleNfcRequest();
+    }
+  }
 
-    var contentLength = content.sublist(2, 4);
+  handleGetResponse(Uint8List apdu) {
+    int le = int.parse(hex.encode(apdu.sublist(apdu.length - 2)), radix: 16);
+    leMax = le;
+    sendNfcResponse();
+  }
 
-    var realContent = content.sublist(4);
+  handleNfcRequest() async {
+    var contentHeader = nfcMessage.sublist(0, 2);
+    logger
+        .d('content header: ${hex.encode(Uint8List.fromList(contentHeader))}');
+
+    var contentLength = nfcMessage.sublist(2, 4);
+
+    var realContent = nfcMessage.sublist(4);
 
     List<int>? responseToSend;
+
     String? type = '';
 
     (responseToSend, type) = await handleMdocRequest(realContent);
 
-    if (responseToSend != null) {
-      var responseLength =
-          responseToSend.length.toRadixString(16).padLeft(4, '0');
-      logger.d('responseLength: $responseLength');
-      sendApdu(
-          hex.decode('5382$responseLength') + responseToSend + apduResponseOk);
+    nfcMessage = [];
 
-      Timer(
-          const Duration(seconds: 5),
-          () => showSuccessMessage(
-              AppLocalizations.of(navigatorKey.currentContext!)!
-                  .presentationSuccessful,
-              type?.substring(0, type.length - 1) ?? ''));
+    if (responseToSend != null) {
+      var header = getEnvelopeHeader(responseToSend.length);
+      this.responseToSend = hex.decode(header) + responseToSend;
+      typeToShow = type;
+      sendNfcResponse();
     }
+  }
+
+  sendNfcResponse() {
+    logger.d('responseLength: ${responseToSend!.length - bytesSend}');
+
+    if (leMax >= responseToSend!.length - bytesSend) {
+      // everything fits
+      nfcMessage = [];
+      sendApdu(responseToSend!.sublist(bytesSend) + apduResponseOk);
+
+      Timer(const Duration(seconds: 5), () {
+        bytesSend = 0;
+        responseToSend = [];
+        showSuccessMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .presentationSuccessful,
+            typeToShow?.substring(0, typeToShow!.length - 1) ?? '');
+      });
+    } else {
+      bytesSend += leMax;
+      var content = responseToSend!.sublist(bytesSend - leMax, leMax);
+      logger.d('content length = ${content.length}');
+      int remaining = responseToSend!.length - bytesSend;
+      sendApdu(content + [97, remaining > 255 ? 0 : remaining]);
+    }
+  }
+
+  String getEnvelopeHeader(int length) {
+    String beginHex = '53';
+    if (length < 128) {
+      beginHex += length.toRadixString(16).padLeft(2, '0');
+    } else if (length < 256) {
+      beginHex += '81${length.toRadixString(16).padLeft(2, '0')}';
+    } else if (length < 65536) {
+      beginHex += '82${length.toRadixString(16).padLeft(4, '0')}';
+    } else if (length < 16777216) {
+      beginHex += '83${length.toRadixString(16).padLeft(6, '0')}';
+    } else {
+      logger.d('content too long');
+      throw Exception('Content too long');
+    }
+
+    return beginHex;
   }
 
   sendApdu(List<int> data) {
@@ -418,7 +506,7 @@ class MdocProvider extends ChangeNotifier {
         '-----BEGIN CERTIFICATE-----\n${base64Encode(decodedRequest.docRequests.first.readerAuthSignature!.unprotected.x509chain!)}\n-----END CERTIFICATE-----');
     var requesterCert = certIt.first as X509Certificate;
 
-    List<VerifiableCredential> toShow = [];
+    List<IssuerSignedObject> toShow = [];
     List<IsoRequestedItem> filterResult = [];
 
     var isoCreds =
@@ -468,7 +556,7 @@ class MdocProvider extends ChangeNotifier {
             data.items = revealedData;
             var vc = VerifiableCredential.fromJson(cred.w3cCredential);
             vc.credentialSubject = contentToShow;
-            toShow.add(vc);
+            toShow.add(data);
             var key = await Provider.of<WalletProvider>(
                     navigatorKey.currentContext!,
                     listen: false)
@@ -486,7 +574,8 @@ class MdocProvider extends ChangeNotifier {
     }
 
     var asFilter = FilterResult(
-        credentials: toShow,
+        credentials: [],
+        isoMdocCredentials: toShow,
         matchingDescriptorIds: [],
         presentationDefinitionId: '');
 
@@ -505,22 +594,50 @@ class MdocProvider extends ChangeNotifier {
       ),
     );
 
-    if (res) {
+    if (res != null) {
       String type = '';
       List<Document> content = [];
-      for (var entry in filterResult) {
-        var signedData = await generateDeviceSignature(
-            entry.revealedData,
-            decodedRequest.docRequests.first.itemsRequest.docType,
-            transcriptHolder,
-            signer: SignatureGenerator.get(entry.privateKey));
-        var docToSend = Document(
-            docType: entry.docType,
-            issuerSigned: entry.issuerSigned,
-            deviceSigned: signedData);
-        content.add(docToSend);
-        type += '${entry.docType},';
+      logger.d(res.runtimeType);
+      res as List<FilterResult>;
+      for (var entry in res) {
+        for (var doc in entry.isoMdocCredentials ?? <IssuerSignedObject>[]) {
+          var mso = MobileSecurityObject.fromCbor(doc.issuerAuth.payload);
+          var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
+
+          var private = await Provider.of<WalletProvider>(
+                  navigatorKey.currentContext!,
+                  listen: false)
+              .getPrivateKeyForCredentialDid(did);
+          if (private == null) {
+            showErrorMessage('Kein privater schlüssel');
+            return (null, null);
+          }
+          var privateKey = await didToCosePublicKey(did);
+          privateKey.d = hexDecode(private);
+
+          var ds = await generateDeviceSignature(
+              {}, mso.docType, transcriptHolder,
+              signer: SignatureGenerator.get(privateKey));
+
+          var docToSend = Document(
+              docType: mso.docType, issuerSigned: doc, deviceSigned: ds);
+          content.add(docToSend);
+          type += '${mso.docType},';
+        }
       }
+      // for (var entry in filterResult) {
+      //   var signedData = await generateDeviceSignature(
+      //       entry.revealedData,
+      //       decodedRequest.docRequests.first.itemsRequest.docType,
+      //       transcriptHolder,
+      //       signer: SignatureGenerator.get(entry.privateKey));
+      //   var docToSend = Document(
+      //       docType: entry.docType,
+      //       issuerSigned: entry.issuerSigned,
+      //       deviceSigned: signedData);
+      //   content.add(docToSend);
+      //   type += '${entry.docType},';
+      // }
 
       // Generate Response
       var response = DeviceResponse(status: 1, documents: content);

@@ -150,10 +150,10 @@ class HomeScreen extends StatelessWidget {
                     activeIcon: Icons.credit_card,
                     inactiveIcon: Icons.credit_card_outlined,
                     activeIndices: const [
-                      NavigationPage.paymentOverview,
+                      NavigationPage.paymentCard,
                       NavigationPage.sendSatoshi,
                       NavigationPage.topUp,
-                      NavigationPage.paymentCard
+                      NavigationPage.paymentOverview
                     ],
                     navigator: navigator),
                 CustomNavigationItem(
@@ -253,7 +253,7 @@ class HomeScreen extends StatelessWidget {
             builder: (context, navigator, child) {
           return PopScope(
               canPop: navigator.canPop,
-              onPopInvokedWithResult: (_, b) => navigator.goBack(),
+              onPopInvoked: (_) => navigator.goBack(),
               child: Scaffold(
                   body: Stack(children: [
                     Column(
