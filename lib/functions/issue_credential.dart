@@ -154,6 +154,11 @@ Future<bool> handleOfferCredential(
 
     //pay the credential
     if (res) {
+      for (var entry in message.detail ?? <LdProofVcDetail>[]) {
+        if (entry.credential.type.contains('PieceOfArt')) {
+          wallet.addIssuanceProcess(threadId);
+        }
+      }
       if (invoice != null) {
         try {
           if (lnAdminKey != null) {
@@ -422,6 +427,8 @@ Future<bool> handleIssueCredential(
                 newDid: credDid);
             wallet.storeExchangeHistoryEntry(
                 credDid, DateTime.now(), 'issue', message.from!);
+
+            wallet.removeIssuanceProcess(message.threadId ?? '');
 
             showSuccessMessage(
                 AppLocalizations.of(navigatorKey.currentContext!)!

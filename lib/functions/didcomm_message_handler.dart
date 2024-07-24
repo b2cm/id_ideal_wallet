@@ -25,7 +25,16 @@ Future<bool> handleOobUrl(String url) async {
   var asUri = Uri.parse(url);
   var oobUrl = asUri.queryParameters['_ooburl'];
   if (oobUrl != null) {
-    var messageGot = await get(Uri.parse(oobUrl));
+    Response messageGot;
+    try {
+      messageGot = await get(Uri.parse(oobUrl));
+    } catch (e) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .downloadFailedExplanation);
+      return false;
+    }
     logger.d(messageGot.body);
     return handleDidcommMessage(messageGot.body);
   }
@@ -447,14 +456,19 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
 
   if (otherEndpoint.startsWith('http')) {
     logger.d('send message to $otherEndpoint');
-    var res = await post(Uri.parse(otherEndpoint),
-        body: encrypted.toString(),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }).timeout(const Duration(seconds: 300), onTimeout: () {
-      return Response('Timeout', 400);
-    });
+    Response res;
+    try {
+      res = await post(Uri.parse(otherEndpoint),
+          body: encrypted.toString(),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }).timeout(const Duration(seconds: 300), onTimeout: () {
+        return Response('Timeout', 400);
+      });
+    } catch (e) {
+      res = Response('Exception', 400);
+    }
 
     if (res.statusCode == 201 || res.statusCode == 200) {
       logger.d('getResponse: ${res.body}');
@@ -538,6 +552,7 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
 
       logger.d('${res.statusCode} from $otherEndpoint with $message');
       logger.d(res.body);
+      wallet.removeIssuanceProcess(message.threadId ?? '');
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);

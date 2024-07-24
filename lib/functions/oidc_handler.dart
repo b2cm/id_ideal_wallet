@@ -837,7 +837,7 @@ storeCredential(String format, dynamic credential, String credentialDid,
       }
 
       wallet.storeCredential(vc.toString(), storageCred.hdPath,
-          isoMdlData: 'isoData:${base64Encode(doc.toEncodedCbor())}',
+          isoMdlData: '$isoPrefix:${base64Encode(doc.toEncodedCbor())}',
           keyType: keyType);
       wallet.storeExchangeHistoryEntry(
           credentialDid, DateTime.now(), 'issue', credentialIssuer);
@@ -846,6 +846,9 @@ storeCredential(String format, dynamic credential, String credentialDid,
           AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
           signedData.docType);
     }
+  } else if (format == OidcCredentialFormat.sdJwt) {
+    showErrorMessage('Format nicht unterstützt');
+    return;
   } else {
     logger.d(credential);
 
@@ -1018,7 +1021,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
 
   for (var cred in isoCreds) {
     isoCredsParsed.add(IssuerSignedObject.fromCbor(
-        base64Decode(cred.plaintextCredential.replaceAll('isoData:', ''))));
+        base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', ''))));
   }
 
   if (definition == null) {

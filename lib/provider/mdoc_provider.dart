@@ -474,7 +474,9 @@ class MdocProvider extends ChangeNotifier {
     var transcriptHolder = SessionTranscript(
         deviceEngagementBytes: engagement!.toDeviceEngagementBytes(),
         keyBytes: se.eReaderKey.toCoseKeyBytes(),
-        handover: NFCHandover(handoverSelectMessage: handoverSelectMessage!));
+        handover: handoverSelectMessage == null
+            ? null
+            : NFCHandover(handoverSelectMessage: handoverSelectMessage!));
 
     encryptor = SessionEncryptor(
         mdocRole: MdocRole.mdocHolder,
@@ -517,7 +519,7 @@ class MdocProvider extends ChangeNotifier {
 
     for (var cred in isoCreds) {
       var data = IssuerSignedObject.fromCbor(
-          base64Decode(cred.plaintextCredential.replaceAll('isoData:', '')));
+          base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', '')));
       var m = MobileSecurityObject.fromCbor(data.issuerAuth.payload);
       var coseKey = m.deviceKeyInfo.deviceKey;
       KeyType keyType;

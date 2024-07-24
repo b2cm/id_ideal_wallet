@@ -6,6 +6,8 @@ import 'package:logger/logger.dart';
 
 var relay = 'https://167.235.195.132:8888';
 //var relay = 'http://localhost:8888';
+const String isoPrefix = 'isoData';
+const String sdPrefix = 'sdJwt';
 
 Map knownAuthServer = {
   'https://issuer.eudiw.dev/oidc': {
@@ -59,7 +61,7 @@ var applicationEndpoint =
     'https://test.hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
 var stylingEndpoint = 'https://test.hidy.app/walletcontext/layouts';
 var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
-String versionNumber = '3.2.4-test';
+String versionNumber = '3.2.5-test';
 String baseUrl = 'https://test.hidy.app';
 bool testBuild = true;
 

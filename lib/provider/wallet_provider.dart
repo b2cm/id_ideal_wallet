@@ -47,6 +47,9 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> credentials = [];
   List<VerifiableCredential> paymentCredentials = [];
   List<Credential> isoMdocCredentials = [];
+  List<Credential> sdJwtCredentials = [];
+
+  List<String> issuanceRunning = [];
 
   //[[url, pic-url], [url, pic-url], ...]
   List<Map<String, String>> aboList = [];
@@ -456,6 +459,18 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addIssuanceProcess(String thid) {
+    if (!issuanceRunning.contains(thid)) {
+      issuanceRunning.add(thid);
+      notifyListeners();
+    }
+  }
+
+  void removeIssuanceProcess(String thid) {
+    issuanceRunning.remove(thid);
+    notifyListeners();
+  }
+
   String? getLnInKey(String paymentId) {
     return _wallet.getConfigEntry('lnInKey$paymentId');
   }
@@ -587,6 +602,7 @@ class WalletProvider extends ChangeNotifier {
     credentials = [];
     paymentCredentials = [];
     isoMdocCredentials = [];
+    sdJwtCredentials = [];
 
     var all = allCredentials();
     for (var cred in all.values) {
@@ -594,15 +610,19 @@ class WalletProvider extends ChangeNotifier {
         continue;
       }
       if (cred.plaintextCredential == '' ||
-          cred.plaintextCredential.startsWith('isoData:')) {
-        if (cred.plaintextCredential.startsWith('isoData:')) {
+          cred.plaintextCredential.startsWith('$isoPrefix:') ||
+          cred.plaintextCredential.startsWith('$sdPrefix:')) {
+        if (cred.plaintextCredential.startsWith('$isoPrefix:')) {
           isoMdocCredentials.add(cred);
         }
+        if (cred.plaintextCredential.startsWith('$sdPrefix:')) {
+          sdJwtCredentials.add(cred);
+        }
+
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('PaymentContext')) {
           paymentCredentials.add(vc);
           _updateLastThreePayments(vc.id!);
-
           getLnBalance(vc.id!);
         } else {
           if (!vc.type.contains('PaymentReceipt')) {

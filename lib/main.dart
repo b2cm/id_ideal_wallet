@@ -280,6 +280,45 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                     getContent(navigator, wallet),
+                    if (wallet.issuanceRunning.isNotEmpty)
+                      Center(
+                        child: Card(
+                          color: Colors.grey.shade300,
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width - 40,
+                            height: MediaQuery.of(context).size.height / 4,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    AppLocalizations.of(context)!
+                                        .pictureProcess,
+                                    style: Theme.of(context)
+                                        .primaryTextTheme
+                                        .titleLarge,
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  Text(
+                                    AppLocalizations.of(context)!
+                                        .pictureProcessNote,
+                                    style: Theme.of(context)
+                                        .primaryTextTheme
+                                        .bodySmall,
+                                  ),
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  CircularProgressIndicator()
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
                   ]),
                   bottomNavigationBar: buildBottomBar1(context, navigator),
                   floatingActionButtonLocation:
