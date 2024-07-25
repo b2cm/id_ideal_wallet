@@ -4,7 +4,8 @@
 
 Wallet Application supporting W3C Verifiable Credentials and recent didcomm protocols
 to issue credentials to the wallet and request them from the wallet. It also support
-OpenID Connect for Verifiable Credential Issuance (draft 11) using the pre-authorized code flow and
+OpenID Connect for Verifiable Credential Issuance (draft 11-13; authorized and pre-authorized flow)
+and
 OpenID
 Connect for Verifiable Presentations.
 
@@ -24,7 +25,7 @@ research purpose.
 - if the url for the webview contains fragment and query it MUST be percent-encoded
 - the wallet will add a wallet id to the url if requested. To request this id, add the
   query-parameter `wid=` (without value) to your url.
-- the wallet can also understand links with ligthning-invoices or
+- the wallet can also understand links with lightning-invoices or
   lnurls : `https://wallet.bccm.dev/invoice?invoice=<lightning invoice>`
   or `https://wallet.bccm.dev/invoice?lnurl=<lnurl>`
 

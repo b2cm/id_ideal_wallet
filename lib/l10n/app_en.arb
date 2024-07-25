@@ -202,5 +202,7 @@
   "issuanceInfoNotFound": "Unfortunately, we have not found out how you can obtain the missing credentials.",
   "issuanceInfoFound": "You can obtain the missing credentials here:",
   "hsmwEmployeeCard": "Employee-Card (HSMW)",
-  "hsmwStudentCard": "Student-Card (HSMW)"
+  "hsmwStudentCard": "Student-Card (HSMW)",
+  "pictureProcess": "Your picture is created",
+  "pictureProcessNote": "Please wait a moment"
 }

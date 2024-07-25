@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
@@ -13,8 +14,10 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
@@ -32,6 +35,8 @@ class WalletProvider extends ChangeNotifier {
   bool openError = false;
 
   String? lndwId;
+  String tosUrl = 'https://hidy.eu/terms.html';
+  String aboutUrl = 'https://hidy.eu';
 
   SortingType sortingType = SortingType.dateDown;
 
@@ -42,6 +47,9 @@ class WalletProvider extends ChangeNotifier {
   List<VerifiableCredential> credentials = [];
   List<VerifiableCredential> paymentCredentials = [];
   List<Credential> isoMdocCredentials = [];
+  List<Credential> sdJwtCredentials = [];
+
+  List<String> issuanceRunning = [];
 
   //[[url, pic-url], [url, pic-url], ...]
   List<Map<String, String>> aboList = [];
@@ -56,7 +64,7 @@ class WalletProvider extends ChangeNotifier {
   List<int> dataShared = [];
 
   WalletProvider(String walletPath, [this.onboard = true])
-      : _wallet = WalletStore(walletPath);
+      : _wallet = WalletStore(walletPath, Platform.isIOS ? 'hidy' : null);
 
   Future<List<int>?> startUri() async {
     try {
@@ -121,10 +129,8 @@ class WalletProvider extends ChangeNotifier {
           }
           if (!valid) {
             logger.d('Invalid pkpass signature');
-            my_util.showScaffoldMessenger(
-                navigatorKey.currentContext!,
-                AppLocalizations.of(navigatorKey.currentContext!)!
-                    .importFailed);
+            showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+                .importFailed);
             return;
           }
         }
@@ -176,8 +182,10 @@ class WalletProvider extends ChangeNotifier {
 
           var did = await newCredentialDid();
 
+          logger.d(passAsJson);
+
           var vc = VerifiableCredential(
-              context: ['schema.org'],
+              context: [credentialsV1Iri, 'schema.org'],
               type: [type, 'PkPass'],
               issuer: did,
               credentialSubject: {'id': did, ...passAsJson, ...simplyfiedData},
@@ -187,18 +195,16 @@ class WalletProvider extends ChangeNotifier {
           var storageCred = getCredential(did);
           storeCredential(signed, storageCred!.hdPath);
           storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
-          my_util.showScaffoldMessenger(
-              navigatorKey.currentContext!,
-              AppLocalizations.of(navigatorKey.currentContext!)!
-                  .importSuccess(type));
+          showSuccessMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+              .importSuccess(type));
         } else {
           logger.d('no valid pkpassFile');
-          my_util.showScaffoldMessenger(navigatorKey.currentContext!,
+          showErrorMessage(
               AppLocalizations.of(navigatorKey.currentContext!)!.importFailed);
         }
       } catch (e) {
         logger.d(e);
-        my_util.showScaffoldMessenger(navigatorKey.currentContext!,
+        showErrorMessage(
             AppLocalizations.of(navigatorKey.currentContext!)!.importFailed);
       }
     }
@@ -232,6 +238,14 @@ class WalletProvider extends ChangeNotifier {
         aboList = dec.map((e) => (e as Map).cast<String, String>()).toList();
       }
 
+      var t = wallet.getConfigEntry('tosUrl');
+      if (t != null) tosUrl = t;
+
+      var a = wallet.getConfigEntry('aboutUrl');
+      if (a != null) {
+        aboutUrl = a;
+      }
+
       var lastUpdateCheck = _wallet.getConfigEntry('lastUpdateCheck');
       if (lastUpdateCheck != null) {
         logger.d(
@@ -239,9 +253,10 @@ class WalletProvider extends ChangeNotifier {
       }
       if (lastUpdateCheck == null ||
           DateTime.now().difference(DateTime.parse(lastUpdateCheck)) >=
-              const Duration(days: 1)) {
+              Duration(days: testBuild ? 0 : 1, seconds: testBuild ? 1 : 0)) {
         logger.d('with request');
         generateCredentialStyling(true);
+        updateTosUrl();
         _wallet.storeConfigEntry(
             'lastUpdateCheck', DateTime.now().toIso8601String());
       } else {
@@ -301,6 +316,24 @@ class WalletProvider extends ChangeNotifier {
     }
 
     logger.d(credentialStyling);
+  }
+
+  Future<void> updateTosUrl() async {
+    var data = await get(Uri.parse(termsVersionEndpoint));
+    if (data.statusCode == 200) {
+      var asJson = jsonDecode(data.body);
+      if (asJson['url'] != null) {
+        tosUrl = asJson['url'];
+        logger.d(tosUrl);
+      }
+      if (asJson['about']['url'] != null) {
+        aboutUrl = (asJson['about'] as Map)['url'];
+        logger.d(aboutUrl);
+      }
+
+      wallet.storeConfigEntry('tosUrl', tosUrl);
+      wallet.storeConfigEntry('aboutUrl', aboutUrl);
+    }
   }
 
   void deleteAbo(int index) async {
@@ -423,6 +456,18 @@ class WalletProvider extends ChangeNotifier {
       await checkValiditySingle(vc);
     }
 
+    notifyListeners();
+  }
+
+  void addIssuanceProcess(String thid) {
+    if (!issuanceRunning.contains(thid)) {
+      issuanceRunning.add(thid);
+      notifyListeners();
+    }
+  }
+
+  void removeIssuanceProcess(String thid) {
+    issuanceRunning.remove(thid);
     notifyListeners();
   }
 
@@ -557,6 +602,7 @@ class WalletProvider extends ChangeNotifier {
     credentials = [];
     paymentCredentials = [];
     isoMdocCredentials = [];
+    sdJwtCredentials = [];
 
     var all = allCredentials();
     for (var cred in all.values) {
@@ -564,15 +610,19 @@ class WalletProvider extends ChangeNotifier {
         continue;
       }
       if (cred.plaintextCredential == '' ||
-          cred.plaintextCredential.startsWith('isoData:')) {
-        if (cred.plaintextCredential.startsWith('isoData:')) {
+          cred.plaintextCredential.startsWith('$isoPrefix:') ||
+          cred.plaintextCredential.startsWith('$sdPrefix:')) {
+        if (cred.plaintextCredential.startsWith('$isoPrefix:')) {
           isoMdocCredentials.add(cred);
         }
+        if (cred.plaintextCredential.startsWith('$sdPrefix:')) {
+          sdJwtCredentials.add(cred);
+        }
+
         var vc = VerifiableCredential.fromJson(cred.w3cCredential);
         if (vc.type.contains('PaymentContext')) {
           paymentCredentials.add(vc);
           _updateLastThreePayments(vc.id!);
-
           getLnBalance(vc.id!);
         } else {
           if (!vc.type.contains('PaymentReceipt')) {
@@ -691,9 +741,10 @@ class WalletProvider extends ChangeNotifier {
     var nav = Provider.of<NavigationProvider>(navigatorKey.currentContext!,
         listen: false);
     if (nav.redirectWebViewUrl != null) {
-      nav.changePage([1], track: false);
+      nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        nav.changePage([5], webViewUrl: nav.redirectWebViewUrl);
+        nav.changePage([NavigationPage.webView],
+            webViewUrl: nav.redirectWebViewUrl);
         nav.redirectWebViewUrl = null;
       });
     }

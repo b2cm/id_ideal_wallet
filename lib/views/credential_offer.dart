@@ -17,11 +17,12 @@ class CredentialOfferDialog extends StatefulWidget {
       required this.credentials,
       this.toPay,
       this.oidcIssuer,
-      this.requestOidcTan = false});
+      this.requestOidcTan = false,
+      this.isOid = false});
 
   final List<VerifiableCredential> credentials;
   final String? toPay, oidcIssuer;
-  final bool requestOidcTan;
+  final bool requestOidcTan, isOid;
 
   @override
   CredentialOfferDialogState createState() => CredentialOfferDialogState();
@@ -45,7 +46,9 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
             height: 10,
           ),
         );
-        var subject = buildCredSubject(credential.credentialSubject);
+        var subject = widget.isOid
+            ? buildOidClaimsData(credential.credentialSubject)
+            : buildCredSubject(credential.credentialSubject);
         VerifiableCredential? issuerCertCredential;
         try {
           issuerCertCredential = widget.credentials.firstWhere(
@@ -183,4 +186,15 @@ class CredentialOfferDialogState extends State<CredentialOfferDialog> {
       ],
     );
   }
+}
+
+List<ListTile> buildOidClaimsData(Map<String, dynamic> claims) {
+  List<ListTile> tiles = [];
+  for (var k in claims.keys) {
+    tiles.add(ListTile(
+      title: Text(k),
+      subtitle: Text(claims[k] ?? ''),
+    ));
+  }
+  return tiles;
 }

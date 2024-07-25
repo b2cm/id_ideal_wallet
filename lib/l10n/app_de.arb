@@ -115,8 +115,8 @@
   "accept": "Annehmen",
   "noteNoCredentials": "Keine Nachweise vorhanden",
   "allCredentials": "Alle Nachweise",
-  "sendFailed": "Senden Fehlgeschlagen",
-  "sendFailedNote": "Das Senden einer Nachricht ist fehlgeschlagen oder die Nachricht konnte von der Gegenseite nicht verarbeitet werden.",
+  "sendFailed": "Es gibt ein Problem",
+  "sendFailedNote": "Der Vorgang kann nicht beendet werden. Bitte probieren Sie es erneut.",
   "wrongCredential": "Fehlerhafter Nachweis",
   "wrongCredentialNote": "Dein Gegenüber hat einen Nachweis ausgestellt, der eine fehlerhafte Signatur trägt. \nTeilen Sie dies ihm mit.",
   "familyName": "Nachname",
@@ -202,5 +202,7 @@
   "issuanceInfoNotFound": "Wir haben leider nicht herausgefunden, wie Du Dir die fehlenden Nachweise besorgen kannst.",
   "issuanceInfoFound": "Hier kannst Du Dir die fehlenden Nachweise besorgen:",
   "hsmwEmployeeCard": "Mitarbeiterausweis (HSMW)",
-  "hsmwStudentCard": "Studierendenausweis (HSMW)"
+  "hsmwStudentCard": "Studierendenausweis (HSMW)",
+  "pictureProcess": "Ihr Bild wird erstellt",
+  "pictureProcessNote": "Bitte haben Sie einen Moment Geduld"
 }

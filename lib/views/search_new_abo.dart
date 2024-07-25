@@ -87,6 +87,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
           : toShow.isEmpty
               ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
               : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: bottomPadding),
                   itemCount: toShow.length,
                   itemBuilder: (context, index) {
                     return ListTile(

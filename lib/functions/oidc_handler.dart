@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
 import 'package:crypto_keys/crypto_keys.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
@@ -11,9 +13,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
-import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
-import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -34,6 +34,41 @@ String removeTrailingSlash(String base64Input) {
   return base64Input;
 }
 
+Map<String, dynamic> findClaims(Map? claimsDescription) {
+  var claims = <String, dynamic>{};
+  claimsDescription ??= {};
+
+  for (var key in claimsDescription.keys) {
+    var value = claimsDescription[key];
+    if (value is CredentialSubjectMetadata) {
+      var displayList = value.display ?? <OidcDisplayObject>[];
+      var locale =
+          AppLocalizations.of(navigatorKey.currentContext!)!.localeName;
+      String? defaultName, localName, localeDes, defaultDes;
+      for (var d in displayList) {
+        if (d.locale != null && d.locale!.startsWith('en')) {
+          defaultName = d.name;
+          defaultDes = d.description;
+        }
+        if (d.locale != null && d.locale!.startsWith(locale)) {
+          localName = d.name;
+          localeDes = d.description;
+        }
+      }
+      claims[localName ?? defaultName ?? key] = localeDes ?? defaultDes ?? '';
+    } else if (value is Map) {
+      claims.addAll(findClaims(value));
+    } else if (value is List) {
+      for (var v in value) {
+        claims.addAll(findClaims(v));
+      }
+    }
+  }
+
+  logger.d(claims);
+  return claims;
+}
+
 Future<void> handleOfferOidc(String offerUri) async {
   var offer = OidcCredentialOffer.fromUri(offerUri);
 
@@ -51,10 +86,20 @@ Future<void> handleOfferOidc(String offerUri) async {
   });
 
   if (issuerMetaReq.statusCode != 200) {
-    throw Exception('Bad Status code: ${issuerMetaReq.statusCode}');
+    logger.d(
+        'Bad Status code: ${issuerMetaReq.statusCode} /${issuerMetaReq.body}');
+    showErrorMessage('Keine Issuer-Metadaten',
+        'Issuer-Metadaten können nicht heruntergeladen werden.');
+    return;
   }
 
-  var issuerMetadata = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
+  CredentialIssuerMetaData issuerMetadata;
+  try {
+    issuerMetadata = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
+  } catch (e) {
+    showErrorMessage('Fehlerhafte Metadaten');
+    return;
+  }
 
   logger.d(offer.credentials);
   List<String> credentialToRequest = offer.credentialConfigurationIds ?? [];
@@ -84,6 +129,7 @@ Future<void> handleOfferOidc(String offerUri) async {
       barrierColor: Colors.white,
       builder: (BuildContext context) => CredentialOfferDialog(
           oidcIssuer: issuerString,
+          isOid: true,
           requestOidcTan: offer.grants != null &&
               offer.grants!.containsKey(GrantType.preAuthType) &&
               (offer.grants![GrantType.preAuthType] as PreAuthCodeGrant)
@@ -96,7 +142,7 @@ Future<void> handleOfferOidc(String offerUri) async {
                   context: [credentialsV1Iri],
                   type: e.credentialType ?? [],
                   issuer: {'name': issuerString},
-                  credentialSubject: <String, dynamic>{},
+                  credentialSubject: findClaims(e.claims),
                   issuanceDate: DateTime.now()))
               .toList()),
     );
@@ -124,6 +170,14 @@ Future<void> handleOfferOidc(String offerUri) async {
       authserver = removeTrailingSlash(authserver);
 
       logger.d('auth server: $authserver');
+      // get MetaData
+      Map? authServerMetaData;
+      Map? clientMetaData = knownAuthServer[authserver.trim()];
+      logger.d('authServer: ${knownAuthServer.keys}');
+      if (clientMetaData == null) {
+        showErrorMessage('Unbekannter Authorization Server');
+        return;
+      }
 
       var state = const Uuid().v4();
       String pkceCodeVerifier =
@@ -142,18 +196,9 @@ Future<void> handleOfferOidc(String offerUri) async {
                 'codeVerifier': pkceCodeVerifier
               }));
 
-      // get MetaData
-      Map? authServerMetaData;
-      Map? clientMetaData = knownAuthServer[authserver.trim()];
-      logger.d('authServer: ${knownAuthServer.keys}');
-      if (clientMetaData == null) {
-        showErrorMessage('Unbekannter Authorization Server');
-        return;
-      }
-
       String clientId = clientMetaData['client_id'];
       String redirectUri =
-          clientMetaData['redirect_uri'] ?? 'https:/wallet.bccm.dev/redirect';
+          clientMetaData['redirect_uri'] ?? 'https://wallet.bccm.dev/redirect';
 
       authServerMetaData = await getAuthServerMetaData(authserver);
       if (authServerMetaData == null) {
@@ -199,6 +244,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         var parResponse = await post(Uri.parse(parEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: body);
+
         if (parResponse.statusCode == 201 || parResponse.statusCode == 200) {
           logger.d(parResponse.body);
           var decoded = jsonDecode(parResponse.body);
@@ -217,7 +263,7 @@ Future<void> handleOfferOidc(String offerUri) async {
           logger.d(authRequest);
           Provider.of<NavigationProvider>(navigatorKey.currentContext!,
                   listen: false)
-              .changePage([5], webViewUrl: authRequest);
+              .changePage([NavigationPage.webView], webViewUrl: authRequest);
           //launchUrl(Uri.parse(authRequest));
           return;
         } else {
@@ -240,22 +286,10 @@ Future<void> handleOfferOidc(String offerUri) async {
       }
     } else if (offer.grants != null &&
         offer.grants!.containsKey(GrantType.preAuthType)) {
-      var authMetaReq = await get(
-          Uri.parse('$authserver/.well-known/oauth-authorization-server'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }).timeout(const Duration(seconds: 20), onTimeout: () {
-        return Response('Timeout', 400);
-      });
+      var authServerMeta = await getAuthServerMetaData(authserver);
 
-      if (authMetaReq.statusCode != 200) {
-        throw Exception(
-            'Bad Status code: ${authMetaReq.statusCode} / ${authMetaReq.body}');
-      }
-
-      var jsonBody = jsonDecode(authMetaReq.body);
-      var tokenEndpoint = jsonBody['token_endpoint'];
+      var tokenEndpoint =
+          authServerMeta?['token_endpoint'] ?? '$authserver/token';
 
       logger.d(tokenEndpoint);
 
@@ -275,6 +309,7 @@ Future<void> handleOfferOidc(String offerUri) async {
         return Response('Timeout', 400);
       });
       if (tokenRes.statusCode == 200) {
+        logger.d(jsonDecode(tokenRes.body));
         OidcTokenResponse tokenResponse =
             OidcTokenResponse.fromJson(tokenRes.body);
 
@@ -360,7 +395,7 @@ Future<void> handleRedirect(String uri) async {
 
   String clientId = clientMetaData['client_id'];
   String redirectUri =
-      clientMetaData['redirect_uri'] ?? 'https:/wallet.bccm.dev/redirect';
+      clientMetaData['redirect_uri'] ?? 'https://wallet.bccm.dev/redirect';
 
   var authServerMetaData = await getAuthServerMetaData(authServer);
   String tokenEndpoint =
@@ -383,7 +418,7 @@ Future<void> handleRedirect(String uri) async {
 
   if (tokenRes.statusCode == 200) {
     logger.d(
-        'sucessful token request: ${jsonDecode(tokenRes.body).keys.toList()}');
+        'successful token request: ${jsonDecode(tokenRes.body).keys.toList()}');
     var decoded = OidcTokenResponse.fromJson(tokenRes.body);
     var payload = decoded.accessToken!.split('.')[1];
     logger.d(
@@ -421,16 +456,26 @@ Future<(String, dynamic, KeyType)> buildJwt(List<String> algValues,
     keyType = KeyType.ed25519;
   }
   // create JWT
+  var ddo = resolveDidKey(credentialDid).convertAllKeysToJwk().resolveKeyIds();
+  var jwk = ddo.verificationMethod!.first.publicKeyJwk!;
+  jwk.remove('kid');
   var header = {
     'typ': 'openid4vci-proof+jwt',
     'alg': alg,
     'crv': crv,
-    'kid': '$credentialDid' //#${credentialDid.split(':').last
+    'kid': credentialDid,
+    // 'kid':
+    //     'did:jwk:${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(jwk))))}#0',
+    //'jwk': ddo.verificationMethod!.first.publicKeyJwk
+    //#${credentialDid.split(':').last
   };
 
   var payload = {
     'aud': credentialIssuer,
-    'iat': DateTime.now().millisecondsSinceEpoch,
+    'iss': credentialDid,
+    // 'iss':
+    //     'did:jwk:${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(jwk))))}',
+    'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
   };
   if (cNonce != null) {
     payload['nonce'] = cNonce;
@@ -472,6 +517,7 @@ Future<void> getCredential(
   }
 
   if (tokenResponse.cNonce == null) {
+    logger.d('need new c_nonce');
     // send false cred request to get cNonce
     var credentialRequest = OidcCredentialRequest(
       format: credentialMetadata.format,
@@ -492,6 +538,8 @@ Future<void> getCredential(
       tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
     }
   }
+
+  logger.d('c_nonce: ${tokenResponse.cNonce}');
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
 
@@ -541,21 +589,6 @@ Future<void> getCredential(
       proof:
           CredentialRequestProof(proofType: proofType, proofValue: proofValue));
 
-  // var credentialRequest = {
-  //   'format': credentialMetadata.format,
-  //   'doctype': credentialMetadata.credentialType!.first,
-  //   'types': credentialMetadata.credentialType,
-  //   'proof': {'proof_type': 'jwt', 'jwt': jwt}
-  // };
-  //
-  // var credentialRequestLdp = {
-  //   'format': credentialMetadata.format,
-  //   'types': credentialMetadata.credentialType,
-  //   'proof': {'proof_type': 'ldp_vp', 'vp': presentation.toJson()}
-  // };
-  //
-  // logger.d(credentialRequest);
-  // logger.d(credentialRequestLdp);
   KeyPair? decryptionKey;
   if (metadata.credentialResponseEncryptionRequired ?? false) {
     var alg = metadata.credentialResponseEncryptionAlgSupported!;
@@ -584,6 +617,8 @@ Future<void> getCredential(
 
   logger.d(credentialRequest.toJson());
 
+  logger.d('credential Endpoint: ${metadata.credentialEndpoint}');
+
   var credentialResponse = await post(Uri.parse(metadata.credentialEndpoint),
           headers: {
             'Content-Type': 'application/json',
@@ -595,173 +630,262 @@ Future<void> getCredential(
   });
 
   if (credentialResponse.statusCode == 200) {
-    dynamic credential;
+    OidcCredentialResponse decodedCredentialResponse;
     logger.d(credentialResponse.body);
     if (decryptionKey != null) {
-      logger.d('decryption');
-      var split = credentialResponse.body.split('.');
-      logger.d('length: ${split.length}');
-      var header = jsonDecode(
-          utf8.decode(base64Decode(addPaddingToBase64(split.first))));
-      logger.d(header);
-      var encryptedKey = base64Decode(addPaddingToBase64(split[1]));
-      var iv = base64Decode(addPaddingToBase64(split[2]));
-      var cipher = base64Decode(addPaddingToBase64(split[3]));
-      var tag = base64Decode(addPaddingToBase64(split[4]));
-
-      var encryptor = decryptionKey.privateKey!
-          .createEncrypter(algorithms.encryption.rsa.oaep256);
-      var decrypted = encryptor.decrypt(EncryptionResult(encryptedKey));
-
-      logger.d(iv);
-
-      var symmetric = SymmetricKey(keyValue: decrypted);
-      var symmetricDecrypt = symmetric
-          .createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha256);
-      var decrypted2 = symmetricDecrypt.decrypt(EncryptionResult(cipher,
-          initializationVector: iv,
-          authenticationTag: tag,
-          additionalAuthenticatedData: ascii.encode(split.first)));
-      logger.d(utf8.decode(decrypted2));
-      credential = jsonDecode(utf8.decode(decrypted2))['credential'];
+      try {
+        decodedCredentialResponse =
+            decryptResponse(decryptionKey, credentialResponse.body);
+      } catch (e) {
+        showErrorMessage('Fehler beim Entschlüsseln');
+        return;
+      }
     } else {
-      credential = jsonDecode(credentialResponse.body)['credential'];
+      decodedCredentialResponse =
+          OidcCredentialResponse.fromJson(credentialResponse.body);
     }
     var format = credentialMetadata.format;
 
-    if (format == 'mso_mdoc') {
-      logger.d(cborDecode(base64Decode(credential)));
-      var data = IssuerSignedObject.fromCbor(base64Decode(credential));
-      var doc = data;
-      var verified = await verifyMso(doc);
-      if (verified) {
-        var signedData = MobileSecurityObject.fromCbor(doc.issuerAuth.payload);
-        logger.d(signedData.deviceKeyInfo.deviceKey);
-        var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
-        logger.d('$did == $credentialDid');
-        if (did != credentialDid) {
-          showErrorMessage('Credential wurde für jemand anderen ausgestellt');
-          return;
-        }
-        var credSubject = <String, dynamic>{'id': credentialDid};
-        doc.items.forEach((key, value) {
-          for (var i in value) {
-            credSubject[i.dataElementIdentifier] = i.dataElementValue;
-          }
-        });
-
-        var vc = VerifiableCredential(
-            context: [
-              credentialsV1Iri,
-              'schema.org'
-            ],
-            type: [
-              'IsoMdlCredential',
-              signedData.docType
-            ],
-            issuer: {
-              'name': 'IsoMdlIssuer',
-              'certificate':
-                  base64UrlEncode(doc.issuerAuth.unprotected.x509chain!)
-            },
-            credentialSubject: credSubject,
-            issuanceDate: signedData.validityInfo.validFrom,
-            expirationDate: signedData.validityInfo.validUntil);
-
-        var storageCred = wallet.getCredential(credentialDid);
-
-        if (storageCred == null) {
-          throw Exception(
-              'No hd path for credential found. Sure we control it?');
-        }
-
-        wallet.storeCredential(vc.toString(), storageCred.hdPath,
-            isoMdlData: 'isoData:${base64Encode(doc.toEncodedCbor())}',
-            keyType: keyType);
-        wallet.storeExchangeHistoryEntry(
-            credentialDid, DateTime.now(), 'issue', credentialIssuer);
-
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: "Credential empfangen",
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: signedData.docType,
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
-      }
-    } else {
-      logger.d(credential);
-
-      var verified = false;
-      try {
-        verified = await verifyCredential(credential,
-            loadDocumentFunction: loadDocumentFast);
-      } catch (e) {
-        showErrorMessage(
-          AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
-          AppLocalizations.of(navigatorKey.currentContext!)!
-              .wrongCredentialNote,
-        );
+    if (decodedCredentialResponse.transactionId != null) {
+      // deferred flow
+      if (metadata.deferredCredentialEndpoint == null) {
+        logger.d('No deferred endpoint');
+        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+            .credentialDownloadFailed);
         return;
       }
-
-      logger.d(verified);
-      if (verified) {
-        var credDid = getHolderDidFromCredential(credential);
-        logger.d(credDid);
-        var storageCred = wallet.getCredential(credDid.split('#').first);
-        if (storageCred == null) {
-          showErrorMessage(
-              AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
-              AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
-          return;
-        }
-
-        wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
-        wallet.storeExchangeHistoryEntry(
-            credDid, DateTime.now(), 'issue', credentialIssuer);
-
-        var asVC = VerifiableCredential.fromJson(credential);
-
-        showModalBottomSheet(
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-            ),
-            context: navigatorKey.currentContext!,
-            builder: (context) {
-              return ModalDismissWrapper(
-                child: PaymentFinished(
-                  headline: AppLocalizations.of(context)!.credentialReceived,
-                  success: true,
-                  amount: CurrencyDisplay(
-                      amount: getTypeToShow(asVC.type),
-                      symbol: '',
-                      mainFontSize: 35,
-                      centered: true),
-                ),
-              );
-            });
-      }
+      logger.d('deferred request after 3 seconds');
+      Timer(
+          const Duration(seconds: 3),
+          () => sendDeferredRequest(
+              format,
+              credentialDid,
+              wallet,
+              keyType,
+              credentialIssuer,
+              tokenResponse.accessToken!,
+              metadata!.deferredCredentialEndpoint!,
+              decodedCredentialResponse.transactionId!,
+              decryptionKey));
+    } else {
+      storeCredential(format, decodedCredentialResponse.credential,
+          credentialDid, wallet, keyType, credentialIssuer);
     }
   } else {
     logger.d(credentialResponse.statusCode);
+    logger.d(credentialResponse.headers);
     logger.d(credentialResponse.body);
 
     showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
         .credentialDownloadFailed);
+  }
+}
+
+OidcCredentialResponse decryptResponse(KeyPair decryptionKey, String data) {
+  logger.d('decryption');
+  var split = data.split('.');
+  logger.d('length: ${split.length}');
+  var header =
+      jsonDecode(utf8.decode(base64Decode(addPaddingToBase64(split.first))));
+  logger.d(header);
+  var encryptedKey = base64Decode(addPaddingToBase64(split[1]));
+  var iv = base64Decode(addPaddingToBase64(split[2]));
+  var cipher = base64Decode(addPaddingToBase64(split[3]));
+  var tag = base64Decode(addPaddingToBase64(split[4]));
+
+  var encryptor = decryptionKey.privateKey!
+      .createEncrypter(algorithms.encryption.rsa.oaep256);
+  var decrypted = encryptor.decrypt(EncryptionResult(encryptedKey));
+
+  logger.d(iv);
+
+  var symmetric = SymmetricKey(keyValue: decrypted);
+  Encrypter symmetricDecrypt;
+  var enc = header['enc'];
+  if (enc == 'A128CBC-HS256') {
+    symmetricDecrypt =
+        symmetric.createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha256);
+  } else if (enc == 'A192CBC-HS384') {
+    symmetricDecrypt =
+        symmetric.createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha384);
+  } else if (enc == 'A256CBC-HS512') {
+    symmetricDecrypt =
+        symmetric.createEncrypter(algorithms.encryption.aes.cbcWithHmac.sha512);
+  } else if (enc == 'A128GCM' || enc == 'A192GCM' || enc == 'A256GCM') {
+    symmetricDecrypt = symmetric.createEncrypter(algorithms.encryption.aes.gcm);
+  } else {
+    throw Exception('Unknown encryption');
+  }
+  var decrypted2 = symmetricDecrypt.decrypt(EncryptionResult(cipher,
+      initializationVector: iv,
+      authenticationTag: tag,
+      additionalAuthenticatedData: ascii.encode(split.first)));
+  logger.d(utf8.decode(decrypted2));
+  return OidcCredentialResponse.fromJson(utf8.decode(decrypted2));
+}
+
+sendDeferredRequest(
+    String format,
+    String credentialDid,
+    WalletProvider wallet,
+    KeyType keyType,
+    String credentialIssuer,
+    String authToken,
+    String endpoint,
+    String transactionId,
+    KeyPair? decryptionKey) async {
+  var credentialResponse = await post(Uri.parse(endpoint),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $authToken'
+          },
+          body: jsonEncode({'transaction_id': transactionId}))
+      .timeout(const Duration(seconds: 20), onTimeout: () {
+    return Response('Timeout', 400);
+  });
+
+  if (credentialResponse.statusCode == 200) {
+    OidcCredentialResponse decodedCredentialResponse;
+
+    if (decryptionKey != null) {
+      try {
+        decodedCredentialResponse =
+            decryptResponse(decryptionKey, credentialResponse.body);
+      } catch (e) {
+        showErrorMessage('Fehler beim Entschlüsseln');
+        return;
+      }
+    } else {
+      decodedCredentialResponse =
+          OidcCredentialResponse.fromJson(credentialResponse.body);
+    }
+    storeCredential(format, decodedCredentialResponse.credential, credentialDid,
+        wallet, keyType, credentialIssuer);
+  } else {
+    logger.d('${credentialResponse.statusCode} / ${credentialResponse.body}');
+    var parsedBody = jsonDecode(credentialResponse.body);
+    var error = parsedBody['error'];
+    if (error == 'issuance_pending') {
+      int interval = parsedBody['interval'] ?? 5;
+      Timer(
+          Duration(seconds: interval),
+          () => sendDeferredRequest(
+              format,
+              credentialDid,
+              wallet,
+              keyType,
+              credentialIssuer,
+              authToken,
+              endpoint,
+              transactionId,
+              decryptionKey));
+    } else {
+      showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+          .credentialDownloadFailed);
+    }
+  }
+}
+
+storeCredential(String format, dynamic credential, String credentialDid,
+    WalletProvider wallet, KeyType keyType, String credentialIssuer) async {
+  if (format == OidcCredentialFormat.msoMdoc) {
+    logger.d(cborDecode(base64Decode(credential)));
+    var data = IssuerSignedObject.fromCbor(base64Decode(credential));
+    var doc = data;
+    var verified = await verifyMso(doc);
+    if (verified) {
+      var signedData = MobileSecurityObject.fromCbor(doc.issuerAuth.payload);
+      logger.d(signedData.deviceKeyInfo.deviceKey);
+      var did = coseKeyToDid(signedData.deviceKeyInfo.deviceKey);
+      logger.d('$did == $credentialDid');
+      if (did != credentialDid) {
+        showErrorMessage('Credential wurde für jemand anderen ausgestellt');
+        return;
+      }
+      var credSubject = <String, dynamic>{'id': credentialDid};
+      doc.items.forEach((key, value) {
+        for (var i in value) {
+          credSubject[i.dataElementIdentifier] = i.dataElementValue;
+        }
+      });
+
+      var vc = VerifiableCredential(
+          context: [
+            credentialsV1Iri,
+            'schema.org'
+          ],
+          type: [
+            'IsoMdlCredential',
+            signedData.docType
+          ],
+          issuer: {
+            'name': 'IsoMdlIssuer',
+            'certificate':
+                base64UrlEncode(doc.issuerAuth.unprotected.x509chain!)
+          },
+          credentialSubject: credSubject,
+          issuanceDate: signedData.validityInfo.validFrom,
+          expirationDate: signedData.validityInfo.validUntil);
+
+      var storageCred = wallet.getCredential(credentialDid);
+
+      if (storageCred == null) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
+        return;
+      }
+
+      wallet.storeCredential(vc.toString(), storageCred.hdPath,
+          isoMdlData: '$isoPrefix:${base64Encode(doc.toEncodedCbor())}',
+          keyType: keyType);
+      wallet.storeExchangeHistoryEntry(
+          credentialDid, DateTime.now(), 'issue', credentialIssuer);
+
+      showSuccessMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+          signedData.docType);
+    }
+  } else if (format == OidcCredentialFormat.sdJwt) {
+    showErrorMessage('Format nicht unterstützt');
+    return;
+  } else {
+    logger.d(credential);
+
+    var verified = false;
+    try {
+      verified = await verifyCredential(credential,
+          loadDocumentFunction: loadDocumentFast);
+    } catch (e) {
+      showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredential,
+        AppLocalizations.of(navigatorKey.currentContext!)!.wrongCredentialNote,
+      );
+      return;
+    }
+
+    logger.d(verified);
+    if (verified) {
+      var credDid = getHolderDidFromCredential(credential);
+      logger.d(credDid);
+      var storageCred = wallet.getCredential(credDid.split('#').first);
+      if (storageCred == null) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+            AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
+        return;
+      }
+
+      wallet.storeCredential(jsonEncode(credential), storageCred.hdPath);
+      wallet.storeExchangeHistoryEntry(
+          credDid, DateTime.now(), 'issue', credentialIssuer);
+
+      var asVC = VerifiableCredential.fromJson(credential);
+
+      showSuccessMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+          getTypeToShow(asVC.type));
+    }
   }
 }
 
@@ -897,7 +1021,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
 
   for (var cred in isoCreds) {
     isoCredsParsed.add(IssuerSignedObject.fromCbor(
-        base64Decode(cred.plaintextCredential.replaceAll('isoData:', ''))));
+        base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', ''))));
   }
 
   if (definition == null) {

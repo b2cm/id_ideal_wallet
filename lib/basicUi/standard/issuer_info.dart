@@ -100,6 +100,13 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
     } else if (widget.issuer is VerifiableCredential) {
       issuerName =
           widget.issuer.credentialSubject['companyInformation']['legalName'];
+    } else if (widget.endpoint != null) {
+      var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+      issuerName = certInfo?.subjectOrganization ??
+          certInfo?.subjectCommonName ??
+          AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
+
+      setState(() {});
     } else {
       if (widget.issuer.startsWith('did:web')) {
         var didUrl = didWebToUri(widget.issuer);

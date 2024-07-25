@@ -4,6 +4,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
@@ -14,8 +15,8 @@ import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:provider/provider.dart';
 
 class NavigationProvider extends ChangeNotifier {
-  int activeIndex = 0;
-  List<int> pageStack = [];
+  NavigationPage activeIndex = NavigationPage.abo;
+  List<NavigationPage> pageStack = [];
   String webViewUrl = 'https://hidy.app';
   String? redirectWebViewUrl;
   VerifiableCredential? credential;
@@ -41,11 +42,12 @@ class NavigationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void changePage(List<int> newIndex,
+  void changePage(List<NavigationPage> newIndex,
       {String? webViewUrl,
       VerifiableCredential? credential,
       bool track = true}) {
-    if (newIndex.first != activeIndex || newIndex.first == 5) {
+    if (newIndex.first != activeIndex ||
+        newIndex.first == NavigationPage.webView) {
       canPop = false;
       logger.d('Before: $activeIndex /${this.webViewUrl}');
       activeIndex = newIndex.first;
@@ -87,7 +89,9 @@ class NavigationProvider extends ChangeNotifier {
       return;
     }
     // Handle Custom Schemes
-    if (link.startsWith('LNURL') || link.startsWith('lnurl')) {
+    if (link.startsWith('lightning:')) {
+      handleLink(link.replaceAll('lightning:', ''));
+    } else if (link.startsWith('LNURL') || link.startsWith('lnurl')) {
       handleLnurl(link);
     } else if (link.startsWith('lnbc') || link.startsWith('LNBC')) {
       logger.d('LN-Invoice found');
@@ -136,10 +140,10 @@ class NavigationProvider extends ChangeNotifier {
         var uriToCall = Uri.parse(asUri.queryParameters['url']!);
         var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
             listen: false);
-        changePage([1], track: false);
+        changePage([NavigationPage.credential], track: false);
         Timer(
             const Duration(milliseconds: 10),
-            () => changePage([5],
+            () => changePage([NavigationPage.webView],
                 webViewUrl: uriToCall
                     .toString()
                     .replaceAll('wid=', 'wid=${wallet.lndwId}')));
@@ -173,11 +177,11 @@ class NavigationProvider extends ChangeNotifier {
       pageStack.removeLast();
     }
     if (pageStack.isEmpty) {
-      if (activeIndex == 0) {
+      if (activeIndex == NavigationPage.abo) {
         Navigator.of(navigatorKey.currentContext!).pop();
       } else {
         canPop = true;
-        activeIndex = 0;
+        activeIndex = NavigationPage.abo;
       }
     } else {
       activeIndex = pageStack.last;

@@ -21,10 +21,20 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 Future<bool> handleOobUrl(String url) async {
+  logger.d(url);
   var asUri = Uri.parse(url);
   var oobUrl = asUri.queryParameters['_ooburl'];
   if (oobUrl != null) {
-    var messageGot = await get(Uri.parse(oobUrl));
+    Response messageGot;
+    try {
+      messageGot = await get(Uri.parse(oobUrl));
+    } catch (e) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.downloadFailed,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .downloadFailedExplanation);
+      return false;
+    }
     logger.d(messageGot.body);
     return handleDidcommMessage(messageGot.body);
   }
@@ -446,14 +456,19 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
 
   if (otherEndpoint.startsWith('http')) {
     logger.d('send message to $otherEndpoint');
-    var res = await post(Uri.parse(otherEndpoint),
-        body: encrypted.toString(),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }).timeout(const Duration(seconds: 300), onTimeout: () {
-      return Response('Timeout', 400);
-    });
+    Response res;
+    try {
+      res = await post(Uri.parse(otherEndpoint),
+          body: encrypted.toString(),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }).timeout(const Duration(seconds: 300), onTimeout: () {
+        return Response('Timeout', 400);
+      });
+    } catch (e) {
+      res = Response('Exception', 400);
+    }
 
     if (res.statusCode == 201 || res.statusCode == 200) {
       logger.d('getResponse: ${res.body}');
@@ -470,27 +485,10 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
         type = type.substring(0, type.length - 3);
 
         if (!silent) {
-          showModalBottomSheet(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10)),
-              ),
-              context: navigatorKey.currentContext!,
-              builder: (context) {
-                return ModalDismissWrapper(
-                  child: PaymentFinished(
-                    headline:
-                        AppLocalizations.of(context)!.presentationSuccessful,
-                    success: true,
-                    amount: CurrencyDisplay(
-                        amount: type,
-                        symbol: '',
-                        mainFontSize: 18,
-                        centered: true),
-                  ),
-                );
-              });
+          showSuccessMessage(
+              AppLocalizations.of(navigatorKey.currentContext!)!
+                  .presentationSuccessful,
+              type);
         }
 
         if (lnInvoice != null && paymentCards != null) {
@@ -554,6 +552,7 @@ sendMessage(String myDid, String? otherEndpoint, WalletProvider wallet,
 
       logger.d('${res.statusCode} from $otherEndpoint with $message');
       logger.d(res.body);
+      wallet.removeIssuanceProcess(message.threadId ?? '');
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailed,
           AppLocalizations.of(navigatorKey.currentContext!)!.sendFailedNote);
@@ -586,6 +585,28 @@ void showErrorMessage(String headline, [String? subtext]) {
             success: false,
             amount: CurrencyDisplay(
                 width: 350,
+                amount: subtext ?? '',
+                symbol: '',
+                mainFontSize: 18,
+                centered: true),
+          ),
+        );
+      });
+}
+
+void showSuccessMessage(String headline, [String? subtext]) {
+  showModalBottomSheet(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+      ),
+      context: navigatorKey.currentContext!,
+      builder: (context) {
+        return ModalDismissWrapper(
+          child: PaymentFinished(
+            headline: headline,
+            success: true,
+            amount: CurrencyDisplay(
                 amount: subtext ?? '',
                 symbol: '',
                 mainFontSize: 18,

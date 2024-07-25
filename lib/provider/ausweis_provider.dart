@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
-import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
-import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/ausweis_message.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
@@ -45,6 +42,7 @@ class AusweisProvider extends ChangeNotifier {
   String? tcTokenUrl;
   bool selfInfo = true;
   bool connected = false;
+  bool pause = false;
 
   AusweisProvider();
 
@@ -60,6 +58,7 @@ class AusweisProvider extends ChangeNotifier {
     errorDescription = '';
     errorMessage = '';
     selfInfo = true;
+    pause = false;
     disconnectSdk();
     notifyListeners();
   }
@@ -97,25 +96,10 @@ class AusweisProvider extends ChangeNotifier {
       } else {
         throw Exception('Das sollte nicht passieren');
       }
-      showModalBottomSheet(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-          ),
-          context: navigatorKey.currentContext!,
-          builder: (context) {
-            return ModalDismissWrapper(
-              child: PaymentFinished(
-                headline: AppLocalizations.of(context)!.credentialReceived,
-                success: true,
-                amount: const CurrencyDisplay(
-                    amount: 'Personalauweis',
-                    symbol: '',
-                    mainFontSize: 18,
-                    centered: true),
-              ),
-            );
-          });
+
+      showSuccessMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+          'Personalausweis');
     } catch (e) {
       showErrorMessage('Speichern fehlgeschlagen', e.toString());
     }
@@ -134,6 +118,10 @@ class AusweisProvider extends ChangeNotifier {
       } else {
         screen = AusweisScreen.insertCard;
       }
+    } else if (message is PauseMessage) {
+      screen = AusweisScreen.insertCard;
+      pause = true;
+      logger.d('set pause: $pause');
     } else if (message is EnterPinMessage) {
       screen = AusweisScreen.enterPin;
       pinRetry = message.reader?.cardRetryCounter ?? 3;
@@ -209,6 +197,20 @@ class AusweisProvider extends ChangeNotifier {
       }
       if (message.cardRetryCounter != null) {
         pinRetry = 3;
+      }
+      logger.d(pause);
+      if (pause) {
+        if (message.cardRetryCounter != null &&
+            message.cardDeactivated != null &&
+            message.cardInoperative != null) {
+          sendContinue();
+          if (pinEntered) {
+            screen = AusweisScreen.finish;
+          } else {
+            screen = AusweisScreen.main;
+          }
+          pause = false;
+        }
       }
     } else if (message is DisconnectMessage) {
       logger.d('Successfully disconnected');
@@ -445,6 +447,14 @@ class AusweisProvider extends ChangeNotifier {
   void interrupt() {
     try {
       method.invokeMethod('sendCommand', jsonEncode({'cmd': 'INTERRUPT'}));
+    } on PlatformException catch (e) {
+      logger.d('Failed to connect to sdk: ${e.message}.');
+    }
+  }
+
+  void sendContinue() {
+    try {
+      method.invokeMethod('sendCommand', jsonEncode({'cmd': 'CONTINUE'}));
     } on PlatformException catch (e) {
       logger.d('Failed to connect to sdk: ${e.message}.');
     }

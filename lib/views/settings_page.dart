@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
+import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,48 +21,47 @@ class SettingsPage extends StatefulWidget {
 class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
+    var wallet = Provider.of<WalletProvider>(context, listen: false);
     return StyledScaffoldTitle(
       title: AppLocalizations.of(context)!.settings,
       child: Column(
         children: [
           ListTile(
             title: Text(AppLocalizations.of(context)!.termsOfService),
-            subtitle: Text(tosEndpoint),
+            subtitle: Text(wallet.tosUrl),
             onTap: () {
-              launchUrl(Uri.parse(tosEndpoint),
+              launchUrl(Uri.parse(wallet.tosUrl),
                   mode: LaunchMode.externalApplication);
             },
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.license),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([8]),
+                .changePage([NavigationPage.license]),
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.settings),
-            subtitle: Text(
-                'https://hidy.eu/${AppLocalizations.of(context)!.localeName}/app'),
+            subtitle: Text(wallet.aboutUrl),
             onTap: () {
-              var locale = AppLocalizations.of(context)!.localeName;
-              launchUrl(Uri.parse('https://hidy.eu/$locale/app'),
+              launchUrl(Uri.parse(wallet.aboutUrl),
                   mode: LaunchMode.externalApplication);
             },
           ),
           ListTile(
             title: const Text('Vertrauenswürdige Anwendungen'),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([7]),
+                .changePage([NavigationPage.authorizedApps]),
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.newAppTitle),
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([9]),
+                .changePage([NavigationPage.searchNewAbo]),
           ),
           if (Platform.isAndroid)
             ListTile(
               title: Text('Ausweis'),
-              onTap: () => Navigator.of(navigatorKey.currentContext!)
-                  .push(MaterialPageRoute(builder: (context) => AusweisView())),
+              onTap: () => Navigator.of(navigatorKey.currentContext!).push(
+                  MaterialPageRoute(builder: (context) => const AusweisView())),
             )
         ],
       ),

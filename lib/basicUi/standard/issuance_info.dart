@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
@@ -71,9 +72,11 @@ class IssuanceInfoState extends State<IssuanceInfo> {
               Navigator.of(context).pop(false);
               var nav = Provider.of<NavigationProvider>(context, listen: false);
               nav.redirectWebViewUrl = nav.webViewUrl;
-              nav.changePage([1], track: false);
-              Timer(const Duration(milliseconds: 5),
-                  () => nav.changePage([5], webViewUrl: layout['issuerUrl']));
+              nav.changePage([NavigationPage.credential], track: false);
+              Timer(
+                  const Duration(milliseconds: 5),
+                  () => nav.changePage([NavigationPage.webView],
+                      webViewUrl: layout['issuerUrl']));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,

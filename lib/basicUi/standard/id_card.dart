@@ -93,10 +93,18 @@ class IdCard extends StatelessWidget {
         'PKBarcodeFormatPDF417': BarcodeType.PDF417,
         'PKBarcodeFormatAztec': BarcodeType.Aztec
       };
+      var barcodeFormat = credential.credentialSubject['barcode']?['format'];
+      var barcodeData = credential.credentialSubject['barcode']?['message'];
+      if (barcodeFormat == null &&
+          credential.credentialSubject['barcodes'] != null) {
+        var barcodeList = credential.credentialSubject['barcodes'] as List;
+        barcodeFormat = barcodeList.first['format'];
+        barcodeData = barcodeList.first['message'];
+      }
       return PkPassCard(
           description: credential.credentialSubject['description'] ?? '',
-          barcodeType: map[credential.credentialSubject['barcode']?['format']],
-          barcodeData: credential.credentialSubject['barcode']?['message'],
+          barcodeType: map[barcodeFormat],
+          barcodeData: barcodeData,
           backgroundColor: credential.credentialSubject['backgroundColor'] !=
                       null &&
                   credential.credentialSubject['backgroundColor']

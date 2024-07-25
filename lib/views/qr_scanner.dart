@@ -19,6 +19,8 @@ class QrScanner extends StatefulWidget {
 class QrScannerState extends State<QrScanner> {
   bool waiting = false;
   Timer? t;
+  double scaleFactor = 1.0;
+  double baseScaleFactor = 1.0;
   final controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
@@ -54,20 +56,32 @@ class QrScannerState extends State<QrScanner> {
         StyledScaffoldTitle(
           currentlyActive: 1,
           title: 'QR-Code Scanner',
-          child: MobileScanner(
-              controller: controller,
-              onDetect: (capture) {
-                final List<Barcode> codes = capture.barcodes;
-                var barcode = codes.first;
-                if (barcode.rawValue != null) {
-                  controller.stop();
-                  t = Timer(const Duration(milliseconds: 400),
-                      () => handleBarcode(barcode));
-                  setState(() {
-                    waiting = true;
-                  });
-                }
-              }),
+          child: GestureDetector(
+            onScaleStart: (details) {
+              baseScaleFactor = scaleFactor;
+            },
+            onScaleUpdate: (details) {
+              setState(() {
+                scaleFactor = baseScaleFactor * details.scale;
+                logger.d(scaleFactor);
+                controller.setZoomScale(scaleFactor);
+              });
+            },
+            child: MobileScanner(
+                controller: controller,
+                onDetect: (capture) {
+                  final List<Barcode> codes = capture.barcodes;
+                  var barcode = codes.first;
+                  if (barcode.rawValue != null) {
+                    controller.stop();
+                    t = Timer(const Duration(milliseconds: 400),
+                        () => handleBarcode(barcode));
+                    setState(() {
+                      waiting = true;
+                    });
+                  }
+                }),
+          ),
         ),
         if (waiting)
           const Opacity(

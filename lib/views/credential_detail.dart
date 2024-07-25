@@ -1,6 +1,7 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -28,6 +29,7 @@ class HistoryEntries extends StatelessWidget {
       List<Widget> entries = [];
 
       for (var h in historyEntries) {
+        logger.d(h.otherParty);
         var tile = ListTile(
           visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
           minLeadingWidth: 100,
@@ -44,6 +46,11 @@ class HistoryEntries extends StatelessWidget {
                       : h.action == 'present'
                           ? AppLocalizations.of(context)!.presented
                           : AppLocalizations.of(context)!.presentedError),
+          subtitle: h.action == 'present' &&
+                  h.otherParty.isNotEmpty &&
+                  h.otherParty.startsWith('http')
+              ? IssuerInfoText(issuer: '', endpoint: h.otherParty)
+              : null,
         );
         entries.add(tile);
       }
@@ -164,7 +171,10 @@ class CredentialDetailState extends State<CredentialDetailView> {
         const SizedBox(
           height: 10,
         ),
-        HistoryEntries(credential: widget.credential)
+        HistoryEntries(credential: widget.credential),
+        const SizedBox(
+          height: bottomPadding,
+        )
       ],
     ));
   }

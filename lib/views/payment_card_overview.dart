@@ -5,6 +5,7 @@ import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/heading.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/basicUi/standard/transaction_preview.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -49,9 +50,9 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
             child: SizedBox(
               height: 45,
               child: ElevatedButton(
-                  onPressed: () =>
-                      Provider.of<NavigationProvider>(context, listen: false)
-                          .changePage([11], credential: toShow),
+                  onPressed: () => Provider.of<NavigationProvider>(context,
+                          listen: false)
+                      .changePage([NavigationPage.topUp], credential: toShow),
                   child: Text(AppLocalizations.of(context)!.receive)),
             ),
           ),
@@ -64,7 +65,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
               child: ElevatedButton(
                   onPressed: () =>
                       Provider.of<NavigationProvider>(context, listen: false)
-                          .changePage([10]),
+                          .changePage([NavigationPage.sendSatoshi]),
                   child: Text(AppLocalizations.of(context)!.send)),
             ),
           ),
@@ -96,7 +97,7 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
                         .first);
                     if (cred != null && cred.w3cCredential.isNotEmpty) {
                       Provider.of<NavigationProvider>(context, listen: false)
-                          .changePage([6],
+                          .changePage([NavigationPage.credentialDetail],
                               credential: VerifiableCredential.fromJson(
                                   cred.w3cCredential));
                     }
@@ -109,7 +110,8 @@ class PaymentCardOverviewState extends State<PaymentCardOverview> {
           var additional = TextButton(
             onPressed: () =>
                 Provider.of<NavigationProvider>(context, listen: false)
-                    .changePage([12], credential: toShow),
+                    .changePage([NavigationPage.paymentOverview],
+                        credential: toShow),
             child: Text(AppLocalizations.of(context)!.showMore,
                 style: Theme.of(context).primaryTextTheme.titleMedium),
           );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/currency_display.dart';
 import 'package:id_ideal_wallet/basicUi/standard/invoice_display.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
@@ -64,7 +65,8 @@ class _TopUpState extends State<TopUp> {
                 Future.delayed(const Duration(seconds: 1), () {
                   Navigator.pop(context);
                   Provider.of<NavigationProvider>(context, listen: false)
-                      .changePage([3, 11]);
+                      .changePage(
+                          [NavigationPage.paymentCard, NavigationPage.topUp]);
                 });
                 return const SizedBox(
                   height: 10,
@@ -143,6 +145,8 @@ class _TopUpState extends State<TopUp> {
                   TextField(
                       controller: _amountControllerSats,
                       keyboardType: TextInputType.number,
+                      onTapOutside: (event) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
                         labelText: AppLocalizations.of(context)!.amountSatoshi,
@@ -151,6 +155,8 @@ class _TopUpState extends State<TopUp> {
                   : // toogle button to switch between fiat and sats
                   TextField(
                       controller: _amountControllerFiat,
+                      onTapOutside: (event) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
@@ -161,6 +167,8 @@ class _TopUpState extends State<TopUp> {
               if (_selectedReceiveOption[0])
                 TextField(
                   controller: _memoController,
+                  onTapOutside: (event) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   maxLines: 4, //or null
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),

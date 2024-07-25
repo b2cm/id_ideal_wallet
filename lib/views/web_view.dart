@@ -9,6 +9,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -250,15 +251,12 @@ class WebViewWindowState extends State<WebViewWindow> {
                         },
                         onUpdateVisitedHistory:
                             (controller, url, androidIsReload) {
-                          logger.d('new Uri: $url');
+                          logger.d(
+                              'new Uri: ${removeTrailingSlash(url.toString())}');
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
-                              .setWebViewUrl(url.toString());
-                          setState(() {
-                            Provider.of<NavigationProvider>(context,
-                                    listen: false)
-                                .setWebViewUrl(url.toString());
-                          });
+                              .setWebViewUrl(
+                                  removeTrailingSlash(url.toString()));
                         },
                         onConsoleMessage: (controller, consoleMessage) {
                           logger.d(consoleMessage);
