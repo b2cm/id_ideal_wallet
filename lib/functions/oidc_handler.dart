@@ -23,6 +23,7 @@ import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
+import 'package:sd_jwt/sd_jwt.dart' as sdJwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -847,6 +848,33 @@ storeCredential(String format, dynamic credential, String credentialDid,
           signedData.docType);
     }
   } else if (format == OidcCredentialFormat.sdJwt) {
+    printWrapped(credential);
+    var parsed = sdJwt.SdJws.fromCompactSerialization(credential);
+    for (var v in credential.split('~')) {
+      logger.d(v);
+    }
+    logger.d(parsed.jsonContent());
+    logger.d(parsed.header.toJson());
+    var iss = parsed.payload['iss'];
+    var issMetaUrl = '$iss/.well-known/jwt-vc-issuer';
+
+    logger.d(issMetaUrl);
+
+    var metaRes = await get(Uri.parse(issMetaUrl));
+    if (metaRes.statusCode != 200) {
+      showErrorMessage('Kein Public Key', 'Verifikation nicht möglich');
+    }
+
+    var data = jsonDecode(metaRes.body);
+    List keys = data['jwks ']['keys'];
+    logger.d(keys);
+    Map k = keys.first;
+    var sd = sdJwt.SdJwt.verified(
+        parsed,
+        sdJwt.Jwk.fromJson(
+            k.map((key, value) => MapEntry(key as String, value))));
+
+    logger.d(sd.claims);
     showErrorMessage('Format nicht unterstützt');
     return;
   } else {
