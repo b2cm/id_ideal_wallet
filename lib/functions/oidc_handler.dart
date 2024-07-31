@@ -850,12 +850,8 @@ storeCredential(String format, dynamic credential, String credentialDid,
   } else if (format == OidcCredentialFormat.sdJwt) {
     printWrapped(credential);
     var parsed = sdJwt.SdJws.fromCompactSerialization(credential);
-    for (var v in credential.split('~')) {
-      logger.d(v);
-    }
     logger.d(parsed.jsonContent());
-    logger.d(parsed.header.toJson());
-    var iss = parsed.payload['iss'];
+    var iss = parsed.jsonContent()['payload']['iss'];
     var issMetaUrl = '$iss/.well-known/jwt-vc-issuer';
 
     logger.d(issMetaUrl);
@@ -869,13 +865,52 @@ storeCredential(String format, dynamic credential, String credentialDid,
     List keys = data['jwks ']['keys'];
     logger.d(keys);
     Map k = keys.first;
-    var sd = sdJwt.SdJwt.verified(
-        parsed,
-        sdJwt.Jwk.fromJson(
-            k.map((key, value) => MapEntry(key as String, value))));
+    var jwk = sdJwt.Jwk.fromJson(
+        k.map((key, value) => MapEntry(key as String, value)));
+    var sd = sdJwt.SdJwt.verified(parsed, jwk);
 
-    logger.d(sd.claims);
-    showErrorMessage('Format nicht unterstützt');
+    var cnf = sd.confirmation!.toJson();
+    logger.d(cnf['jwk']);
+    var multibase = jwkToMultiBase(cnf['jwk']);
+    logger.d('$credentialDid, did:key:$multibase');
+    var restoredDid = 'did:key:$multibase';
+    if (restoredDid != credentialDid) {
+      showErrorMessage('Credential für jemand anderen');
+    }
+
+    var claims = sd.claims;
+    var type = claims.remove('vct');
+    claims['id'] = restoredDid;
+
+    var vc = VerifiableCredential(
+        id: restoredDid,
+        context: [credentialsV1Iri, schemaOrgIri],
+        type: ['VerifiableCredential', type],
+        issuer: {
+          'id': credentialIssuer,
+          if (jwk.x509CertificateChain != null)
+            'certificate': jwk.x509CertificateChain!.first
+        },
+        credentialSubject: claims,
+        issuanceDate: sd.issuedAt ?? DateTime.now(),
+        expirationDate: sd.expirationTime);
+
+    var storageCred = wallet.getCredential(restoredDid);
+    if (storageCred == null) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
+      return;
+    }
+
+    wallet.storeCredential(vc.toString(), storageCred.hdPath,
+        isoMdlData: '$sdPrefix:$credential', keyType: keyType);
+    wallet.storeExchangeHistoryEntry(
+        credentialDid, DateTime.now(), 'issue', credentialIssuer);
+
+    showSuccessMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+        type);
     return;
   } else {
     logger.d(credential);
