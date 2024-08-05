@@ -119,7 +119,11 @@ Future<void> handleOfferOidc(String offerUri) async {
   }
   for (String t in credentialToRequest) {
     var credConfig = issuerMetadata.credentialsSupported[t];
-    offeredCredentials.add(credConfig!);
+    if (credConfig == null) {
+      showErrorMessage('Credential ohne Konfiguration');
+      return;
+    }
+    offeredCredentials.add(credConfig);
   }
 
   dynamic res = true;
@@ -850,7 +854,7 @@ storeCredential(String format, dynamic credential, String credentialDid,
     showErrorMessage('Format nicht unterstützt');
     return;
   } else {
-    logger.d(credential);
+    logger.d(jsonDecode(credential));
 
     var verified = false;
     try {
@@ -953,6 +957,10 @@ Future<void> handlePresentationRequestOidc(String request) async {
       'Accept': 'application/json'
     });
     logger.d(requestRaw.statusCode);
+    if (requestRaw.statusCode != 200) {
+      showErrorMessage('Request nicht gefunden');
+      return;
+    }
     logger.d(requestRaw.headers);
     logger.d(requestRaw.body);
 
