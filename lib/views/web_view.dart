@@ -40,6 +40,7 @@ class WebViewWindowState extends State<WebViewWindow> {
       allowBackgroundAudioPlaying: false,
       mediaPlaybackRequiresUserGesture: true,
       allowsInlineMediaPlayback: false,
+      supportMultipleWindows: true,
       iframeAllowFullscreen: true);
 
   PullToRefreshController? pullToRefreshController;
@@ -156,6 +157,10 @@ class WebViewWindowState extends State<WebViewWindow> {
                             (controller, challenge) async {
                           return ServerTrustAuthResponse(
                               action: ServerTrustAuthResponseAction.PROCEED);
+                        },
+                        onCreateWindow: (a, b) async {
+                          logger.d('Open request');
+                          return false;
                         },
                         onWebViewCreated: (controller) {
                           webViewController = controller;
@@ -315,22 +320,28 @@ class WebViewWindowState extends State<WebViewWindow> {
         }
       }
     });
-    var filtered = searchCredentialsForPresentationDefinition(definition,
-        credentials: creds);
-    logger.d('successfully filtered');
     List<VerifiableCredential> toSend = [];
-    for (var entry in filtered) {
-      if (entry.fulfilled && entry.credentials != null) {
-        toSend.addAll(entry.credentials!.map((e) {
-          return VerifiableCredential(
-              id: e.id,
-              context: e.context,
-              type: e.type,
-              credentialSubject: e.credentialSubject,
-              issuer: {},
-              issuanceDate: e.issuanceDate);
-        }));
+    try {
+      var filtered = searchCredentialsForPresentationDefinition(definition,
+          credentials: creds);
+      logger.d('successfully filtered');
+
+      for (var entry in filtered) {
+        if (entry.fulfilled && entry.credentials != null) {
+          toSend.addAll(entry.credentials!.map((e) {
+            return VerifiableCredential(
+                id: e.id,
+                context: e.context,
+                type: e.type,
+                credentialSubject: e.credentialSubject,
+                issuer: {},
+                issuanceDate: e.issuanceDate);
+          }));
+        }
       }
+    } catch (e) {
+      logger.d(e);
+      return null;
     }
     if (toSend.isNotEmpty) {
       return VerifiablePresentation(
