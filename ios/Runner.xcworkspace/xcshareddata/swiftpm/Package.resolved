@@ -1,0 +1,15 @@
+{
+  "originHash" : "f5f53e3c4973fdb7617621d6bed85608b2079b34e8b80b381ef826428af61700",
+  "pins" : [
+    {
+      "identity" : "ausweisapp2-sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Governikus/AusweisApp2-SDK-iOS",
+      "state" : {
+        "revision" : "9b01b0b3bab1be0173c6ca0817eda72ff9d55293",
+        "version" : "2.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}
