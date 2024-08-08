@@ -622,6 +622,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           submission = casted.presentationSubmission!;
           logger.d(await verifyPresentation(vp, widget.nonce!,
               loadDocumentFunction: loadDocumentFast));
+
           logger.d(jsonDecode(vp));
         }
       }
@@ -663,7 +664,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           var crv = readerKey['crv'];
 
           logger.d(readerKey);
-          var walletKeyType;
+          KeyType walletKeyType;
           if (crv == 'P-256') {
             walletKeyType = KeyType.p256;
           } else if (crv == 'X25519') {
@@ -974,9 +975,17 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
-                  var vp = await Future.delayed(
-                      const Duration(milliseconds: 50), sendAnswer);
-                  Navigator.of(context).pop(vp);
+                  dynamic vp;
+                  try {
+                    vp = await Future.delayed(
+                        const Duration(milliseconds: 50), sendAnswer);
+                    Navigator.of(context).pop(vp);
+                  } catch (e) {
+                    Navigator.of(context).pop();
+                    showErrorMessage(
+                        AppLocalizations.of(navigatorKey.currentContext!)!
+                            .sendFailed);
+                  }
                 },
               )
           ],
