@@ -98,6 +98,9 @@ dependencies:
   local_auth_android: any
   local_auth_darwin: any
 
+dependency_overrides:
+  pinenacl: ^0.6.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
