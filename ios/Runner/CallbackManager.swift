@@ -261,7 +261,7 @@ class CallbackManager: WorkflowCallbacks {
             let cardRetryCounter: Int?
         }
         
-        let message = try! JSONEncoder().encode(ReaderCardCodable(msg: "READER", name: reader!.name, attached: reader!.attached, card: Card(cardDeactivated: reader?.card?.deactivated, cardInoperative: reader?.card?.inoperative, cardRetryCounter: reader?.card?.pinRetryCounter), insertable: reader?.insertable, keypad: reader?.keypad))
+        let message = try! JSONEncoder().encode(ReaderCardCodable(msg: "READER", name: reader?.name ?? "custom", attached: reader?.attached ?? false, card: Card(cardDeactivated: reader?.card?.deactivated, cardInoperative: reader?.card?.inoperative, cardRetryCounter: reader?.card?.pinRetryCounter), insertable: reader?.insertable, keypad: reader?.keypad))
         
         let jsonString = String(data: message, encoding: .utf8)
         EventChannelManager.shared.sendEvent(jsonString)
