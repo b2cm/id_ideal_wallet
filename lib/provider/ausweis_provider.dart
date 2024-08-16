@@ -464,6 +464,7 @@ class AusweisProvider extends ChangeNotifier {
   void handleCertificateMessage(dynamic message) {
     if (message is CertificateMessage) {
       requesterCert = message;
+      accept();
     } else {
       logger.d("Incorrect type for handleCertificateMessage");
     }
