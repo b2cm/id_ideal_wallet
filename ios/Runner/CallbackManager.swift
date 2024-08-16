@@ -138,6 +138,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(EnterCanResult(msg: "ENTER_CAN", error: error, reader: ReaderCardCodable(name: reader.name, attached: reader.attached, card: Card(cardDeactivated: reader.card?.deactivated, cardInoperative: reader.card?.inoperative, cardRetryCounter: reader.card?.pinRetryCounter), insertable: reader.insertable, keypad: reader.keypad)))
         
         let jsonString = String(data: message, encoding: .utf8)
+        AA2SDKWrapper.workflowController.interrupt()
         EventChannelManager.shared.sendEvent(jsonString)
     }
     
@@ -172,6 +173,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(EnterPinResult(msg: "ENTER_PIN", reader: ReaderCardCodable(name: reader.name, attached: reader.attached, card: Card(cardDeactivated: reader.card?.deactivated, cardInoperative: reader.card?.inoperative, cardRetryCounter: reader.card?.pinRetryCounter), insertable: reader.insertable, keypad: reader.keypad)))
         
         let jsonString = String(data: message, encoding: .utf8)
+        AA2SDKWrapper.workflowController.interrupt()
         EventChannelManager.shared.sendEvent(jsonString)
     }
     
@@ -202,6 +204,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(EnterPukResult(msg: "ENTER_CAN", error: error, reader: ReaderCardCodable(name: reader.name, attached: reader.attached, card: Card(cardDeactivated: reader.card?.deactivated, cardInoperative: reader.card?.inoperative, cardRetryCounter: reader.card?.pinRetryCounter), insertable: reader.insertable, keypad: reader.keypad)))
         
         let jsonString = String(data: message, encoding: .utf8)
+        AA2SDKWrapper.workflowController.interrupt()
         EventChannelManager.shared.sendEvent(jsonString)
     }
     
