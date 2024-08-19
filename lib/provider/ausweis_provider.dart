@@ -136,8 +136,6 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("No handler for ${data.runtimeType}");
     }
-
-    notifyListeners();
   }
 
   void connectSdk() {
@@ -428,6 +426,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleInsertCardMessage");
     }
+    notifyListeners();
   }
 
   void handlePauseMessage(dynamic message) {
@@ -438,6 +437,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handlePauseMessage");
     }
+    notifyListeners();
   }
 
     void handleEnterPinMessage(dynamic message) {
@@ -448,6 +448,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleEnterPinMessage");
     }
+    notifyListeners();
   }
 
   void handleAccessRightsMessage(dynamic message) {
@@ -459,6 +460,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleAccessRightsMessage");
     }
+    notifyListeners();
   }
 
   void handleCertificateMessage(dynamic message) {
@@ -467,6 +469,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleCertificateMessage");
     }
+    notifyListeners();
   }
 
   void handleAuthMessage(dynamic message) async {
@@ -507,6 +510,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleAuthMessage");
     }
+    notifyListeners();
   }
 
   void handleStatusMessage(dynamic message) {
@@ -522,6 +526,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleStatusMessage");
     }
+    notifyListeners();
   }
 
   void handleReaderMessage(dynamic message) {
@@ -559,6 +564,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleReaderMessage");
     }
+    notifyListeners();
   }
 
   void handleDisconnectMessage(dynamic message) {
@@ -567,6 +573,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleDisconnectMessage");
     }
+    notifyListeners();
   }
 
   void handleEnterCanMessage(dynamic message) {
@@ -575,6 +582,7 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleEnterCanMessage");
     }
+    notifyListeners();
   }
 
   void handleEnterPukMessage(dynamic message) {
@@ -583,5 +591,6 @@ class AusweisProvider extends ChangeNotifier {
     } else {
       logger.d("Incorrect type for handleEnterPukMessage");
     }
+    notifyListeners();
   }
 }
