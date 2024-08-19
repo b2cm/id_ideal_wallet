@@ -23,7 +23,7 @@ class CallbackManager: WorkflowCallbacks {
         }
         
         struct Chat: Codable {
-            let optionalRights, requiredRights, effectiveRights: [String?]
+            let optional, required, effective: [String?]
         }
         
         struct Aux: Codable {
@@ -31,7 +31,7 @@ class CallbackManager: WorkflowCallbacks {
             let requiredAge, communityId: String?
         }
         
-        let message = try! JSONEncoder().encode(AccessRightsResult(msg: "ACCESS_RIGHTS", error: error, transactionInfo: accessRights?.transactionInfo, chat: Chat(optionalRights: accessRights!.optionalRights.map { $0.rawValue }, requiredRights: accessRights!.requiredRights.map { $0.rawValue }, effectiveRights: accessRights!.effectiveRights.map { $0.rawValue }), ageVerificationDate: accessRights?.auxiliaryData?.ageVerificationDate?.description, aux: Aux(validityDate: accessRights?.auxiliaryData?.validityDate?.description, requiredAge: accessRights?.auxiliaryData?.requiredAge?.description, communityId: accessRights?.auxiliaryData?.communityId)))
+        let message = try! JSONEncoder().encode(AccessRightsResult(msg: "ACCESS_RIGHTS", error: error, transactionInfo: accessRights?.transactionInfo, chat: Chat(optional: accessRights!.optionalRights.map { $0.rawValue }, required: accessRights!.requiredRights.map { $0.rawValue }, effective: accessRights!.effectiveRights.map { $0.rawValue }), ageVerificationDate: accessRights?.auxiliaryData?.ageVerificationDate?.description, aux: Aux(validityDate: accessRights?.auxiliaryData?.validityDate?.description, requiredAge: accessRights?.auxiliaryData?.requiredAge?.description, communityId: accessRights?.auxiliaryData?.communityId)))
         
         let jsonString = String(data: message, encoding: .utf8)
         EventChannelManager.shared.sendEvent(jsonString)
