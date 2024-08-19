@@ -8,7 +8,6 @@ import AusweisApp2SDKWrapper
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-      let nfcReader = NFCReader()
       let workflowCallback = CallbackManager()
       let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
       let methodChannel = FlutterMethodChannel(name: "app.channel.method",
@@ -25,7 +24,6 @@ import AusweisApp2SDKWrapper
               AA2SDKWrapper.workflowController.registerCallbacks(workflowCallback)
               AA2SDKWrapper.workflowController.start()
               print("############### finished connectSdk ######################")
-              //nfcReader.beginScanning()
           case "disconnectSdk":
               AA2SDKWrapper.workflowController.stop()
           case "sendCommand":
@@ -88,8 +86,6 @@ func decodeAndSendCommand(jsonString: String, res: FlutterResult) {
 
         case "SET_CARD":
             print("############### SET_CARD ######################")
-            let nfcReader = NFCReader()
-            nfcReader.beginScanning()
             if let name = commandDict?["name"] as? String {
                 AA2SDKWrapper.workflowController.setCard(name: name)
             } else {
