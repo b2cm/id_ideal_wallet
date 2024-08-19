@@ -30,6 +30,7 @@ import 'package:id_ideal_wallet/views/self_issuance.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:json_path/json_path.dart';
 import 'package:provider/provider.dart';
+import 'package:sd_jwt/sd_jwt.dart' as sd_jwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509b/x509.dart';
 
@@ -110,6 +111,19 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         innerPos++;
       }
       for (var _ in res.credentials ?? []) {
+        if (innerPos == 0) {
+          selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+        } else {
+          if (res.submissionRequirement?.min != null &&
+              innerPos < res.submissionRequirement!.min!) {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
+          } else {
+            selectedCredsPerResult['o${outerPos}i$innerPos'] = false;
+          }
+        }
+        innerPos++;
+      }
+      for (var _ in res.sdJwtCredentials ?? []) {
         if (innerPos == 0) {
           selectedCredsPerResult['o${outerPos}i$innerPos'] = true;
         } else {
@@ -348,6 +362,38 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         innerPos++;
       }
 
+      // sd Jwt
+      for (var v in result.sdJwtCredentials ?? <sd_jwt.SdJws>[]) {
+        var sd = v.unverified();
+        Map<String, dynamic> subject = sd.claims;
+
+        var type = subject.remove('vct');
+        var key = 'o${outerPos}i$innerPos';
+
+        logger.d(key);
+        if (selectedCredsPerResult[key]!) {
+          credCount++;
+          selectedCredNames.add(type);
+        }
+        outerTileChildList.add(
+          ExpansionTile(
+            leading: Checkbox(
+                activeColor: Colors.greenAccent.shade700,
+                onChanged: (bool? newValue) {
+                  setState(() {
+                    if (newValue != null) {
+                      selectedCredsPerResult[key] = newValue;
+                    }
+                  });
+                },
+                value: selectedCredsPerResult[key]),
+            title: Text(type),
+            children: buildCredSubject(subject),
+          ),
+        );
+        innerPos++;
+      }
+
       if (!result.fulfilled) {
         logger.d('entirely not');
         fulfillable = false;
@@ -538,13 +584,17 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     for (var result in widget.results) {
       List<VerifiableCredential> credList = [];
       List<IssuerSignedObject> credListIso = [];
+      List<sd_jwt.SdJws> credListSd = [];
+
       innerPos = 0;
+
       for (var cred in result.isoMdocCredentials ?? []) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
           credListIso.add(cred);
         }
         innerPos++;
       }
+
       for (var cred in result.credentials ?? []) {
         if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
           credList.add(cred);
@@ -553,11 +603,20 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
         innerPos++;
       }
+
+      for (var cred in result.sdJwtCredentials ?? []) {
+        if (selectedCredsPerResult['o${outerPos}i$innerPos']!) {
+          credListSd.add(cred);
+        }
+        innerPos++;
+      }
+
       outerPos++;
 
       finalSend.add(FilterResult(
           credentials: credList,
           isoMdocCredentials: credListIso,
+          sdJwtCredentials: credListSd,
           matchingDescriptorIds: result.matchingDescriptorIds,
           presentationDefinitionId: result.presentationDefinitionId,
           submissionRequirement: result.submissionRequirement));
@@ -568,19 +627,26 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     }
 
     if (widget.isOidc) {
-      String? vp;
+      logger.d('is oidc');
+      List<dynamic> vp = [];
       PresentationSubmission? submission;
       VerifiablePresentation? casted;
       String? mdocGeneratedNonce;
 
-      List<String> responses = [];
       String definitionId = '';
       List<InputDescriptorMappingObject> descriptorMap = [];
 
       for (FilterResult entry in finalSend) {
         definitionId = entry.presentationDefinitionId;
+
         if (entry.isoMdocCredentials != null &&
             entry.isoMdocCredentials!.isNotEmpty) {
+          logger.d('handle mdoc');
+          var handover = OID4VPHandover.fromValues(
+              widget.receiverDid, widget.otherEndpoint, widget.nonce!);
+          mdocGeneratedNonce = handover.mdocGeneratedNonce;
+          List<Document> docs = [];
+
           for (var cred in entry.isoMdocCredentials!) {
             var mso = MobileSecurityObject.fromCbor(cred.issuerAuth.payload);
             var did = coseKeyToDid(mso.deviceKeyInfo.deviceKey);
@@ -593,47 +659,101 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             var privateKey = await didToCosePublicKey(did);
             privateKey.d = hexDecode(private);
 
-            var handover = OID4VPHandover.fromValues(
-                widget.receiverDid, widget.otherEndpoint, widget.nonce!);
-            mdocGeneratedNonce = handover.mdocGeneratedNonce;
             var transcript = SessionTranscript(handover: handover);
             var ds = await generateDeviceSignature({}, mso.docType, transcript,
                 signer: SignatureGenerator.get(privateKey));
-            var res = DeviceResponse(status: 0, documents: [
-              Document(
-                  docType: mso.docType, issuerSigned: cred, deviceSigned: ds)
-            ]);
-
-            responses.add(
-                removePaddingFromBase64(base64UrlEncode(res.toEncodedCbor())));
-            descriptorMap.add(InputDescriptorMappingObject(
-                id: entry.matchingDescriptorIds.first,
-                format: 'iso_mdoc',
-                path: JsonPath(r'$')));
+            docs.add(Document(
+                docType: mso.docType, issuerSigned: cred, deviceSigned: ds));
           }
-          vp = responses.isNotEmpty ? responses.first : '';
-          submission = PresentationSubmission(
-              presentationDefinitionId: definitionId,
-              descriptorMap: descriptorMap);
-        } else {
-          vp = await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
-              loadDocumentFunction: loadDocumentFast);
+
+          var res = DeviceResponse(status: 0, documents: docs);
+
+          descriptorMap.add(InputDescriptorMappingObject(
+              id: entry.matchingDescriptorIds.first,
+              format: OidcCredentialFormat.msoMdoc,
+              path: JsonPath(r'$')));
+
+          vp.add(removePaddingFromBase64(base64UrlEncode(res.toEncodedCbor())));
+        }
+
+        if (entry.credentials != null && entry.credentials!.isNotEmpty) {
+          logger.d('handle w3c');
+          vp.add(await buildPresentation(
+              finalSend, wallet.wallet, widget.nonce!,
+              loadDocumentFunction: loadDocumentFast));
           casted = VerifiablePresentation.fromJson(vp);
           submission = casted.presentationSubmission!;
           logger.d(await verifyPresentation(vp, widget.nonce!,
               loadDocumentFunction: loadDocumentFast));
 
-          logger.d(jsonDecode(vp));
+          logger.d(vp);
+        }
+
+        if (entry.sdJwtCredentials != null &&
+            entry.sdJwtCredentials!.isNotEmpty) {
+          logger.d('handle sd jwt');
+          for (var s in entry.sdJwtCredentials!) {
+            var sd = s.unverified();
+
+            var cnf = sd.confirmation!.toJson();
+            logger.d(cnf['jwk']);
+            var multibase = jwkToMultiBase(cnf['jwk']);
+            var restoredDid = 'did:key:$multibase';
+
+            var private = await wallet.wallet
+                .getPrivateKeyForCredentialDidAsJwk(restoredDid);
+            if (private == null) {
+              logger.d('no private key found for $restoredDid');
+              throw Exception();
+            }
+            private['x'] = cnf['jwk']['x'];
+            private['y'] = cnf['jwk']['y'];
+            logger.d(private);
+
+            var jwk = sd_jwt.Jwk.fromJson(private);
+            logger.d(jwk.toJson());
+            sd_jwt.SigningAlgorithm? algorithm;
+            if (private['crv'] == 'P-256') {
+              algorithm = sd_jwt.SigningAlgorithm.ecdsaSha256Prime;
+            } else if (private['crv'] == 'P-384') {
+              algorithm = sd_jwt.SigningAlgorithm.ecdsaSha384Prime;
+            } else if (private['crv'] == 'P-221') {
+              algorithm = sd_jwt.SigningAlgorithm.ecdsaSha512Prime;
+            }
+
+            var signed = s.bind(
+                jsonWebKey: jwk,
+                audience: widget.otherEndpoint,
+                issuedAt: DateTime.now(),
+                nonce: widget.nonce!,
+                signingAlgorithm: algorithm);
+
+            logger.d(signed);
+
+            vp.add(signed.toCompactSerialization());
+
+            descriptorMap.add(InputDescriptorMappingObject(
+                id: entry.matchingDescriptorIds.first,
+                format: OidcCredentialFormat.sdJwt,
+                path: JsonPath(r'$')));
+          }
         }
       }
+      submission = PresentationSubmission(
+          presentationDefinitionId: definitionId, descriptorMap: descriptorMap);
 
       logger.d('send presentation to ${widget.otherEndpoint}');
       Response res;
+      String vpAnswer = vp.length == 1
+          ? vp.first is String
+              ? vp.first
+              : jsonEncode(vp.first)
+          : jsonEncode(vp);
       if (widget.oidcResponseMode == 'direct_post') {
         res = await post(Uri.parse(widget.otherEndpoint),
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body:
-                'presentation_submission=${submission.toString()}&vp_token=$vp${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
+                'presentation_submission=${submission.toString()}&vp_token=$vpAnswer${widget.oidcState != null ? '&state=${widget.oidcState!}' : ''}');
       } else if (widget.oidcResponseMode == 'direct_post.jwt') {
         if (widget.oidcClientMetadata == null) {
           throw Exception('no client metadata');
@@ -713,7 +833,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
             //data
             var data = {
-              'vp_token': vp,
+              'vp_token': vp.length == 1 ? vp.first : vp,
               'presentation_submission': submission,
               'state': widget.oidcState
             };
@@ -755,11 +875,11 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
         }
       } else {
         logger.d(
-            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp!)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+            '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vpAnswer)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
 
         var r = await launchUrl(
             Uri.parse(
-                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vp)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
+                '${widget.otherEndpoint}?presentation_submission=${Uri.encodeQueryComponent(submission.toString())}&vp_token=${Uri.encodeQueryComponent(vpAnswer)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}'),
             mode: LaunchMode.externalApplication);
         if (r) {
           res = Response('', 200);
@@ -795,9 +915,27 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             type += '${mso.docType}, \n';
           }
           logger.d(type);
+
+          for (var cred in entry.sdJwtCredentials ?? <sd_jwt.SdJws>[]) {
+            var sdJwt = cred.unverified();
+
+            var cnf = sdJwt.confirmation!.toJson();
+            logger.d(cnf['jwk']);
+            var multibase = jwkToMultiBase(cnf['jwk']);
+            var restoredDid = 'did:key:$multibase';
+            wallet.storeExchangeHistoryEntry(
+                restoredDid, DateTime.now(), 'present', widget.otherEndpoint);
+
+            var vct = sdJwt.claims['vct'];
+            type += '$vct, \n';
+          }
         }
-        type = type.substring(0, type.length - 3);
+
+        if (type.length >= 3) {
+          type = type.substring(0, type.length - 3);
+        }
         logger.d(type);
+
         await showModalBottomSheet(
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
@@ -981,6 +1119,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                         const Duration(milliseconds: 50), sendAnswer);
                     Navigator.of(context).pop(vp);
                   } catch (e) {
+                    logger.d(e);
                     Navigator.of(context).pop();
                     showErrorMessage(
                         AppLocalizations.of(navigatorKey.currentContext!)!

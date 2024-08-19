@@ -1080,6 +1080,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var isoCreds = wallet.isoMdocCredentials;
   List<VerifiableCredential> creds = [];
   List<IssuerSignedObject> isoCredsParsed = [];
+  List<sdJwt.SdJws> sdJwtCredentials = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
@@ -1095,6 +1096,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
         base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', ''))));
   }
 
+  for (var c in wallet.sdJwtCredentials) {
+    sdJwtCredentials.add(sdJwt.SdJws.fromCompactSerialization(
+        c.plaintextCredential.replaceAll('$sdPrefix:', '')));
+  }
+
   if (definition == null) {
     logger.d('No presentation definition');
     showErrorMessage(
@@ -1106,9 +1112,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
   try {
     logger.d(isoCredsParsed.length);
     var filtered = searchCredentialsForPresentationDefinition(definition,
-        credentials: creds, isoMdocCredentials: isoCredsParsed);
+        credentials: creds,
+        isoMdocCredentials: isoCredsParsed,
+        sdJwtCredentials: sdJwtCredentials);
     logger.d(
-        'successfully filtered: isoLength: ${filtered.first.isoMdocCredentials?.length}');
+        'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(
