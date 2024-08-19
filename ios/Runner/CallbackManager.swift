@@ -34,7 +34,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(AccessRightsResult(msg: "ACCESS_RIGHTS", error: error, transactionInfo: accessRights?.transactionInfo, chat: Chat(optional: accessRights!.optionalRights.map { $0.rawValue }, required: accessRights!.requiredRights.map { $0.rawValue }, effective: accessRights!.effectiveRights.map { $0.rawValue }), ageVerificationDate: accessRights?.auxiliaryData?.ageVerificationDate?.description, aux: Aux(validityDate: accessRights?.auxiliaryData?.validityDate?.description, requiredAge: accessRights?.auxiliaryData?.requiredAge?.description, communityId: accessRights?.auxiliaryData?.communityId)))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onAuthenticationCompleted(authResult: AusweisApp2SDKWrapper.AuthResult) {
@@ -59,7 +59,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(authCompletedResult(msg: "AUTH", error: nil, result: Result(major: authResult.result?.major, minor: authResult.result?.minor, language: authResult.result?.language, description: authResult.result?.description, message: authResult.result?.message, reason: authResult.result?.reason), url: authResult.url?.absoluteString))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
         
     }
     
@@ -98,7 +98,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(CertificateResult(msg: "CERTIFICATE", description: Description(issuerName: certificateDescription.issuerName, issuerUrl: certificateDescription.issuerUrl!.absoluteString, subjectName: certificateDescription.subjectName, subjectUrl: certificateDescription.subjectUrl!.absoluteString, termsOfUsage: certificateDescription.termsOfUsage, purpose: certificateDescription.purpose), validity: Validity(effectiveDate: certificateDescription.validity.effectiveDate.description, expirationDate: certificateDescription.validity.expirationDate.description)))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onChangePinCompleted(changePinResult: AusweisApp2SDKWrapper.ChangePinResult) {
@@ -139,7 +139,7 @@ class CallbackManager: WorkflowCallbacks {
         
         let jsonString = String(data: message, encoding: .utf8)
         AA2SDKWrapper.workflowController.interrupt()
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onEnterNewPin(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
@@ -174,7 +174,7 @@ class CallbackManager: WorkflowCallbacks {
         
         let jsonString = String(data: message, encoding: .utf8)
         AA2SDKWrapper.workflowController.interrupt()
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onEnterPuk(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
@@ -205,7 +205,7 @@ class CallbackManager: WorkflowCallbacks {
         
         let jsonString = String(data: message, encoding: .utf8)
         AA2SDKWrapper.workflowController.interrupt()
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onInfo(versionInfo: AusweisApp2SDKWrapper.VersionInfo) {
@@ -223,7 +223,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(InsertCardResult(msg: "INSERT_CARD", error: error))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onInternalError(error: String) {
@@ -242,7 +242,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(PauseResult(msg: "INSERT_CARD", cause: cause.rawValue))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onReader(reader: AusweisApp2SDKWrapper.Reader?) {
@@ -267,7 +267,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(ReaderCardCodable(msg: "READER", name: reader?.name ?? "custom", attached: reader?.attached ?? false, card: Card(cardDeactivated: reader?.card?.deactivated, cardInoperative: reader?.card?.inoperative, cardRetryCounter: reader?.card?.pinRetryCounter), insertable: reader?.insertable, keypad: reader?.keypad))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onReaderList(readers: [AusweisApp2SDKWrapper.Reader]?) {
@@ -292,7 +292,7 @@ class CallbackManager: WorkflowCallbacks {
         let message = try! JSONEncoder().encode(StatusResult(msg: "STATUS", workflow: workflowProgress.workflow?.rawValue, state: workflowProgress.state, progress: workflowProgress.progress))
         
         let jsonString = String(data: message, encoding: .utf8)
-        EventChannelManager.shared.sendEvent(jsonString)
+        EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
     func onWrapperError(error: AusweisApp2SDKWrapper.WrapperError) {
