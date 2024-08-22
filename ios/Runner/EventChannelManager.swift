@@ -28,3 +28,24 @@ class EventChannelManager: NSObject, FlutterStreamHandler {
         eventSink?(event)
     }
 }
+
+class EventChannelManagerDeepLink: NSObject, FlutterStreamHandler {
+    static let shared = EventChannelManagerDeepLink()
+    private var eventSink: FlutterEventSink?
+
+    private override init() { super.init() }
+
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        self.eventSink = events
+        return nil
+    }
+
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        eventSink = nil
+        return nil
+    }
+
+    func sendEvent(_ event: Any) {
+        eventSink?(event)
+    }
+}

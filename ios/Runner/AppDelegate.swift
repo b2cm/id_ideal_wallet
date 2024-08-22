@@ -4,18 +4,30 @@ import AusweisApp2SDKWrapper
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+    
+    var methodChannelDeepLink: FlutterMethodChannel?
+    var eventChannelDeepLink: FlutterEventChannel?
+    
+    var methodChannel: FlutterMethodChannel?
+    var eventChannel: FlutterEventChannel?
+    
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
       let workflowCallback = CallbackManager()
       let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-      let methodChannel = FlutterMethodChannel(name: "app.channel.method",
-                                                binaryMessenger: controller.binaryMessenger)
-      let eventChannel = FlutterEventChannel(name: "app.channel.event",
-                                                     binaryMessenger: controller.binaryMessenger)
-              eventChannel.setStreamHandler(EventChannelManager.shared)
-      methodChannel.setMethodCallHandler({
+      
+      methodChannel = FlutterMethodChannel(name: "app.channel.method", binaryMessenger: controller.binaryMessenger)
+      eventChannel = FlutterEventChannel(name: "app.channel.event", binaryMessenger: controller.binaryMessenger)
+      eventChannel!.setStreamHandler(EventChannelManager.shared)
+      
+      // initialize deep link channels
+      methodChannelDeepLink = FlutterMethodChannel(name: "app.channel.deeplink", binaryMessenger: controller.binaryMessenger)
+      eventChannelDeepLink = FlutterEventChannel(name: "app.channel.deeplink/events", binaryMessenger: controller.binaryMessenger)
+      eventChannelDeepLink?.setStreamHandler(EventChannelManagerDeepLink.shared)
+      
+      methodChannel!.setMethodCallHandler({
           [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
           // This method is invoked on the UI thread.
           switch call.method {
@@ -41,6 +53,27 @@ import AusweisApp2SDKWrapper
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+    
+    // Handle incoming URL schemes
+    override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        
+        methodChannel!.setMethodCallHandler({
+            [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
+            // This method is invoked on the UI thread.
+            switch call.method {
+            case "getInitialLink":
+                result(url.absoluteString)
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        })
+        
+        let handled = super.application(app, open: url, options: options)
+        
+        EventChannelManagerDeepLink.shared.sendEvent(url.absoluteString)
+        
+        return handled
+    }
     
 }
 
