@@ -4,7 +4,13 @@
 //
 //  Created by Jonas Bentke on 13.08.24.
 //
-
+/**
+ This Class implements the CallbackManager that is required by the AusweisApp. Since the Datatypes from the Ausweis App are not codable we manually encode them into json. There are some
+ discrapancies between the datatypes defined here and the once that get send straight from the AusweisSdk. Since the Android version is directly communicating with the sdk instead of the wrapper
+ we parse the data how the sdk returns them to match with android.
+ The only other thing we do here is calling interupt whenever a user input is required such as onEnterPin etc.
+ There are also a bunch of callbacks that do nothing simply because we dont need them to do anything on the flutter side. Those functions can be found at the end.
+ */
 import Foundation
 import Flutter
 import AusweisApp2SDKWrapper
@@ -13,7 +19,7 @@ class CallbackManager: WorkflowCallbacks {
     
     func onAccessRights(error: String?, accessRights: AusweisApp2SDKWrapper.AccessRights?) {
         print("############### onAccessRights ######################")
-        // ACCESS_RIGHTS
+
         struct AccessRightsResult: Codable {
             let msg: String
             let error, transactionInfo: String?
@@ -38,8 +44,7 @@ class CallbackManager: WorkflowCallbacks {
     }
     
     func onAuthenticationCompleted(authResult: AusweisApp2SDKWrapper.AuthResult) {
-        print("############### onAuthenticationCompleted ######################")
-        // String? error, major, minor, language, description, message, reason, url;
+
         struct authCompletedResult: Encodable {
             let msg: String
             let error: String?
@@ -60,27 +65,10 @@ class CallbackManager: WorkflowCallbacks {
         
         let jsonString = String(data: message, encoding: .utf8)
         EventChannelManager.shared.sendEvent(jsonString as Any)
-        
-    }
-    
-    func onAuthenticationStarted() {
-        print("############### onAuthenticationStarted ######################")
-        // @dev ?
-    }
-    
-    func onAuthenticationStartFailed(error: String) {
-        print("############### onAuthenticationFailed ######################")
-        // @dev ?
-    }
-    
-    func onBadState(error: String) {
-        print("############### onBadState ######################")
-        // @dev ?
     }
     
     func onCertificate(certificateDescription: AusweisApp2SDKWrapper.CertificateDescription) {
-        print("############### onCertificate ######################")
-        // CERTIFICATE
+        
         struct CertificateResult: Codable {
             let msg: String
             let description: Description
@@ -101,19 +89,8 @@ class CallbackManager: WorkflowCallbacks {
         EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
-    func onChangePinCompleted(changePinResult: AusweisApp2SDKWrapper.ChangePinResult) {
-        print("############### onChangePinCompleted ######################")
-        // @dev ?
-    }
-    
-    func onChangePinStarted() {
-        print("############### onChangePinStarted ######################")
-        // @dev ?
-    }
-    
     func onEnterCan(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
-        print("############### onEnterCan ######################")
-        // ENTER_CAN
+        
         struct ReaderCardCodable: Codable {
             let name: String
             let attached: Bool
@@ -142,14 +119,8 @@ class CallbackManager: WorkflowCallbacks {
         EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
-    func onEnterNewPin(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
-        print("############### onEnterNewPin ######################")
-        // @dev ?
-    }
-    
     func onEnterPin(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
-        print("############### onEnterPin ######################")
-        // ENTER_PIN
+        
         struct ReaderCardCodable: Codable {
             let name: String
             let attached: Bool
@@ -178,8 +149,7 @@ class CallbackManager: WorkflowCallbacks {
     }
     
     func onEnterPuk(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
-        print("############### onEnterPuk ######################")
-        // ENTER_PUK
+        
         struct ReaderCardCodable: Codable {
             let name: String
             let attached: Bool
@@ -208,14 +178,8 @@ class CallbackManager: WorkflowCallbacks {
         EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
-    func onInfo(versionInfo: AusweisApp2SDKWrapper.VersionInfo) {
-        print("############### onInfo ######################")
-        // @dev ?
-    }
-    
     func onInsertCard(error: String?) {
-        print("############### onInsertCard ######################")
-        // type INSERT_CARD, String? error
+        
         struct InsertCardResult: Encodable {
             let msg: String
             let error: String?
@@ -226,14 +190,8 @@ class CallbackManager: WorkflowCallbacks {
         EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
-    func onInternalError(error: String) {
-        print("############### onInternalError ######################")
-        // @dev ?
-    }
-    
     func onPause(cause: AusweisApp2SDKWrapper.Cause) {
-        print("############### onPause ######################")
-        // type PAUSE, String? error
+        
         struct PauseResult: Encodable {
             let msg: String
             let cause: String?
@@ -246,8 +204,7 @@ class CallbackManager: WorkflowCallbacks {
     }
     
     func onReader(reader: AusweisApp2SDKWrapper.Reader?) {
-        print("############### onReader ######################")
-        // READER
+        
         struct ReaderCardCodable: Codable {
             let msg: String
             let name: String
@@ -270,19 +227,8 @@ class CallbackManager: WorkflowCallbacks {
         EventChannelManager.shared.sendEvent(jsonString as Any)
     }
     
-    func onReaderList(readers: [AusweisApp2SDKWrapper.Reader]?) {
-        print("############### onReaderList ######################")
-        // @dev ?
-    }
-    
-    func onStarted() {
-        print("############### onStarted ######################")
-        // @dev ?
-    }
-    
     func onStatus(workflowProgress: AusweisApp2SDKWrapper.WorkflowProgress) {
-        print("############### onStatus ######################")
-        // STATUS
+        
         struct StatusResult: Encodable {
             let msg: String
             let workflow, state: String?
@@ -296,8 +242,46 @@ class CallbackManager: WorkflowCallbacks {
     }
     
     func onWrapperError(error: AusweisApp2SDKWrapper.WrapperError) {
-        print("############### onWrappedError ######################")
         // @dev ?
     }
-
+    
+    func onReaderList(readers: [AusweisApp2SDKWrapper.Reader]?) {
+        // @dev ?
+    }
+    
+    func onStarted() {
+        // @dev ?
+    }
+    
+    func onInternalError(error: String) {
+        // @dev ?
+    }
+    
+    func onInfo(versionInfo: AusweisApp2SDKWrapper.VersionInfo) {
+        // @dev ?
+    }
+    
+    func onEnterNewPin(error: String?, reader: AusweisApp2SDKWrapper.Reader) {
+        // @dev ?
+    }
+    
+    func onChangePinCompleted(changePinResult: AusweisApp2SDKWrapper.ChangePinResult) {
+        // @dev ?
+    }
+    
+    func onChangePinStarted() {
+        // @dev ?
+    }
+    
+    func onAuthenticationStarted() {
+        // @dev ?
+    }
+    
+    func onAuthenticationStartFailed(error: String) {
+        // @dev ?
+    }
+    
+    func onBadState(error: String) {
+        // @dev ?
+    }
 }

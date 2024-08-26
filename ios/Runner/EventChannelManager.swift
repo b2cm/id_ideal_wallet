@@ -8,6 +8,9 @@
 import Foundation
 import Flutter
 
+/**
+ This Channel Manager is used for communication between flutter and Ausweis Sdk Wrapper
+ */
 class EventChannelManager: NSObject, FlutterStreamHandler {
     static let shared = EventChannelManager()
     private var eventSink: FlutterEventSink?
@@ -29,6 +32,9 @@ class EventChannelManager: NSObject, FlutterStreamHandler {
     }
 }
 
+/**
+ This EventChannelManager is used for deep links. We defined the supported deep links in the info.plist
+ */
 class EventChannelManagerDeepLink: NSObject, FlutterStreamHandler {
     static let shared = EventChannelManagerDeepLink()
     private var eventSink: FlutterEventSink?
