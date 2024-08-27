@@ -11,6 +11,8 @@ import AusweisApp2SDKWrapper
     var methodChannel: FlutterMethodChannel?
     var eventChannel: FlutterEventChannel?
     
+    var initialLink: String?
+    
   override func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
       let workflowCallback = CallbackManager()
       let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
@@ -40,6 +42,12 @@ import AusweisApp2SDKWrapper
               } else {
                   result(FlutterError(code: "INVALID_ARGUMENTS", message: "Expected a JSON string as arguments", details: nil))
               }
+          case "getInitialLink":
+              if let initialLink = self?.initialLink {
+                  result(initialLink)
+              } else {
+                  result(FlutterError(code: "NO LINK FOUND", message: "No initial link has been stored yet", details: nil))
+              }
           default:
               result(FlutterMethodNotImplemented)
           }
@@ -51,21 +59,13 @@ import AusweisApp2SDKWrapper
     
     // Handle incoming URL schemes
     override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        // store it for the method handler
+        self.initialLink = url.absoluteString
         
-        methodChannel!.setMethodCallHandler({
-            [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
-            
-            switch call.method {
-            case "getInitialLink":
-                result(url.absoluteString)
-            default:
-                result(FlutterMethodNotImplemented)
-            }
-        })
-        
-        let handled = super.application(app, open: url, options: options)
         // send the url to flutter to be handled there
         EventChannelManagerDeepLink.shared.sendEvent(url.absoluteString)
+        
+        let handled = super.application(app, open: url, options: options)
         
         return handled
     }
