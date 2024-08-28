@@ -42,15 +42,23 @@ import AusweisApp2SDKWrapper
               } else {
                   result(FlutterError(code: "INVALID_ARGUMENTS", message: "Expected a JSON string as arguments", details: nil))
               }
-          case "getInitialLink":
-              if let initialLink = self?.initialLink {
-                  result(initialLink)
-              } else {
-                  result(FlutterError(code: "NO LINK FOUND", message: "No initial link has been stored yet", details: nil))
-              }
           default:
               result(FlutterMethodNotImplemented)
           }
+      })
+    
+      methodChannelDeepLink!.setMethodCallHandler({
+          [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
+          switch call.method {
+              case "getInitialLink":
+                  if let initialLink = self?.initialLink {
+                      result(initialLink)
+                  } else {
+                      result(FlutterError(code: "NO LINK FOUND", message: "No initial link has been stored yet", details: nil))
+                  }
+              default:
+                  result(FlutterMethodNotImplemented)
+            }
       })
       
     GeneratedPluginRegistrant.register(with: self)
