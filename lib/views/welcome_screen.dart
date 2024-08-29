@@ -40,7 +40,9 @@ class WelcomeScreenState extends State<WelcomeScreen> {
     techOk = Platform.isAndroid ? await checkAuthSupport() : true;
     load = false;
     setState(() {});
-    var res = await get(Uri.parse(termsVersionEndpoint));
+    var res = await get(Uri.parse(termsVersionEndpoint)).timeout(
+        const Duration(seconds: 150),
+        onTimeout: () => Response('Timeout', 400));
     if (res.statusCode == 200) {
       var json = jsonDecode(res.body);
       if (json['version'] != null) {

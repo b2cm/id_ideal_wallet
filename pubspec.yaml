@@ -19,7 +19,7 @@ version: 3.2.5-test+55
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.16.0 <3.23.0"
+  flutter: ">=3.16.0 <3.24.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -69,7 +69,7 @@ dependencies:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form
   # device_info_plus: ^9.1.1
-  android_id: ^0.3.3
+  # android_id: ^0.4.0
   flutter_inappwebview: ^6.0.0-beta.22
   action_slider: any
   crypto: any
@@ -99,6 +99,9 @@ dependencies:
 
   local_auth_android: any
   local_auth_darwin: any
+
+dependency_overrides:
+  pinenacl: ^0.6.0
 
 dev_dependencies:
   flutter_test:

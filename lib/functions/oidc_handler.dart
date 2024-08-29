@@ -540,7 +540,13 @@ Future<void> getCredential(
     });
 
     if (credentialResponse.statusCode != 200) {
-      tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      try {
+        tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      } catch (e) {
+        logger.d(e);
+        showErrorMessage('Kaine nonce');
+        return;
+      }
     }
   }
 
@@ -591,8 +597,9 @@ Future<void> getCredential(
       format: credentialMetadata.format,
       credentialType: credentialMetadata.credentialType,
       context: credentialMetadata.context,
-      proof:
-          CredentialRequestProof(proofType: proofType, proofValue: proofValue));
+      proof: [
+        CredentialRequestProof(proofType: proofType, proofValue: proofValue)
+      ]);
 
   KeyPair? decryptionKey;
   if (metadata.credentialResponseEncryptionRequired ?? false) {

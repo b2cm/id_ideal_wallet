@@ -573,10 +573,12 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     setState(() {
       send = true;
     });
+
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     if (widget.askForBackground && backgroundAllow) {
       wallet.addAuthorizedApp(widget.otherEndpoint, widget.definitionHash);
     }
+
     List<FilterResult> finalSend = [];
     Set<String> issuerDids = {};
     int outerPos = 0;
@@ -653,8 +655,8 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
             var private = await wallet.getPrivateKeyForCredentialDid(did);
             if (private == null) {
-              showErrorMessage('Kein privater schlüssel');
-              return null;
+              logger.d('Kein privater schlüssel');
+              throw Exception();
             }
             var privateKey = await didToCosePublicKey(did);
             privateKey.d = hexDecode(private);
@@ -689,6 +691,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           logger.d(vp);
         }
 
+        int arrayIndex = 0;
         if (entry.sdJwtCredentials != null &&
             entry.sdJwtCredentials!.isNotEmpty) {
           logger.d('handle sd jwt');
@@ -735,7 +738,9 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             descriptorMap.add(InputDescriptorMappingObject(
                 id: entry.matchingDescriptorIds.first,
                 format: OidcCredentialFormat.sdJwt,
-                path: JsonPath(r'$')));
+                path: JsonPath(
+                    '\$${vp.isEmpty && entry.sdJwtCredentials!.length == 1 ? '' : '[${arrayIndex + vp.length}]'}')));
+            arrayIndex++;
           }
         }
       }
@@ -1113,6 +1118,11 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     : null,
                 negativeFunction: reject,
                 positiveFunction: () async {
+                  // expected return values
+                  // oidc_handler 1123: nothing
+                  // present_proof 181: nothing
+                  // mdoc_provider 586: null or List<FilterResult>
+                  // web_view 422: VerifiablePresentation or null
                   dynamic vp;
                   try {
                     vp = await Future.delayed(
