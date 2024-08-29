@@ -23,6 +23,7 @@ import 'package:id_ideal_wallet/views/credential_offer.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
+import 'package:sd_jwt/sd_jwt.dart' as sdJwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -539,7 +540,13 @@ Future<void> getCredential(
     });
 
     if (credentialResponse.statusCode != 200) {
-      tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      try {
+        tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      } catch (e) {
+        logger.d(e);
+        showErrorMessage('Kaine nonce');
+        return;
+      }
     }
   }
 
@@ -590,8 +597,9 @@ Future<void> getCredential(
       format: credentialMetadata.format,
       credentialType: credentialMetadata.credentialType,
       context: credentialMetadata.context,
-      proof:
-          CredentialRequestProof(proofType: proofType, proofValue: proofValue));
+      proof: [
+        CredentialRequestProof(proofType: proofType, proofValue: proofValue)
+      ]);
 
   KeyPair? decryptionKey;
   if (metadata.credentialResponseEncryptionRequired ?? false) {
@@ -851,7 +859,69 @@ storeCredential(String format, dynamic credential, String credentialDid,
           signedData.docType);
     }
   } else if (format == OidcCredentialFormat.sdJwt) {
-    showErrorMessage('Format nicht unterstützt');
+    printWrapped(credential);
+    var parsed = sdJwt.SdJws.fromCompactSerialization(credential);
+    logger.d(parsed.jsonContent());
+    var iss = parsed.jsonContent()['payload']['iss'];
+    var issMetaUrl = '$iss/.well-known/jwt-vc-issuer';
+
+    logger.d(issMetaUrl);
+
+    var metaRes = await get(Uri.parse(issMetaUrl));
+    if (metaRes.statusCode != 200) {
+      showErrorMessage('Kein Public Key', 'Verifikation nicht möglich');
+    }
+
+    var data = jsonDecode(metaRes.body);
+    List keys = data['jwks ']['keys'];
+    logger.d(keys);
+    Map k = keys.first;
+    var jwk = sdJwt.Jwk.fromJson(
+        k.map((key, value) => MapEntry(key as String, value)));
+    var sd = sdJwt.SdJwt.verified(parsed, jwk);
+
+    var cnf = sd.confirmation!.toJson();
+    logger.d(cnf['jwk']);
+    var multibase = jwkToMultiBase(cnf['jwk']);
+    logger.d('$credentialDid, did:key:$multibase');
+    var restoredDid = 'did:key:$multibase';
+    if (restoredDid != credentialDid) {
+      showErrorMessage('Credential für jemand anderen');
+    }
+
+    var claims = sd.claims;
+    var type = claims.remove('vct');
+    claims['id'] = restoredDid;
+
+    var vc = VerifiableCredential(
+        id: restoredDid,
+        context: [credentialsV1Iri, schemaOrgIri],
+        type: ['VerifiableCredential', type],
+        issuer: {
+          'id': credentialIssuer,
+          if (jwk.x509CertificateChain != null)
+            'certificate': jwk.x509CertificateChain!.first
+        },
+        credentialSubject: claims,
+        issuanceDate: sd.issuedAt ?? DateTime.now(),
+        expirationDate: sd.expirationTime);
+
+    var storageCred = wallet.getCredential(restoredDid);
+    if (storageCred == null) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
+      return;
+    }
+
+    wallet.storeCredential(vc.toString(), storageCred.hdPath,
+        isoMdlData: '$sdPrefix:$credential', keyType: keyType);
+    wallet.storeExchangeHistoryEntry(
+        credentialDid, DateTime.now(), 'issue', credentialIssuer);
+
+    showSuccessMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+        type);
     return;
   } else {
     logger.d(jsonDecode(credential));
@@ -1017,6 +1087,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var isoCreds = wallet.isoMdocCredentials;
   List<VerifiableCredential> creds = [];
   List<IssuerSignedObject> isoCredsParsed = [];
+  List<sdJwt.SdJws> sdJwtCredentials = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
@@ -1032,6 +1103,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
         base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', ''))));
   }
 
+  for (var c in wallet.sdJwtCredentials) {
+    sdJwtCredentials.add(sdJwt.SdJws.fromCompactSerialization(
+        c.plaintextCredential.replaceAll('$sdPrefix:', '')));
+  }
+
   if (definition == null) {
     logger.d('No presentation definition');
     showErrorMessage(
@@ -1043,9 +1119,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
   try {
     logger.d(isoCredsParsed.length);
     var filtered = searchCredentialsForPresentationDefinition(definition,
-        credentials: creds, isoMdocCredentials: isoCredsParsed);
+        credentials: creds,
+        isoMdocCredentials: isoCredsParsed,
+        sdJwtCredentials: sdJwtCredentials);
     logger.d(
-        'successfully filtered: isoLength: ${filtered.first.isoMdocCredentials?.length}');
+        'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
     Navigator.of(navigatorKey.currentContext!).push(
       MaterialPageRoute(

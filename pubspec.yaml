@@ -19,7 +19,7 @@ version: 3.2.6-test+58
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.16.0 <3.23.0"
+  flutter: ">=3.16.0 <3.24.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -39,6 +39,10 @@ dependencies:
   #  dart_ssi:
   #    path: ../flutter_ssi_wallet
   #dart_ssi: ^3.0.0
+  sd_jwt:
+    git:
+      url: https://github.com/b2cm/sd_jwt
+    #path: ../sd-jwt
   path_provider: ^2.0.12
   local_auth: ^2.2.0
   flutter_secure_storage:
@@ -67,7 +71,7 @@ dependencies:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form
   # device_info_plus: ^9.1.1
-  android_id: ^0.3.3
+  # android_id: ^0.4.0
   flutter_inappwebview: ^6.0.0-beta.22
   action_slider: any
   crypto: any

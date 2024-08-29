@@ -377,10 +377,10 @@ class MdocProvider extends ChangeNotifier {
     } else {
       leMax = int.parse(hex.encode(le), radix: 16);
       logger.d(leMax);
-      if (offset == 5) {
-        logger.d('short message; maybe end of communication');
-        return;
-      }
+      // if (offset == 5) {
+      //   logger.d('short message; maybe end of communication');
+      //   return;
+      // }
       handleNfcRequest();
     }
   }
@@ -434,7 +434,7 @@ class MdocProvider extends ChangeNotifier {
       });
     } else {
       bytesSend += leMax;
-      var content = responseToSend!.sublist(bytesSend - leMax, leMax);
+      var content = responseToSend!.sublist(bytesSend - leMax, bytesSend);
       logger.d('content length = ${content.length}');
       int remaining = responseToSend!.length - bytesSend;
       sendApdu(content + [97, remaining > 255 ? 0 : remaining]);
