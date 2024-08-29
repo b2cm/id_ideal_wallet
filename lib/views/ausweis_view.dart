@@ -9,6 +9,8 @@ import 'package:id_ideal_wallet/basicUi/ausweis/main_content.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class AusweisView extends StatefulWidget {
   const AusweisView({super.key});
@@ -62,6 +64,16 @@ class AusweisViewState extends State<AusweisView> {
   Widget build(BuildContext context) {
     return Consumer<AusweisProvider>(builder: (context, ausweis, child) {
       return Scaffold(
+        appBar: AppBar(
+          title: Text("Ausweis"),
+          // Show the back button only on iOS
+          leading: Platform.isIOS ? IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ) : null,
+        ),
         body: SafeArea(child: getBody(ausweis)),
       );
     });
