@@ -93,10 +93,10 @@ packages:
     dependency: transitive
     description:
       name: bidi
-      sha256: "1a7d0c696324b2089f72e7671fd1f1f64fef44c980f3cebc84e803967c597b63"
+      sha256: "9a712c7ddf708f7c41b1923aa83648a3ed44cfd75b04f72d598c45e5be287f9d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.10"
+    version: "2.0.12"
   bip32:
     dependency: transitive
     description:
@@ -276,9 +276,11 @@ packages:
   dart_ssi:
     dependency: "direct main"
     description:
-      path: "../flutter_ssi_wallet"
-      relative: true
-    source: path
+      path: "."
+      ref: development
+      resolved-ref: "308c179c1e98d93fabc9eab06d79c4cdfbe9fa96"
+      url: "https://github.com/b2cm/dart_ssi"
+    source: git
     version: "4.0.0"
   dbus:
     dependency: transitive
@@ -438,10 +440,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "9d98bd47ef9d34e803d438f17fd32b116d31009f534a6fa5ce3a1167f189a6de"
+      sha256: "9ee02950848f61c4129af3d6ec84a1cfc0e47931abc746b03e7a3bc3e8ff6eda"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.21"
+    version: "2.0.22"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -689,10 +691,10 @@ packages:
     dependency: "direct main"
     description:
       name: local_auth_android
-      sha256: e99c44ca0bce08f26f25e2a2e07d3b443d69986e1c3acf67c1449f7d847e3625
+      sha256: e9a3c321e94359a552b1bdd0f98f79885f2b3e27234d270f9bef5cd82b29340c
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.43"
+    version: "1.0.44"
   local_auth_darwin:
     dependency: "direct main"
     description:
@@ -954,10 +956,10 @@ packages:
     dependency: transitive
     description:
       name: quiver
-      sha256: b1c1ac5ce6688d77f65f3375a9abb9319b3cb32486bdc7a1e0fdf004d7ba4e47
+      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.1"
+    version: "3.2.2"
   random_password_generator:
     dependency: "direct main"
     description:
@@ -977,9 +979,11 @@ packages:
   sd_jwt:
     dependency: "direct main"
     description:
-      path: "../sd-jwt"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "11647deaeaf89a0b2b347085ae5439a9408c0ff3"
+      url: "https://github.com/b2cm/sd_jwt"
+    source: git
     version: "1.0.0"
   sec:
     dependency: transitive
@@ -1001,10 +1005,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: a7e8467e9181cef109f601e3f65765685786c1a738a83d7fbbde377589c0d974
+      sha256: "480ba4345773f56acda9abf5f50bd966f581dac5d514e5fc4a18c62976bbba7e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.1"
+    version: "2.3.2"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1142,10 +1146,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_android
-      sha256: f0c73347dfcfa5b3db8bc06e1502668265d39c08f310c29bff4e28eea9699f79
+      sha256: e35a698ac302dd68e41f73250bd9517fe3ab5fa4f18fe4647a0872db61bacbab
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.9"
+    version: "6.3.10"
   url_launcher_ios:
     dependency: transitive
     description:
@@ -1292,5 +1296,5 @@ packages:
     source: hosted
     version: "6.5.0"
 sdks:
-  dart: ">=3.4.0 <4.0.0"
-  flutter: ">=3.22.0"
+  dart: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"

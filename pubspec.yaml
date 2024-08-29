@@ -32,15 +32,17 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  #  dart_ssi:
-  #    git:
-  #      url: https://github.com/b2cm/dart_ssi
-  #      ref: development
   dart_ssi:
-    path: ../flutter_ssi_wallet
+    git:
+      url: https://github.com/b2cm/dart_ssi
+      ref: development
+  #  dart_ssi:
+  #    path: ../flutter_ssi_wallet
   #dart_ssi: ^3.0.0
   sd_jwt:
-    path: ../sd-jwt
+    git:
+      url: https://github.com/b2cm/sd_jwt
+    #path: ../sd-jwt
   path_provider: ^2.0.12
   local_auth: ^2.2.0
   flutter_secure_storage:
