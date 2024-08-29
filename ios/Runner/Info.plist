@@ -2,11 +2,91 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>LSApplicationQueriesSchemes</key>
+	<key>CFBundleURLTypes</key>
 	<array>
-		<string>http</string>
-		<string>https</string>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eid</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lightning</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lnurl</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lnbc</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eudi-openid4ci</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openid-credential-offer</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eudi-openid4vci</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openid-presentation-request</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eudi-openid4vp</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>eu.hidy.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openid4vp</string>
+			</array>
+		</dict>
 	</array>
+	<key>Cfbundle</key>
+	<string></string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -30,9 +110,20 @@
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>FlutterDeepLinkingEnabled</key>
-	<true/>
+	<false/>
+	<key>LSApplicationCategoryType</key>
+	<string></string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>http</string>
+		<string>https</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>Diese App nutzt NFC um den Personalausweis auszulesen</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>no clue will add later</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App nutzt die Kamera, um QR-Codes zu scannen.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -58,5 +149,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>E80704007F00070302</string>
+		<string>A000000167455349474E</string>
+		<string>A0000002471001</string>
+		<string>A0000002472001</string>
+		<string>D2760000850100</string>
+		<string>D2760000850101</string>
+		<string>00000000000000</string>
+	</array>
 </dict>
 </plist>

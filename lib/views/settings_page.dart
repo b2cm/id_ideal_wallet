@@ -57,7 +57,7 @@ class SettingsPageState extends State<SettingsPage> {
             onTap: () => Provider.of<NavigationProvider>(context, listen: false)
                 .changePage([NavigationPage.searchNewAbo]),
           ),
-          if (Platform.isAndroid)
+          if (Platform.isAndroid || Platform.isIOS)
             ListTile(
               title: Text('Ausweis'),
               onTap: () => Navigator.of(navigatorKey.currentContext!).push(
