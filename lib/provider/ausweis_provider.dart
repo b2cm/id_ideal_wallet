@@ -49,7 +49,7 @@ class AusweisProvider extends ChangeNotifier {
   late final Map<Type, CustomTypeHandler> typeHandlers;
 
   AusweisProvider() {
-      typeHandlers = {
+    typeHandlers = {
       InsertCardMessage: handleInsertCardMessage,
       PauseMessage: handlePauseMessage,
       EnterPinMessage: handleEnterPinMessage,
@@ -61,11 +61,10 @@ class AusweisProvider extends ChangeNotifier {
       DisconnectMessage: handleDisconnectMessage,
       EnterCanMessage: handleEnterCanMessage,
       EnterPukMessage: handleEnterPukMessage
-
     };
   }
 
-  void reset() {
+  void reset([bool notify = true]) {
     screen = AusweisScreen.start;
     requestedAttributes = [];
     requesterCert = null;
@@ -79,7 +78,7 @@ class AusweisProvider extends ChangeNotifier {
     selfInfo = true;
     pause = false;
     disconnectSdk();
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   void startListening() {
@@ -419,8 +418,7 @@ class AusweisProvider extends ChangeNotifier {
     if (message is InsertCardMessage) {
       if (screen != AusweisScreen.enterPin &&
           screen != AusweisScreen.enterCan &&
-          screen != AusweisScreen.enterPuk) 
-      {
+          screen != AusweisScreen.enterPuk) {
         screen = AusweisScreen.insertCard;
       }
     } else {
@@ -440,7 +438,7 @@ class AusweisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-    void handleEnterPinMessage(dynamic message) {
+  void handleEnterPinMessage(dynamic message) {
     if (message is EnterPinMessage) {
       screen = AusweisScreen.enterPin;
       pinRetry = message.reader?.cardRetryCounter ?? 3;
@@ -474,12 +472,14 @@ class AusweisProvider extends ChangeNotifier {
 
   void handleAuthMessage(dynamic message) async {
     if (message is AuthMessage) {
-      if (message.major == 'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#ok') {
+      if (message.major ==
+          'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#ok') {
         // successful response
         if (selfInfo) {
-          var response = await get(Uri.parse(message.url!), headers: {'Accept': 'text/html'});
+          var response = await get(Uri.parse(message.url!),
+              headers: {'Accept': 'text/html'});
           logger.d('${response.statusCode} / ${response.body}');
-          
+
           if (response.statusCode == 200) {
             readData = {};
             var document = XmlDocument.parse(response.body);
@@ -495,15 +495,24 @@ class AusweisProvider extends ChangeNotifier {
             disconnectSdk();
           }
         } else {
-          launchUrl(Uri.parse(message.url!),);
-          reset();
+          launchUrl(Uri.parse(message.url!),
+              mode: LaunchMode.externalApplication);
+          logger.d('launched');
+          Navigator.pop(navigatorKey.currentContext!);
+          logger.d('page changed?');
+          reset(false);
         }
-      } else if (message.major == 'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#error' && message.minor == 'http://www.bsi.bund.de/ecard/api/1.1/resultminor/sal#cancellationByUser') {
+      } else if (message.major ==
+              'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#error' &&
+          message.minor ==
+              'http://www.bsi.bund.de/ecard/api/1.1/resultminor/sal#cancellationByUser') {
         if (message.reason == 'User_Cancelled') {
           reset();
         } else {
-          errorDescription = message.description ?? 'Es ist ein Fehler aufgetreten';
-          errorMessage = message.message ?? 'Es liegt keine Beschreibung des Fehlers vor';
+          errorDescription =
+              message.description ?? 'Es ist ein Fehler aufgetreten';
+          errorMessage =
+              message.message ?? 'Es liegt keine Beschreibung des Fehlers vor';
           screen = AusweisScreen.error;
         }
       }
@@ -520,9 +529,9 @@ class AusweisProvider extends ChangeNotifier {
       } else {
         screen = AusweisScreen.main;
       }
-      statusProgress = message.progress == null ? null : message.progress! / 100;
+      statusProgress =
+          message.progress == null ? null : message.progress! / 100;
       logger.d(statusProgress);
-
     } else {
       logger.d("Incorrect type for handleStatusMessage");
     }
@@ -531,7 +540,6 @@ class AusweisProvider extends ChangeNotifier {
 
   void handleReaderMessage(dynamic message) {
     if (message is ReaderMessage) {
-      
       if (start) {
         if (tcTokenUrl == null) {
           runDemoAuth();
@@ -547,7 +555,7 @@ class AusweisProvider extends ChangeNotifier {
       }
 
       logger.d(pause);
-      
+
       if (pause) {
         if (message.cardRetryCounter != null &&
             message.cardDeactivated != null &&
