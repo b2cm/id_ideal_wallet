@@ -74,20 +74,24 @@ class WebViewWindowState extends State<WebViewWindow> {
     var currentAbos =
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
+
     List<String> allAbos = currentAbos.map((e) {
       var u = e['url']!;
       var asUri = Uri.parse(u);
-      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+      return removeTrailingSlash(
+          '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}');
     }).toList();
 
     var asUri = Uri.parse(widget.initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
     bool inLocalAboList = allAbos.contains(toCheck);
     logger.d('$allAbos contains? $toCheck');
 
     Map<String, String> uriToImage = {};
     List<String> trusted;
-    (trusted, uriToImage) = await initTrustedSites();
+    List<String> originalAbos;
+    (trusted, uriToImage, originalAbos) = await initTrustedSites();
     trustedSites = trusted;
 
     if (inLocalAboList) {
@@ -96,15 +100,21 @@ class WebViewWindowState extends State<WebViewWindow> {
     }
 
     logger.d('$trustedSites contains? $toCheck');
+    logger.d(originalAbos);
+
     if (trustedSites!.contains(toCheck)) {
+      var urlToAdd = originalAbos.firstWhere((test) => test.startsWith(toCheck),
+          orElse: () => toCheck);
       imageUrl = uriToImage[toCheck] ?? '';
       logger.d(imageUrl);
+      logger.d('add $urlToAdd as abo');
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(toCheck, imageUrl, widget.title);
+          .addAbo(urlToAdd, imageUrl, widget.title);
     }
   }
 
-  Future<(List<String>, Map<String, String>)> initTrustedSites() async {
+  Future<(List<String>, Map<String, String>, List<String>)>
+      initTrustedSites() async {
     var res = await get(Uri.parse(applicationEndpoint));
     List<Map<String, dynamic>> available = [];
     if (res.statusCode == 200) {
@@ -114,16 +124,21 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     Map<String, String> uriToImage = {};
     List<String> trusted = [];
+    List<String> original = [];
     if (available.isNotEmpty) {
       trusted = available.map((e) {
         var u = Uri.parse(e['url']!);
-        var correctUri = '${u.scheme}://${u.host}${u.path}';
+        var correctUri =
+            removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
         uriToImage[correctUri] = e['mainbgimg'];
-        return '${u.scheme}://${u.host}${u.path}';
+        return removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
+      }).toList();
+      original = available.map((e) {
+        return e['url']! as String;
       }).toList();
     }
 
-    return (trusted, uriToImage);
+    return (trusted, uriToImage, original);
   }
 
   @override
@@ -284,10 +299,11 @@ class WebViewWindowState extends State<WebViewWindow> {
   Future<VerifiablePresentation?> requestPresentationNoSign(
       dynamic request, String initialUrl, List<String>? trusted) async {
     var asUri = Uri.parse(initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
 
     if (trusted == null || trusted.isEmpty) {
-      (trusted, _) = await initTrustedSites();
+      (trusted, _, _) = await initTrustedSites();
     }
 
     if (testBuild) {
