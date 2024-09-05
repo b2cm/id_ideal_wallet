@@ -278,7 +278,7 @@ packages:
     description:
       path: "."
       ref: development
-      resolved-ref: "308c179c1e98d93fabc9eab06d79c4cdfbe9fa96"
+      resolved-ref: "1372b64895576b9644bd62ea917727a540d1c676"
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "4.0.0"
@@ -302,10 +302,10 @@ packages:
     dependency: transitive
     description:
       name: ed25519_hd_key
-      sha256: c5c9f11a03f5789bf9dcd9ae88d641571c802640851f1cacdb13123f171b3a26
+      sha256: "31e191ec97492873067e46dc9cc0c7d55170559c83a478400feffa0627acaccf"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "2.3.0"
   eip1559:
     dependency: transitive
     description:
@@ -326,10 +326,10 @@ packages:
     dependency: transitive
     description:
       name: elliptic
-      sha256: "98e2fa89a714c649174553c823db2612dc9581814477fe1264a499d448237b6b"
+      sha256: "0c303d810603953a65dc39c4c542fb7538defd9e212403c54c266140819523b6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.10"
+    version: "0.3.11"
   fake_async:
     dependency: transitive
     description:
@@ -1202,10 +1202,10 @@ packages:
     dependency: "direct main"
     description:
       name: uuid
-      sha256: "83d37c7ad7aaf9aa8e275490669535c8080377cfa7a7004c24dfac53afffaa90"
+      sha256: f33d6bb662f0e4f79dcd7ada2e6170f3b3a2530c28fc41f49a411ddedd576a77
       url: "https://pub.dev"
     source: hosted
-    version: "4.4.2"
+    version: "4.5.0"
   vector_math:
     dependency: transitive
     description:
