@@ -73,14 +73,23 @@ class WebViewWindowState extends State<WebViewWindow> {
     var currentAbos =
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
+    List<String> originalAbos = currentAbos.map((e) {
+      var u = e['url']!;
+      return u;
+    }).toList();
+
     List<String> allAbos = currentAbos.map((e) {
       var u = e['url']!;
       var asUri = Uri.parse(u);
-      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+      return removeTrailingSlash(
+          '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}');
     }).toList();
 
+    logger.d(originalAbos);
+
     var asUri = Uri.parse(widget.initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
     bool inLocalAboList = allAbos.contains(toCheck);
     logger.d('$allAbos contains? $toCheck');
 
@@ -95,11 +104,15 @@ class WebViewWindowState extends State<WebViewWindow> {
     }
 
     logger.d('$trustedSites contains? $toCheck');
+
     if (trustedSites!.contains(toCheck)) {
+      var urlToAdd = originalAbos.firstWhere((test) => test.startsWith(toCheck),
+          orElse: () => toCheck);
       imageUrl = uriToImage[toCheck] ?? '';
       logger.d(imageUrl);
+      logger.d('add $urlToAdd as abo');
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(toCheck, imageUrl, widget.title);
+          .addAbo(urlToAdd, imageUrl, widget.title);
     }
   }
 
@@ -116,9 +129,10 @@ class WebViewWindowState extends State<WebViewWindow> {
     if (available.isNotEmpty) {
       trusted = available.map((e) {
         var u = Uri.parse(e['url']!);
-        var correctUri = '${u.scheme}://${u.host}${u.path}';
+        var correctUri =
+            removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
         uriToImage[correctUri] = e['mainbgimg'];
-        return '${u.scheme}://${u.host}${u.path}';
+        return removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
       }).toList();
     }
 
@@ -279,7 +293,8 @@ class WebViewWindowState extends State<WebViewWindow> {
   Future<VerifiablePresentation?> requestPresentationNoSign(
       dynamic request, String initialUrl, List<String>? trusted) async {
     var asUri = Uri.parse(initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
 
     if (trusted == null || trusted.isEmpty) {
       (trusted, _) = await initTrustedSites();
