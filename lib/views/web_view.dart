@@ -100,7 +100,7 @@ class WebViewWindowState extends State<WebViewWindow> {
       imageUrl = uriToImage[toCheck] ?? '';
       logger.d(imageUrl);
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(widget.initialUrl, imageUrl, widget.title);
+          .addAbo(toCheck, imageUrl, widget.title);
     }
   }
 
