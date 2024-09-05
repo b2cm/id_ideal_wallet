@@ -73,10 +73,6 @@ class WebViewWindowState extends State<WebViewWindow> {
     var currentAbos =
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
-    List<String> originalAbos = currentAbos.map((e) {
-      var u = e['url']!;
-      return u;
-    }).toList();
 
     List<String> allAbos = currentAbos.map((e) {
       var u = e['url']!;
@@ -84,8 +80,6 @@ class WebViewWindowState extends State<WebViewWindow> {
       return removeTrailingSlash(
           '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}');
     }).toList();
-
-    logger.d(originalAbos);
 
     var asUri = Uri.parse(widget.initialUrl);
     var toCheck =
@@ -95,7 +89,8 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     Map<String, String> uriToImage = {};
     List<String> trusted;
-    (trusted, uriToImage) = await initTrustedSites();
+    List<String> originalAbos;
+    (trusted, uriToImage, originalAbos) = await initTrustedSites();
     trustedSites = trusted;
 
     if (inLocalAboList) {
@@ -104,6 +99,7 @@ class WebViewWindowState extends State<WebViewWindow> {
     }
 
     logger.d('$trustedSites contains? $toCheck');
+    logger.d(originalAbos);
 
     if (trustedSites!.contains(toCheck)) {
       var urlToAdd = originalAbos.firstWhere((test) => test.startsWith(toCheck),
@@ -116,7 +112,8 @@ class WebViewWindowState extends State<WebViewWindow> {
     }
   }
 
-  Future<(List<String>, Map<String, String>)> initTrustedSites() async {
+  Future<(List<String>, Map<String, String>, List<String>)>
+      initTrustedSites() async {
     var res = await get(Uri.parse(applicationEndpoint));
     List<Map<String, dynamic>> available = [];
     if (res.statusCode == 200) {
@@ -126,6 +123,7 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     Map<String, String> uriToImage = {};
     List<String> trusted = [];
+    List<String> original = [];
     if (available.isNotEmpty) {
       trusted = available.map((e) {
         var u = Uri.parse(e['url']!);
@@ -134,9 +132,12 @@ class WebViewWindowState extends State<WebViewWindow> {
         uriToImage[correctUri] = e['mainbgimg'];
         return removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
       }).toList();
+      original = available.map((e) {
+        return e['url']! as String;
+      }).toList();
     }
 
-    return (trusted, uriToImage);
+    return (trusted, uriToImage, original);
   }
 
   @override
@@ -297,7 +298,7 @@ class WebViewWindowState extends State<WebViewWindow> {
         removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
 
     if (trusted == null || trusted.isEmpty) {
-      (trusted, _) = await initTrustedSites();
+      (trusted, _, _) = await initTrustedSites();
     }
 
     if (testBuild) {
