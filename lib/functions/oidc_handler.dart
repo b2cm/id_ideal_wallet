@@ -586,8 +586,9 @@ Future<void> getCredential(
       format: credentialMetadata.format,
       credentialType: credentialMetadata.credentialType,
       context: credentialMetadata.context,
-      proof:
-          CredentialRequestProof(proofType: proofType, proofValue: proofValue));
+      proof: [
+        CredentialRequestProof(proofType: proofType, proofValue: proofValue)
+      ]);
 
   KeyPair? decryptionKey;
   if (metadata.credentialResponseEncryptionRequired ?? false) {
