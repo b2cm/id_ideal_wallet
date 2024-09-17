@@ -11,6 +11,8 @@ import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class HistoryEntries extends StatelessWidget {
   const HistoryEntries({super.key, required this.credential});
@@ -132,15 +134,19 @@ class CredentialDetailState extends State<CredentialDetailView> {
           .getCredential(widget.credential.credentialSubject['receiptId']);
       if (receipt != null) {
         var receiptVc = VerifiableCredential.fromJson(receipt.w3cCredential);
+        var target = PdfPreviewPage(
+                    paymentReceipt: receiptVc,
+                    eventName:
+                        widget.credential.credentialSubject['event'] ?? '');
         return ExpansionTile(
           title: Text(AppLocalizations.of(context)!.invoice),
           trailing: InkWell(
             child: const Icon(Icons.picture_as_pdf),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => PdfPreviewPage(
-                    paymentReceipt: receiptVc,
-                    eventName:
-                        widget.credential.credentialSubject['event'] ?? ''))),
+            onTap: () => Navigator.of(context).push(
+              Platform.isIOS
+              ? CupertinoPageRoute(builder: (context) => target)
+              : MaterialPageRoute(builder: (context) => target)
+            )
           ),
           expandedAlignment: Alignment.centerLeft,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,

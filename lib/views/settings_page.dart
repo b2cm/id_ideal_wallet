@@ -10,6 +10,7 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/cupertino.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -61,7 +62,9 @@ class SettingsPageState extends State<SettingsPage> {
             ListTile(
               title: Text('Ausweis'),
               onTap: () => Navigator.of(navigatorKey.currentContext!).push(
-                  MaterialPageRoute(builder: (context) => const AusweisView())),
+                Platform.isIOS
+                ? CupertinoPageRoute(builder: (context) => const AusweisView())
+                : MaterialPageRoute(builder: (context) => const AusweisView())),
             )
         ],
       ),

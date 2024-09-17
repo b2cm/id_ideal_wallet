@@ -15,9 +15,10 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		F442AB8E2C9886BD00661D58 /* AusweisApp2SDKWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = F442AB8D2C9886BD00661D58 /* AusweisApp2SDKWrapper */; };
+		F442AB912C9886D500661D58 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = F442AB902C9886D500661D58 /* FlutterGeneratedPluginSwiftPackage */; };
 		F4BBBE802C6B6D450082C7D7 /* CallbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BBBE7F2C6B6D450082C7D7 /* CallbackManager.swift */; };
 		F4BBBE822C6B6D9E0082C7D7 /* EventChannelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4BBBE812C6B6D9E0082C7D7 /* EventChannelManager.swift */; };
-		F4F6602F2C736C290043DEA6 /* AusweisApp2SDKWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = F4F6602E2C736C290043DEA6 /* AusweisApp2SDKWrapper */; };
 		F4F660312C7728C00043DEA6 /* apple-app-site-association in Resources */ = {isa = PBXBuildFile; fileRef = F4F660302C7728C00043DEA6 /* apple-app-site-association */; };
 /* End PBXBuildFile section */
 
@@ -63,9 +64,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F442AB8E2C9886BD00661D58 /* AusweisApp2SDKWrapper in Frameworks */,
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
-				F4F6602F2C736C290043DEA6 /* AusweisApp2SDKWrapper in Frameworks */,
 				54D301C77A38F24BC1D3BE57 /* Pods_Runner.framework in Frameworks */,
+				F442AB912C9886D500661D58 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,7 +165,8 @@
 			name = Runner;
 			packageProductDependencies = (
 				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
-				F4F6602E2C736C290043DEA6 /* AusweisApp2SDKWrapper */,
+				F442AB8D2C9886BD00661D58 /* AusweisApp2SDKWrapper */,
+				F442AB902C9886D500661D58 /* FlutterGeneratedPluginSwiftPackage */,
 			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
@@ -194,8 +197,8 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
-				F4F6602D2C736C290043DEA6 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */,
+				F442AB8C2C9886BD00661D58 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */,
+				F442AB8F2C9886D500661D58 /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -647,19 +650,19 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */ = {
+		F442AB8F2C9886D500661D58 /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F4F6602D2C736C290043DEA6 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */ = {
+		F442AB8C2C9886BD00661D58 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Governikus/AusweisApp2Wrapper-iOS-SPM";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.2.0;
+				minimumVersion = 2.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -669,10 +672,14 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};
-		F4F6602E2C736C290043DEA6 /* AusweisApp2SDKWrapper */ = {
+		F442AB8D2C9886BD00661D58 /* AusweisApp2SDKWrapper */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F4F6602D2C736C290043DEA6 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */;
+			package = F442AB8C2C9886BD00661D58 /* XCRemoteSwiftPackageReference "AusweisApp2Wrapper-iOS-SPM" */;
 			productName = AusweisApp2SDKWrapper;
+		};
+		F442AB902C9886D500661D58 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
