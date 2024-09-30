@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
@@ -27,8 +28,6 @@ import 'package:sd_jwt/sd_jwt.dart' as sdJwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart' as x509;
-import 'package:flutter/cupertino.dart';
-import 'dart:io' show Platform;
 
 String removeTrailingSlash(String base64Input) {
   while (base64Input.endsWith('/')) {
@@ -926,7 +925,7 @@ storeCredential(String format, dynamic credential, String credentialDid,
         type);
     return;
   } else {
-    logger.d(jsonDecode(credential));
+    logger.d(credential);
 
     var verified = false;
     try {
@@ -1128,24 +1127,22 @@ Future<void> handlePresentationRequestOidc(String request) async {
         'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
     var target = PresentationRequestDialog(
-          definition: definition!,
-          definitionHash: '',
-          otherEndpoint: responseUri ?? redirectUri ?? clientId,
-          receiverDid: clientId,
-          myDid: 'myDid',
-          results: filtered,
-          isOidc: true,
-          nonce: nonce,
-          oidcState: state,
-          oidcResponseMode: responseMode,
-          oidcClientMetadata: clientMetaData,
-        );
-
-    Navigator.of(navigatorKey.currentContext!).push(
-      Platform.isIOS
-      ? CupertinoPageRoute(builder: (context) => target)
-      : MaterialPageRoute(builder: (context) => target)
+      definition: definition!,
+      definitionHash: '',
+      otherEndpoint: responseUri ?? redirectUri ?? clientId,
+      receiverDid: clientId,
+      myDid: 'myDid',
+      results: filtered,
+      isOidc: true,
+      nonce: nonce,
+      oidcState: state,
+      oidcResponseMode: responseMode,
+      oidcClientMetadata: clientMetaData,
     );
+
+    Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
+        ? CupertinoPageRoute(builder: (context) => target)
+        : MaterialPageRoute(builder: (context) => target));
   } catch (e) {
     logger.e(e);
     showErrorMessage(
