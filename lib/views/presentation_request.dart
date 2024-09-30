@@ -33,8 +33,9 @@ import 'package:provider/provider.dart';
 import 'package:sd_jwt/sd_jwt.dart' as sd_jwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509b/x509.dart';
-
 import '../functions/didcomm_message_handler.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -229,13 +230,14 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 onPressed: () async {
                   Map res;
                   int index;
-                  (res, index) = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => CredentialSelfIssue(
+                  var target = CredentialSelfIssue(
                         input: [i],
                         outerPos: pos,
-                      ),
-                    ),
+                      );
+                  (res, index) = await Navigator.of(context).push(
+                    Platform.isIOS
+                    ? CupertinoPageRoute(builder: (context) => target)
+                    : MaterialPageRoute(builder: (context) => target)
                   );
                   if (res.isNotEmpty) {
                     var wallet = Provider.of<WalletProvider>(

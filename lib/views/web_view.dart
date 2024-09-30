@@ -15,6 +15,8 @@ import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class WebViewWindow extends StatefulWidget {
   final String initialUrl;
@@ -433,9 +435,7 @@ class WebViewWindowState extends State<WebViewWindow> {
             loadDocumentFunction: loadDocumentFast);
         vp = VerifiablePresentation.fromJson(tmp);
       } else {
-        vp = await Navigator.of(navigatorKey.currentContext!).push(
-          MaterialPageRoute(
-            builder: (context) => PresentationRequestDialog(
+        var target = PresentationRequestDialog(
               definition: definition,
               definitionHash: definitionHash.toString(),
               askForBackground: askForBackground,
@@ -446,8 +446,11 @@ class WebViewWindowState extends State<WebViewWindow> {
               myDid: '',
               results: filtered,
               nonce: nonce,
-            ),
-          ),
+            );
+        vp = await Navigator.of(navigatorKey.currentContext!).push(
+          Platform.isIOS
+          ? CupertinoPageRoute(builder: (context) => target)
+          : MaterialPageRoute(builder: (context) => target)
         );
       }
 

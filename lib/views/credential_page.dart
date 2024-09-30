@@ -18,6 +18,8 @@ import 'package:id_ideal_wallet/views/iso_credential_request.dart';
 import 'package:json_path/fun_sdk.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class CredentialPage extends StatefulWidget {
   final String initialSelection;
@@ -46,9 +48,11 @@ class CredentialPageState extends State<CredentialPage> {
                 ? [
                     InkWell(
                         onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) =>
-                                  const IsoCredentialRequest()));
+                          Navigator.of(context).push(
+                            Platform.isIOS
+                            ? CupertinoPageRoute(builder: (context) => const IsoCredentialRequest())
+                            : MaterialPageRoute(builder: (context) => const IsoCredentialRequest())
+                          );
                         },
                         child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
@@ -152,12 +156,17 @@ ListTile generateTile(String? before, String key, dynamic value) {
           child: Text(AppLocalizations.of(navigatorKey.currentContext!)!.show),
           onTap: () {
             if (value.contains('image')) {
-              Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
-                  builder: (context) =>
-                      Base64ImagePreview(imageDataUri: value)));
+              Navigator.of(navigatorKey.currentContext!).push(
+                Platform.isIOS
+                ? CupertinoPageRoute(builder: (context) => Base64ImagePreview(imageDataUri: value))
+                : MaterialPageRoute(builder: (context) => Base64ImagePreview(imageDataUri: value))
+              );
             } else if (value.contains('application/pdf')) {
-              Navigator.of(navigatorKey.currentContext!).push(MaterialPageRoute(
-                  builder: (context) => Base64PdfPreview(pdfDataUri: value)));
+              Navigator.of(navigatorKey.currentContext!).push(
+                Platform.isIOS
+                ? CupertinoPageRoute(builder: (context) => Base64PdfPreview(pdfDataUri: value))
+                : MaterialPageRoute(builder: (context) => Base64PdfPreview(pdfDataUri: value))
+              );
             }
           },
         )
@@ -436,9 +445,11 @@ class CredentialCard extends StatelessWidget {
             : null,
         onTap: () => clickable
             ? credential.type.contains('ContextCredential')
-                ? Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        CredentialPage(initialSelection: credential.id!)))
+                ? Navigator.of(context).push(
+                  Platform.isIOS
+                  ? CupertinoPageRoute(builder: (context) => CredentialPage(initialSelection: credential.id!))
+                  : MaterialPageRoute(builder: (context) => CredentialPage(initialSelection: credential.id!))
+                )
                 : Provider.of<NavigationProvider>(context, listen: false)
                     .changePage([NavigationPage.credentialDetail],
                         credential: credential)
