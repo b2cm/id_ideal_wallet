@@ -68,7 +68,8 @@ class WalletProvider extends ChangeNotifier {
 
   Future<List<int>?> startUri() async {
     try {
-      return platform.invokeMethod('getSharedText');
+      if(!Platform.isIOS)
+        return platform.invokeMethod('getSharedText');
     } on PlatformException catch (e) {
       logger.d('cant fetch pkpass: $e');
     }
