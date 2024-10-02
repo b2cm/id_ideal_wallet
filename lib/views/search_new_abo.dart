@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
+import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
@@ -19,7 +21,6 @@ class SearchNewAbo extends StatefulWidget {
 class SearchNewAboState extends State<SearchNewAbo> {
   bool searching = true;
   List<Map<String, dynamic>> toShow = [];
-  List<bool> checked = [];
 
   @override
   void initState() {
@@ -43,14 +44,13 @@ class SearchNewAboState extends State<SearchNewAbo> {
     }
 
     toShow = [];
-    checked = [];
+
     if (available.isNotEmpty) {
       for (var entry in available) {
         var asUri = Uri.parse(entry['url']);
         var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
         if (!inAbo.contains(toCheck)) {
           toShow.add(entry);
-          checked.add(false);
         }
       }
     }
@@ -64,62 +64,57 @@ class SearchNewAboState extends State<SearchNewAbo> {
   Widget build(BuildContext context) {
     return StyledScaffoldTitle(
       title: AppLocalizations.of(context)!.newAppTitle,
-      fab: !searching && toShow.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                var wallet =
-                    Provider.of<WalletProvider>(context, listen: false);
-                for (int i = 0; i < checked.length; i++) {
-                  if (checked[i]) {
-                    var entry = toShow[i];
-                    wallet.addAbo(
-                        entry['url'], entry['mainbgimg'], entry['name']);
-                  }
-                }
-                Provider.of<NavigationProvider>(context, listen: false)
-                    .goBack();
-              },
-              label: Text(AppLocalizations.of(context)!.add),
-            )
-          : null,
       child: searching
           ? const Center(child: CircularProgressIndicator())
           : toShow.isEmpty
               ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
-              : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: bottomPadding),
-                  itemCount: toShow.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      trailing: Checkbox(
-                        value: checked[index],
-                        onChanged: (bool? value) {
-                          if (value != null) {
-                            setState(() {
-                              checked[index] = value;
-                            });
-                          }
-                        },
-                      ),
-                      leading: Container(
-                          width: 100,
-                          decoration: BoxDecoration(
-                              border: Border.all(),
-                              borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(
-                                  scale: 0.2,
-                                  fit: BoxFit.cover,
-                                  image:
-                                      Image.network(toShow[index]['mainbgimg'])
-                                          .image))),
-                      title: Text(toShow[index]['name'] ?? ''),
-                    );
-                  },
-                  separatorBuilder: (BuildContext context, int index) {
-                    return const SizedBox(
-                      height: 7,
-                    );
-                  },
+              : SizedBox.expand(
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceEvenly,
+                      children: List.generate(toShow.length, (index) {
+                        var e = toShow[index];
+                        return InkWell(
+                          onTap: () {
+                            Provider.of<NavigationProvider>(context,
+                                    listen: false)
+                                .changePage([NavigationPage.webView],
+                                    webViewUrl: e['url']);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.4,
+                              child: ContextCredentialCard(
+                                borderWidth: 1,
+                                edgeRadius: 10,
+                                cardTitle: '',
+                                backgroundImage: e.containsKey('mainbgimg') &&
+                                        e['mainbgimg']!.isNotEmpty
+                                    ? Image.network(e['mainbgimg']!).image
+                                    : null,
+                                backgroundColor: Colors.green.shade300,
+                                cardTitleColor:
+                                    const Color.fromARGB(255, 255, 255, 255),
+                                subjectName:
+                                    e['name'] != null && e['name']!.isNotEmpty
+                                        ? e['name']!
+                                        : e['url'] != null
+                                            ? e['url']!
+                                            : '',
+                                bottomLeftText: const SizedBox(
+                                  width: 0,
+                                ),
+                                bottomRightText: const SizedBox(
+                                  width: 0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
                 ),
     );
   }
