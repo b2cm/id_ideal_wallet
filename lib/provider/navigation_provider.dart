@@ -30,7 +30,7 @@ class NavigationProvider extends ChangeNotifier {
   static const stream = EventChannel('app.channel.deeplink/events');
 
   NavigationProvider(this.showWelcome) {
-    getInitialUri();
+    getInitialUri().then((l) => handleLink(l));
     stream.receiveBroadcastStream().listen((link) => handleLink(link));
     logger.d('listen link stream');
   }
