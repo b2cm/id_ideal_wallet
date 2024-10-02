@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:base_codecs/base_codecs.dart';
@@ -8,6 +9,7 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -33,9 +35,8 @@ import 'package:provider/provider.dart';
 import 'package:sd_jwt/sd_jwt.dart' as sd_jwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:x509b/x509.dart';
+
 import '../functions/didcomm_message_handler.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:io' show Platform;
 
 class PresentationRequestDialog extends StatefulWidget {
   final List<FilterResult> results;
@@ -177,20 +178,22 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
     }
 
     // Requesting entity
-    childList.add(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: RequesterInfo(
-          requesterUrl: widget.otherEndpoint,
-          requesterCert: widget.requesterCert,
-          followingText:
-              ' ${AppLocalizations.of(navigatorKey.currentContext!)!.noteGetInformation}:',
+    if (!inOidcTest) {
+      childList.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: RequesterInfo(
+            requesterUrl: widget.otherEndpoint,
+            requesterCert: widget.requesterCert,
+            followingText:
+                ' ${AppLocalizations.of(navigatorKey.currentContext!)!.noteGetInformation}:',
+          ),
         ),
-      ),
-    );
-    childList.add(const SizedBox(
-      height: 10,
-    ));
+      );
+      childList.add(const SizedBox(
+        height: 10,
+      ));
+    }
 
     if (widget.askForBackground) {
       childList.add(CheckboxListTile(
@@ -231,14 +234,12 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                   Map res;
                   int index;
                   var target = CredentialSelfIssue(
-                        input: [i],
-                        outerPos: pos,
-                      );
-                  (res, index) = await Navigator.of(context).push(
-                    Platform.isIOS
-                    ? CupertinoPageRoute(builder: (context) => target)
-                    : MaterialPageRoute(builder: (context) => target)
+                    input: [i],
+                    outerPos: pos,
                   );
+                  (res, index) = await Navigator.of(context).push(Platform.isIOS
+                      ? CupertinoPageRoute(builder: (context) => target)
+                      : MaterialPageRoute(builder: (context) => target));
                   if (res.isNotEmpty) {
                     var wallet = Provider.of<WalletProvider>(
                         navigatorKey.currentContext!,
@@ -842,8 +843,10 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             var data = {
               'vp_token': vp.length == 1 ? vp.first : vp,
               'presentation_submission': submission,
-              'state': widget.oidcState
             };
+            if (widget.oidcState != null) {
+              data['state'] = widget.oidcState;
+            }
 
             Encrypter e;
             if (enc == 'A128CBC-HS256') {
@@ -870,10 +873,12 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
             var jwe =
                 '${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(header))))}..${removePaddingFromBase64(base64UrlEncode(encrypted.initializationVector!))}.${removePaddingFromBase64(base64UrlEncode(encrypted.data))}.${removePaddingFromBase64(base64UrlEncode(encrypted.authenticationTag!))}';
+
+            logger.d('jwe: $jwe');
             res = await post(Uri.parse(widget.otherEndpoint),
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {'content-type': 'application/x-www-form-urlencoded'},
                 body:
-                    'response=${Uri.encodeQueryComponent(jwe)}&state=${Uri.encodeQueryComponent(widget.oidcState!)}');
+                    'response=${Uri.encodeQueryComponent(jwe)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
           } else {
             throw Exception('Unsupported alg ${header['alg']}');
           }

@@ -65,6 +65,8 @@ String versionNumber = '3.3.1-test';
 String baseUrl = 'https://test.hidy.app';
 bool testBuild = true;
 
+bool inOidcTest = false;
+
 var tosEndpoint =
     'https://hidy.eu/${AppLocalizations.of(navigatorKey.currentContext!)!.localeName}/terms';
 
