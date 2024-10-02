@@ -360,6 +360,41 @@ class XmlCard extends IdCard {
   }
 }
 
+class IconCard extends IdCard {
+  final IconData icon;
+
+  const IconCard(
+      {super.key,
+      super.backgroundColor = Colors.black12,
+      required super.cardTitle,
+      required super.subjectName,
+      required this.icon,
+      super.borderWidth = 2,
+      super.edgeRadius = 20});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Icon(
+      icon,
+      size: 45,
+    );
+  }
+
+  @override
+  Widget buildFooter() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
 class ContextCredentialCard extends IdCard {
   final void Function()? onReturnTap, addToFavorites;
   final bool isFavorite;

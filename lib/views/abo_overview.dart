@@ -65,7 +65,32 @@ class AboOverviewState extends State<AboOverview>
                         child: Wrap(
                           alignment: WrapAlignment.spaceEvenly,
                           children:
-                              List.generate(wallet.aboList.length, (index) {
+                              List.generate(wallet.aboList.length + 1, (index) {
+                            if (index == wallet.aboList.length) {
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 5),
+                                child: InkWell(
+                                  onTap: () {
+                                    Provider.of<NavigationProvider>(context,
+                                            listen: false)
+                                        .changePage(
+                                            [NavigationPage.searchNewAbo]);
+                                  },
+                                  child: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.4,
+                                    child: const IconCard(
+                                      cardTitle: '',
+                                      subjectName: '',
+                                      icon: Icons.add,
+                                      borderWidth: 1,
+                                      edgeRadius: 10,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
                             var e = wallet.aboList[index];
                             return GestureDetector(
                               onTapDown: (details) {
@@ -207,8 +232,27 @@ class AboOverviewState extends State<AboOverview>
                         ),
                       ),
                     )
-                  : Center(
-                      child: Text(AppLocalizations.of(context)!.noAppNote));
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 20),
+                      child: InkWell(
+                        onTap: () {
+                          Provider.of<NavigationProvider>(context,
+                                  listen: false)
+                              .changePage([NavigationPage.searchNewAbo]);
+                        },
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.4,
+                          child: const IconCard(
+                            cardTitle: '',
+                            subjectName: '',
+                            icon: Icons.add,
+                            borderWidth: 1,
+                            edgeRadius: 10,
+                          ),
+                        ),
+                      ),
+                    );
             }),
           ),
         ));
