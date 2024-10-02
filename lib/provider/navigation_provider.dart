@@ -30,7 +30,7 @@ class NavigationProvider extends ChangeNotifier {
   static const stream = EventChannel('app.channel.deeplink/events');
 
   NavigationProvider(this.showWelcome) {
-    getInitialUri().then((l) => handleLink(l));
+    getInitialUri();
     stream.receiveBroadcastStream().listen((link) => handleLink(link));
     logger.d('listen link stream');
   }
@@ -76,7 +76,10 @@ class NavigationProvider extends ChangeNotifier {
 
   Future<dynamic> getInitialUri() async {
     try {
-      return platform.invokeMethod('getInitialLink');
+        final initialUri = await platform.invokeMethod('getInitialLink');
+        if (initialUri != null) {
+          return initialUri;
+        }
     } on PlatformException catch (e) {
       logger.d('Failed to Invoke Link from Android: ${e.message}.');
       return "Failed to Invoke: '${e.message}'.";
