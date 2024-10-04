@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
@@ -205,8 +206,8 @@ class AboOverviewState extends State<AboOverview>
                                       backgroundImage:
                                           e.containsKey('mainbgimage') &&
                                                   e['mainbgimage']!.isNotEmpty
-                                              ? Image.network(e['mainbgimage']!)
-                                                  .image
+                                              ? CachedImage(
+                                                  imageUrl: e['mainbgimage']!)
                                               : null,
                                       backgroundColor: Colors.green.shade300,
                                       cardTitleColor: const Color.fromARGB(

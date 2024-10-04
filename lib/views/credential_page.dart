@@ -8,6 +8,7 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
@@ -319,113 +320,106 @@ class ContextCardState extends State<ContextCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onTap: () => setState(() {
-              back = !back;
-            }),
-        child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-          return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 800),
-              transitionBuilder: transitionBuilder,
-              switchInCurve: Curves.easeInBack,
-              switchOutCurve: Curves.easeInBack.flipped,
-              layoutBuilder: (widget, list) =>
-                  Stack(children: [widget!, ...list]),
-              child: back
-                  ? widget.context.type.contains('PaymentContext')
-                      ? PaymentCard(
-                          key: const ValueKey(false),
-                          deleteOnTap: _deleteCredential,
-                          // onReturnTap: () => setState(() {
-                          //   back = !back;
-                          // }),
-                          balance: Provider.of<WalletProvider>(context,
-                                      listen: false)
+      onTap: () => setState(() {
+        back = !back;
+      }),
+      child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 800),
+          transitionBuilder: transitionBuilder,
+          switchInCurve: Curves.easeInBack,
+          switchOutCurve: Curves.easeInBack.flipped,
+          layoutBuilder: (widget, list) => Stack(children: [widget!, ...list]),
+          child: back
+              ? widget.context.type.contains('PaymentContext')
+                  ? PaymentCard(
+                      key: const ValueKey(false),
+                      deleteOnTap: _deleteCredential,
+                      balance:
+                          Provider.of<WalletProvider>(context, listen: false)
                                   .balance[widget.context.id]
                                   ?.toStringAsFixed(2) ??
                               '0.0',
-                          cardTitle: widget.context.credentialSubject['name'],
-                          cardTitleColor: widget.context
-                                      .credentialSubject['overlaycolor'] !=
-                                  null
-                              ? HexColor.fromHex(widget
-                                  .context.credentialSubject['overlaycolor'])
-                              : Colors.black,
-                          backgroundColor: widget.context
-                                      .credentialSubject['backsidecolor'] !=
-                                  null
-                              ? HexColor.fromHex(widget
-                                  .context.credentialSubject['backsidecolor'])
-                              : const Color.fromARGB(255, 233, 224, 200),
-                          subjectName: '',
-                          bottomLeftText: const SizedBox(
-                            width: 0,
-                          ),
-                          bottomRightText: const SizedBox(
-                            width: 0,
-                          ),
-                        )
-                      : ContextCredentialCardBack(
-                          credential: widget.context,
-                          key: const ValueKey(false),
-                          deleteOnTap: _deleteCredential,
-                          cardTitle: '',
-                          cardTitleColor:
-                              widget.context.credentialSubject['overlaycolor'] !=
-                                      null
-                                  ? HexColor.fromHex(widget.context
-                                      .credentialSubject['overlaycolor'])
-                                  : Colors.black,
-                          backgroundColor:
-                              widget.context.credentialSubject['backsidecolor'] !=
-                                      null
-                                  ? HexColor.fromHex(widget.context
-                                      .credentialSubject['backsidecolor'])
-                                  : const Color.fromARGB(255, 233, 224, 200),
-                          subjectName: widget.context.credentialSubject['name'],
-                          bottomLeftText: const SizedBox(
-                            width: 0,
-                          ),
-                          bottomRightText: const SizedBox(
-                            width: 0,
-                          ))
-                  : ContextCredentialCard(
-                      key: const ValueKey(true),
-                      // isFavorite: wallet.isFavorite(widget.context.id!),
-                      // addToFavorites: () {
-                      //   wallet.isFavorite(widget.context.id!)
-                      //       ? wallet.removeFromFavorites(widget.context.id!)
-                      //       : wallet.addToFavorites(widget.context.id!);
-                      // },
-                      // onReturnTap: () => setState(() {
-                      //       back = !back;
-                      //     }),
-                      cardTitle: '',
-                      cardTitleColor:
-                          widget.context.credentialSubject['overlaycolor'] != null
-                              ? HexColor.fromHex(
-                                  widget.context.credentialSubject['overlaycolor'])
-                              : const Color.fromARGB(255, 255, 255, 255),
-                      backgroundImage: widget.context.credentialSubject['backgroundImage'] != null
-                          ? Image.memory(base64Decode(widget.context.credentialSubject['backgroundImage'].split(',').last)).image
-                          : widget.context.credentialSubject['mainbgimg'] != null
-                              ? Image.network(
-                                  widget.context.credentialSubject['mainbgimg'],
-                                  errorBuilder: (context, object, stackTrace) {
-                                    return Text(widget.context
-                                            .credentialSubject['name'] ??
-                                        '');
-                                  },
-                                ).image
-                              : null,
-                      subjectName: widget.context.credentialSubject['name'],
-                      backgroundColor: HexColor.fromHex(widget.context.credentialSubject['backsidecolor']),
+                      cardTitle: widget.context.credentialSubject['name'],
+                      cardTitleColor: widget
+                                  .context.credentialSubject['overlaycolor'] !=
+                              null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['overlaycolor'])
+                          : Colors.black,
+                      backgroundColor: widget
+                                  .context.credentialSubject['backsidecolor'] !=
+                              null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['backsidecolor'])
+                          : const Color.fromARGB(255, 233, 224, 200),
+                      subjectName: '',
                       bottomLeftText: const SizedBox(
                         width: 0,
                       ),
                       bottomRightText: const SizedBox(
                         width: 0,
-                      )));
-        }));
+                      ),
+                    )
+                  : ContextCredentialCardBack(
+                      credential: widget.context,
+                      key: const ValueKey(false),
+                      deleteOnTap: _deleteCredential,
+                      cardTitle: '',
+                      cardTitleColor: widget
+                                  .context.credentialSubject['overlaycolor'] !=
+                              null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['overlaycolor'])
+                          : Colors.black,
+                      backgroundColor: widget
+                                  .context.credentialSubject['backsidecolor'] !=
+                              null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['backsidecolor'])
+                          : const Color.fromARGB(255, 233, 224, 200),
+                      subjectName: widget.context.credentialSubject['name'],
+                      bottomLeftText: const SizedBox(
+                        width: 0,
+                      ),
+                      bottomRightText: const SizedBox(
+                        width: 0,
+                      ),
+                    )
+              : ContextCredentialCard(
+                  key: const ValueKey(true),
+                  cardTitle: '',
+                  cardTitleColor:
+                      widget.context.credentialSubject['overlaycolor'] != null
+                          ? HexColor.fromHex(
+                              widget.context.credentialSubject['overlaycolor'])
+                          : const Color.fromARGB(255, 255, 255, 255),
+                  backgroundImage: widget
+                              .context.credentialSubject['backgroundImage'] !=
+                          null
+                      ? Image.memory(base64Decode(widget
+                          .context.credentialSubject['backgroundImage']
+                          .split(',')
+                          .last))
+                      : widget.context.credentialSubject['mainbgimg'] != null
+                          ? CachedImage(
+                              imageUrl:
+                                  widget.context.credentialSubject['mainbgimg'],
+                            )
+                          : null,
+                  subjectName: widget.context.credentialSubject['name'],
+                  backgroundColor: HexColor.fromHex(
+                      widget.context.credentialSubject['backsidecolor']),
+                  bottomLeftText: const SizedBox(
+                    width: 0,
+                  ),
+                  bottomRightText: const SizedBox(
+                    width: 0,
+                  ),
+                ),
+        );
+      }),
+    );
   }
 }
 

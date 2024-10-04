@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
+import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
@@ -91,7 +92,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                                 cardTitle: '',
                                 backgroundImage: e.containsKey('mainbgimg') &&
                                         e['mainbgimg']!.isNotEmpty
-                                    ? Image.network(e['mainbgimg']!).image
+                                    ? CachedImage(imageUrl: e['mainbgimg']!)
                                     : null,
                                 backgroundColor: Colors.green.shade300,
                                 cardTitleColor:
