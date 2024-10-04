@@ -437,11 +437,6 @@ class CredentialCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onLongPress: () => credential.type.contains('ContextCredential')
-            ? Provider.of<NavigationProvider>(context, listen: false)
-                .changePage([NavigationPage.credentialDetail],
-                    credential: credential)
-            : null,
         onTap: () => clickable
             ? credential.type.contains('ContextCredential')
                 ? Navigator.of(context).push(Platform.isIOS
@@ -453,7 +448,7 @@ class CredentialCard extends StatelessWidget {
                             CredentialPage(initialSelection: credential.id!)))
                 : Provider.of<NavigationProvider>(context, listen: false)
                     .changePage([NavigationPage.credentialDetail],
-                        credential: credential)
+                        credential: credential, track: false)
             : null,
         child: Consumer<WalletProvider>(builder: (context, wallet, child) {
           var id = getHolderDidFromCredential(credential.toJson());

@@ -45,7 +45,7 @@ dependencies:
     #path: ../sd-jwt
   path_provider: ^2.0.12
   local_auth: ^2.2.0
-  flutter_secure_storage:
+  flutter_secure_storage: ^9.2.2
   random_password_generator:
   uuid: any
   mobile_scanner: 5.2.3
