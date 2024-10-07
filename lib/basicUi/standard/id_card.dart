@@ -137,6 +137,7 @@ class IdCard extends StatelessWidget {
       }
       if (layout != null) {
         return XmlCard(
+            key: UniqueKey(),
             credential: credential,
             xmlValue: layout['baselayout'],
             backgroundImage: layout['credentialbackgroundimage'] != null

@@ -49,6 +49,8 @@ class WalletProvider extends ChangeNotifier {
   List<Credential> isoMdocCredentials = [];
   List<Credential> sdJwtCredentials = [];
 
+  Set<String> credentialsTypes = {};
+
   List<String> issuanceRunning = [];
 
   //[[url, pic-url], [url, pic-url], ...]
@@ -68,8 +70,9 @@ class WalletProvider extends ChangeNotifier {
 
   Future<List<int>?> startUri() async {
     try {
-      if(!Platform.isIOS)
+      if (!Platform.isIOS) {
         return platform.invokeMethod('getSharedText');
+      }
     } on PlatformException catch (e) {
       logger.d('cant fetch pkpass: $e');
     }
@@ -604,6 +607,9 @@ class WalletProvider extends ChangeNotifier {
     paymentCredentials = [];
     isoMdocCredentials = [];
     sdJwtCredentials = [];
+    credentialsTypes = {
+      AppLocalizations.of(navigatorKey.currentContext!)!.allCredentials
+    };
 
     var all = allCredentials();
     for (var cred in all.values) {
@@ -628,6 +634,7 @@ class WalletProvider extends ChangeNotifier {
         } else {
           if (!vc.type.contains('PaymentReceipt')) {
             credentials.add(vc);
+            credentialsTypes.add(my_util.getTypeToShow(vc.type));
           }
         }
       } else {

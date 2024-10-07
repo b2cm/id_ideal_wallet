@@ -32,6 +32,8 @@ class CredentialPage extends StatefulWidget {
 }
 
 class CredentialPageState extends State<CredentialPage> {
+  var selectedItem = '';
+
   @override
   void initState() {
     super.initState();
@@ -41,10 +43,26 @@ class CredentialPageState extends State<CredentialPage> {
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(builder: (context, wallet, child) {
       if (wallet.isOpen()) {
-        var credentialList = wallet.credentials;
+        var credentialList = selectedItem.isEmpty ||
+                selectedItem == AppLocalizations.of(context)!.allCredentials
+            ? wallet.credentials
+            : wallet.credentials
+                .where((element) => element.type.contains(selectedItem))
+                .toList();
         return StyledScaffoldTitle(
             currentlyActive: 0,
-            title: AppLocalizations.of(context)!.allCredentials,
+            title: DropdownMenu<String>(
+                initialSelection: AppLocalizations.of(context)!.allCredentials,
+                inputDecorationTheme:
+                    const InputDecorationTheme(border: InputBorder.none),
+                onSelected: (String? item) {
+                  setState(() {
+                    selectedItem = item ?? '';
+                  });
+                },
+                dropdownMenuEntries: wallet.credentialsTypes
+                    .map((e) => DropdownMenuEntry(value: e, label: e))
+                    .toList()),
             appBarActions: wallet.isoMdocCredentials.isNotEmpty
                 ? [
                     InkWell(

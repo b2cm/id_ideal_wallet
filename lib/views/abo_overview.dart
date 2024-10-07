@@ -207,7 +207,9 @@ class AboOverviewState extends State<AboOverview>
                                           e.containsKey('mainbgimage') &&
                                                   e['mainbgimage']!.isNotEmpty
                                               ? CachedImage(
-                                                  imageUrl: e['mainbgimage']!)
+                                                  imageUrl: e['mainbgimage']!,
+                                                  placeholder: e['name'],
+                                                )
                                               : null,
                                       backgroundColor: Colors.green.shade300,
                                       cardTitleColor: const Color.fromARGB(

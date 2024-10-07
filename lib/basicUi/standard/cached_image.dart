@@ -7,15 +7,15 @@ import 'package:path_provider/path_provider.dart';
 
 class CachedImage extends StatefulWidget {
   final String imageUrl;
+  final String? placeholder;
 
-  const CachedImage({super.key, required this.imageUrl});
+  const CachedImage({super.key, required this.imageUrl, this.placeholder});
 
   @override
   CachedImageState createState() => CachedImageState();
 }
 
 class CachedImageState extends State<CachedImage> {
-  bool imageLoaded = false;
   Uint8List? imageBytes;
 
   @override
@@ -38,9 +38,7 @@ class CachedImageState extends State<CachedImage> {
         file.writeAsBytes(imageBytes!);
       }
     }
-    setState(() {
-      imageLoaded = true;
-    });
+    setState(() {});
   }
 
   @override
@@ -50,6 +48,6 @@ class CachedImageState extends State<CachedImage> {
             imageBytes!,
             fit: BoxFit.cover,
           )
-        : const Text('Placeholder');
+        : Text(widget.placeholder ?? '');
   }
 }
