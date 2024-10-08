@@ -20,7 +20,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/credential_offer.dart';
+import 'package:id_ideal_wallet/views/credential_offer_new.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
@@ -133,7 +133,7 @@ Future<void> handleOfferOidc(String offerUri) async {
     return await showCupertinoModalPopup(
       context: navigatorKey.currentContext!,
       barrierColor: Colors.white,
-      builder: (BuildContext context) => CredentialOfferDialog(
+      builder: (BuildContext context) => CredentialOfferDialogNew(
           oidcIssuer: issuerString,
           isOid: true,
           requestOidcTan: offer.grants != null &&
@@ -147,7 +147,7 @@ Future<void> handleOfferOidc(String offerUri) async {
               .map((e) => VerifiableCredential(
                   context: [credentialsV1Iri],
                   type: e.credentialType ?? [],
-                  issuer: {'name': issuerString},
+                  issuer: {'oidcEndpoint': issuerString, 'id': issuerString},
                   credentialSubject: findClaims(e.claims),
                   issuanceDate: DateTime.now()))
               .toList()),

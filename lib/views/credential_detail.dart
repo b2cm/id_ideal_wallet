@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:dart_ssi/credentials.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
@@ -11,8 +14,6 @@ import 'package:id_ideal_wallet/views/credential_page.dart';
 import 'package:id_ideal_wallet/views/payment_receipt_pdf.dart';
 import 'package:provider/provider.dart';
 import 'package:x509b/x509.dart' as x509;
-import 'package:flutter/cupertino.dart';
-import 'dart:io' show Platform;
 
 class HistoryEntries extends StatelessWidget {
   const HistoryEntries({super.key, required this.credential});
@@ -135,19 +136,15 @@ class CredentialDetailState extends State<CredentialDetailView> {
       if (receipt != null) {
         var receiptVc = VerifiableCredential.fromJson(receipt.w3cCredential);
         var target = PdfPreviewPage(
-                    paymentReceipt: receiptVc,
-                    eventName:
-                        widget.credential.credentialSubject['event'] ?? '');
+            paymentReceipt: receiptVc,
+            eventName: widget.credential.credentialSubject['event'] ?? '');
         return ExpansionTile(
           title: Text(AppLocalizations.of(context)!.invoice),
           trailing: InkWell(
-            child: const Icon(Icons.picture_as_pdf),
-            onTap: () => Navigator.of(context).push(
-              Platform.isIOS
-              ? CupertinoPageRoute(builder: (context) => target)
-              : MaterialPageRoute(builder: (context) => target)
-            )
-          ),
+              child: const Icon(Icons.picture_as_pdf),
+              onTap: () => Navigator.of(context).push(Platform.isIOS
+                  ? CupertinoPageRoute(builder: (context) => target)
+                  : MaterialPageRoute(builder: (context) => target))),
           expandedAlignment: Alignment.centerLeft,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: buildCredSubject(receiptVc.credentialSubject),
@@ -237,8 +234,10 @@ class CredentialDetailState extends State<CredentialDetailView> {
 
 class CredentialInfo extends StatelessWidget {
   final VerifiableCredential credential;
+  final bool showStatus;
 
-  const CredentialInfo({super.key, required this.credential});
+  const CredentialInfo(
+      {super.key, required this.credential, this.showStatus = true});
 
   Text _buildIssuerData() {
     var issuer = '';
@@ -266,7 +265,7 @@ class CredentialInfo extends StatelessWidget {
         // };
         // issuer.addAll(buildCredSubject(dnIss));
       } else {
-        issuer += issMap['name'] ?? '';
+        issuer += issMap['name'] ?? issMap['id'] ?? '';
       }
     } else if (credential.isSelfIssued()) {
       issuer = AppLocalizations.of(navigatorKey.currentContext!)!.selfIssued;
@@ -350,7 +349,7 @@ class CredentialInfo extends StatelessWidget {
         ),
       );
     });
-    otherData.add(statusTile);
+    if (showStatus) otherData.add(statusTile);
 
     return otherData;
   }

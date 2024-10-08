@@ -10,7 +10,7 @@ import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/constants/kaprion_context.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
-import 'package:id_ideal_wallet/views/credential_offer.dart';
+import 'package:id_ideal_wallet/views/credential_offer_new.dart';
 import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:uuid/uuid.dart';
 
@@ -144,7 +144,7 @@ Future<bool> handleOfferCredential(
     var res = await showCupertinoModalPopup(
       context: navigatorKey.currentContext!,
       barrierColor: Colors.white,
-      builder: (BuildContext context) => CredentialOfferDialog(
+      builder: (BuildContext context) => CredentialOfferDialogNew(
         credentials: message.detail?.map((e) => e.credential).toList() ??
             message.fulfillment?.verifiableCredential ??
             [],
