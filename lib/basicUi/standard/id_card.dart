@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
 import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/xml_widget.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -62,10 +63,9 @@ class IdCard extends StatelessWidget {
             backgroundImage:
                 credential.credentialSubject['backgroundImage'] != null
                     ? Image.memory(base64Decode(credential
-                            .credentialSubject['backgroundImage']
-                            .split(',')
-                            .last))
-                        .image
+                        .credentialSubject['backgroundImage']
+                        .split(',')
+                        .last))
                     : null,
             subjectName: credential.credentialSubject['name'],
             bottomLeftText: const SizedBox(
@@ -137,12 +137,13 @@ class IdCard extends StatelessWidget {
       }
       if (layout != null) {
         return XmlCard(
+            key: UniqueKey(),
             credential: credential,
             xmlValue: layout['baselayout'],
             backgroundImage: layout['credentialbackgroundimage'] != null
-                ? Image.network(
-                    layout['credentialbackgroundimage'],
-                  ).image
+                ? CachedImage(
+                    imageUrl: layout['credentialbackgroundimage'],
+                  )
                 : null,
             cardTitleColor: layout['overlaycolor'] != null
                 ? HexColor.fromHex(layout['overlaycolor'])
@@ -159,7 +160,7 @@ class IdCard extends StatelessWidget {
         return IdCard(
             //subjectImage: image?.image,
             backgroundImage: background != null
-                ? Image.memory(base64Decode(background.split(',').last)).image
+                ? Image.memory(base64Decode(background.split(',').last))
                 : null,
             cardTitle: getTypeToShow(credential.type),
             subjectName:
@@ -182,7 +183,7 @@ class IdCard extends StatelessWidget {
   final ImageProvider? subjectImage;
   final Widget bottomLeftText;
   final Widget bottomRightText;
-  final ImageProvider? backgroundImage;
+  final Widget? backgroundImage;
   final ImageProvider? issuerIcon;
   final Color backgroundColor;
   final Color borderColor;
@@ -292,28 +293,28 @@ class IdCard extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(edgeRadius),
-        border: Border.all(color: borderColor, width: borderWidth),
-        image: backgroundImage != null
-            ? DecorationImage(
-                image: backgroundImage!,
-                fit: BoxFit.cover,
-                //opacity: 0.7,
-              )
-            : null,
-      ),
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            buildHeader(),
-            buildCenterOverlay(),
-            buildFooter(),
-          ]),
-    );
+    return Stack(children: [
+      if (backgroundImage != null)
+        ClipRRect(
+          borderRadius: BorderRadius.circular(edgeRadius),
+          child: backgroundImage!,
+        ),
+      Container(
+          decoration: BoxDecoration(
+            color:
+                backgroundImage != null ? Colors.transparent : backgroundColor,
+            borderRadius: BorderRadius.circular(edgeRadius),
+            border: Border.all(color: borderColor, width: borderWidth),
+          ),
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                buildHeader(),
+                buildCenterOverlay(),
+                buildFooter(),
+              ])),
+    ]);
   }
 
   @override
@@ -343,6 +344,41 @@ class XmlCard extends IdCard {
   Widget buildCenterOverlay() {
     return XmlWidget(
         xml: xmlValue, credential: credential, overlayColor: cardTitleColor);
+  }
+
+  @override
+  Widget buildFooter() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+
+  @override
+  Widget buildHeader() {
+    return const SizedBox(
+      height: 0,
+    );
+  }
+}
+
+class IconCard extends IdCard {
+  final IconData icon;
+
+  const IconCard(
+      {super.key,
+      super.backgroundColor = Colors.black12,
+      required super.cardTitle,
+      required super.subjectName,
+      required this.icon,
+      super.borderWidth = 2,
+      super.edgeRadius = 20});
+
+  @override
+  Widget buildCenterOverlay() {
+    return Icon(
+      icon,
+      size: 45,
+    );
   }
 
   @override

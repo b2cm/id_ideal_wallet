@@ -21,6 +21,8 @@ import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 enum BleMdocTransmissionState {
   uninitialized,
@@ -580,10 +582,7 @@ class MdocProvider extends ChangeNotifier {
         isoMdocCredentials: toShow,
         matchingDescriptorIds: [],
         presentationDefinitionId: '');
-
-    var res = await Navigator.of(navigatorKey.currentContext!).push(
-      MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
+    var target = PresentationRequestDialog(
           definition: PresentationDefinition(inputDescriptors: []),
           definitionHash: '',
           otherEndpoint: '',
@@ -592,8 +591,11 @@ class MdocProvider extends ChangeNotifier {
           results: [asFilter],
           isIso: true,
           requesterCert: requesterCert,
-        ),
-      ),
+        );
+    var res = await Navigator.of(navigatorKey.currentContext!).push(
+      Platform.isIOS
+      ? CupertinoPageRoute(builder: (context) => target)
+      : MaterialPageRoute(builder: (context) => target)
     );
 
     if (res != null) {

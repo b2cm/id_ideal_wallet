@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -74,20 +76,24 @@ class WebViewWindowState extends State<WebViewWindow> {
     var currentAbos =
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
+
     List<String> allAbos = currentAbos.map((e) {
       var u = e['url']!;
       var asUri = Uri.parse(u);
-      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
+      return removeTrailingSlash(
+          '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}');
     }).toList();
 
     var asUri = Uri.parse(widget.initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
     bool inLocalAboList = allAbos.contains(toCheck);
     logger.d('$allAbos contains? $toCheck');
 
     Map<String, String> uriToImage = {};
     List<String> trusted;
-    (trusted, uriToImage) = await initTrustedSites();
+    List<String> originalAbos;
+    (trusted, uriToImage, originalAbos) = await initTrustedSites();
     trustedSites = trusted;
 
     if (inLocalAboList) {
@@ -96,15 +102,21 @@ class WebViewWindowState extends State<WebViewWindow> {
     }
 
     logger.d('$trustedSites contains? $toCheck');
+    logger.d(originalAbos);
+
     if (trustedSites!.contains(toCheck)) {
+      var urlToAdd = originalAbos.firstWhere((test) => test.startsWith(toCheck),
+          orElse: () => toCheck);
       imageUrl = uriToImage[toCheck] ?? '';
       logger.d(imageUrl);
+      logger.d('add $urlToAdd as abo');
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(toCheck, imageUrl, widget.title);
+          .addAbo(urlToAdd, imageUrl, widget.title);
     }
   }
 
-  Future<(List<String>, Map<String, String>)> initTrustedSites() async {
+  Future<(List<String>, Map<String, String>, List<String>)>
+      initTrustedSites() async {
     var res = await get(Uri.parse(applicationEndpoint));
     List<Map<String, dynamic>> available = [];
     if (res.statusCode == 200) {
@@ -114,16 +126,21 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     Map<String, String> uriToImage = {};
     List<String> trusted = [];
+    List<String> original = [];
     if (available.isNotEmpty) {
       trusted = available.map((e) {
         var u = Uri.parse(e['url']!);
-        var correctUri = '${u.scheme}://${u.host}${u.path}';
+        var correctUri =
+            removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
         uriToImage[correctUri] = e['mainbgimg'];
-        return '${u.scheme}://${u.host}${u.path}';
+        return removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
+      }).toList();
+      original = available.map((e) {
+        return e['url']! as String;
       }).toList();
     }
 
-    return (trusted, uriToImage);
+    return (trusted, uriToImage, original);
   }
 
   @override
@@ -281,13 +298,14 @@ class WebViewWindowState extends State<WebViewWindow> {
     );
   }
 
-  Future<VerifiablePresentation?> requestPresentationNoSign(
+  Future<Map<String, dynamic>> requestPresentationNoSign(
       dynamic request, String initialUrl, List<String>? trusted) async {
     var asUri = Uri.parse(initialUrl);
-    var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
+    var toCheck =
+        removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
 
     if (trusted == null || trusted.isEmpty) {
-      (trusted, _) = await initTrustedSites();
+      (trusted, _, _) = await initTrustedSites();
     }
 
     if (testBuild) {
@@ -297,7 +315,7 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     logger.d('$trusted contains? $toCheck');
     if (!trusted.contains(toCheck)) {
-      return null;
+      return {'error': 'untrusted site'};
     }
 
     var definition = PresentationDefinition.fromJson(request);
@@ -341,15 +359,16 @@ class WebViewWindowState extends State<WebViewWindow> {
       }
     } catch (e) {
       logger.d(e);
-      return null;
+      return {'error': 'no matching credentials'};
     }
     if (toSend.isNotEmpty) {
       return VerifiablePresentation(
-          context: [credentialsV1Iri],
-          type: ['VerifiablePresentation'],
-          verifiableCredential: toSend);
+              context: [credentialsV1Iri],
+              type: ['VerifiablePresentation'],
+              verifiableCredential: toSend)
+          .toJson();
     }
-    return null;
+    return {'error': 'no matching credentials'};
   }
 
   Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
@@ -417,22 +436,22 @@ class WebViewWindowState extends State<WebViewWindow> {
             loadDocumentFunction: loadDocumentFast);
         vp = VerifiablePresentation.fromJson(tmp);
       } else {
-        vp = await Navigator.of(navigatorKey.currentContext!).push(
-          MaterialPageRoute(
-            builder: (context) => PresentationRequestDialog(
-              definition: definition,
-              definitionHash: definitionHash.toString(),
-              askForBackground: askForBackground,
-              name: definition.name,
-              purpose: definition.purpose,
-              otherEndpoint: initialUrl,
-              receiverDid: '',
-              myDid: '',
-              results: filtered,
-              nonce: nonce,
-            ),
-          ),
+        var target = PresentationRequestDialog(
+          definition: definition,
+          definitionHash: definitionHash.toString(),
+          askForBackground: askForBackground,
+          name: definition.name,
+          purpose: definition.purpose,
+          otherEndpoint: initialUrl,
+          receiverDid: '',
+          myDid: '',
+          results: filtered,
+          nonce: nonce,
         );
+        vp = await Navigator.of(navigatorKey.currentContext!).push(
+            Platform.isIOS
+                ? CupertinoPageRoute(builder: (context) => target)
+                : MaterialPageRoute(builder: (context) => target));
       }
 
       return vp;

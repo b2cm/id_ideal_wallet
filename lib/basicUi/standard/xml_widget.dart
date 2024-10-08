@@ -41,7 +41,9 @@ class XmlWidget extends StatelessWidget {
                     .credentialSubject[split.first.replaceAll('\$', '')] ??
                 '';
             if (split.last == 'date') {
-              value = DateFormat('dd.MM.yyyy').format(DateTime.parse(value));
+              value = value is String && value.isNotEmpty
+                  ? DateFormat('dd.MM.yyyy').format(DateTime.parse(value))
+                  : '';
             }
             return value;
           } else {

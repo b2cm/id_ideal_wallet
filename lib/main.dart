@@ -251,6 +251,20 @@ class HomeScreen extends StatelessWidget {
       if (wallet.isOpen()) {
         return Consumer<NavigationProvider>(
             builder: (context, navigator, child) {
+              Widget content = getContent(navigator, wallet);
+
+          // Only add the swipe gesture on iOS
+          if (Platform.isIOS) {
+            content = GestureDetector(
+              onHorizontalDragUpdate: (details) {
+                // Detect right swipe from the left edge
+                if (details.delta.dx > 0 && details.globalPosition.dx < 50) {
+                  navigator.goBack();
+                }
+              },
+              child: content,
+            );
+          }
           return PopScope(
               canPop: navigator.canPop,
               onPopInvoked: (_) => navigator.goBack(),

@@ -17,6 +17,8 @@ import 'package:id_ideal_wallet/views/lnurl_amount_selector.dart';
 import 'package:id_ideal_wallet/views/payment_method_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class LightningException implements Exception {
   String message;
@@ -338,14 +340,18 @@ Future<void> handleLnurl(String lnurl) async {
     logger.d(maxAmount);
     logger.d(minAmount);
     var amountToSend = minAmount;
-    if (maxAmount != minAmount) {
-      var a = await Navigator.of(navigatorKey.currentContext!)
-          .push(MaterialPageRoute(
-              builder: (context) => AmountSelection(
+    var target = AmountSelection(
                     minAmount: minAmount,
                     maxAmount: maxAmount,
                     description: description,
-                  )));
+                  );
+    if (maxAmount != minAmount) {
+      var a = await Navigator.of(navigatorKey.currentContext!)
+          .push(
+            Platform.isIOS
+            ? CupertinoPageRoute(builder: (context) => target)
+            : MaterialPageRoute(builder: (context) => target)
+          );
       if (a == null) {
         return;
       } else {
@@ -382,14 +388,18 @@ Future<void> handleLnurl(String lnurl) async {
     }
 
     var amountToSend = minAmount;
-    if (maxAmount != minAmount) {
-      var a = await Navigator.of(navigatorKey.currentContext!)
-          .push(MaterialPageRoute(
-              builder: (context) => AmountSelection(
+    var target = AmountSelection(
                     minAmount: minAmount,
                     maxAmount: maxAmount,
                     description: description,
-                  )));
+                  );
+    if (maxAmount != minAmount) {
+      var a = await Navigator.of(navigatorKey.currentContext!)
+          .push(
+            Platform.isIOS
+            ? CupertinoPageRoute(builder: (context) => target)
+            : MaterialPageRoute(builder: (context) => target)
+          );
       if (a == null) {
         return;
       } else {

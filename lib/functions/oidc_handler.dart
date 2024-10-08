@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
@@ -924,7 +925,7 @@ storeCredential(String format, dynamic credential, String credentialDid,
         type);
     return;
   } else {
-    logger.d(jsonDecode(credential));
+    logger.d(credential);
 
     var verified = false;
     try {
@@ -1125,23 +1126,23 @@ Future<void> handlePresentationRequestOidc(String request) async {
     logger.d(
         'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
-    Navigator.of(navigatorKey.currentContext!).push(
-      MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
-          definition: definition!,
-          definitionHash: '',
-          otherEndpoint: responseUri ?? redirectUri ?? clientId,
-          receiverDid: clientId,
-          myDid: 'myDid',
-          results: filtered,
-          isOidc: true,
-          nonce: nonce,
-          oidcState: state,
-          oidcResponseMode: responseMode,
-          oidcClientMetadata: clientMetaData,
-        ),
-      ),
+    var target = PresentationRequestDialog(
+      definition: definition!,
+      definitionHash: '',
+      otherEndpoint: responseUri ?? redirectUri ?? clientId,
+      receiverDid: clientId,
+      myDid: 'myDid',
+      results: filtered,
+      isOidc: true,
+      nonce: nonce,
+      oidcState: state,
+      oidcResponseMode: responseMode,
+      oidcClientMetadata: clientMetaData,
     );
+
+    Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
+        ? CupertinoPageRoute(builder: (context) => target)
+        : MaterialPageRoute(builder: (context) => target));
   } catch (e) {
     logger.e(e);
     showErrorMessage(

@@ -7,13 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:uuid/uuid.dart';
-
 import '../constants/server_address.dart';
 import '../provider/wallet_provider.dart';
 import '../views/presentation_dialog.dart';
 import '../views/presentation_proposal_dialog.dart';
 import '../views/presentation_request.dart';
 import 'didcomm_message_handler.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 Future<bool> handleProposePresentation(
     ProposePresentation message, WalletProvider wallet) async {
@@ -176,9 +177,7 @@ Future<bool> handleRequestPresentation(
       sendMessage(myDid, requester, wallet, presentationMessage, message.from!,
           silent: true);
     } else {
-      Navigator.of(navigatorKey.currentContext!).push(
-        MaterialPageRoute(
-          builder: (context) => PresentationRequestDialog(
+      var target = PresentationRequestDialog(
             definition: definition,
             definitionHash: definitionHash.toString(),
             name: definition.name,
@@ -191,9 +190,13 @@ Future<bool> handleRequestPresentation(
             lnInvoice: invoice,
             paymentCards: paymentCards,
             lnInvoiceRequest: invoiceReq,
-          ),
-        ),
-      );
+          );
+      Navigator.of(navigatorKey.currentContext!)
+          .push(
+            Platform.isIOS
+            ? CupertinoPageRoute(builder: (context) => target)
+            : MaterialPageRoute(builder: (context) => target)
+          );
     }
   } catch (e) {
     logger.e(e);
