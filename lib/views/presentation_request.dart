@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' as io
+    show HttpClient, Platform, SecurityContext, TlsProtocolVersion;
 import 'dart:typed_data';
 
 import 'package:base_codecs/base_codecs.dart';
@@ -47,7 +48,7 @@ class PresentationRequestDialog extends StatefulWidget {
   final String definitionHash;
   final RequestPresentation? message;
   final bool isOidc, askForBackground, isIso;
-  final String? nonce, oidcState, oidcResponseMode;
+  final String? nonce, oidcState, oidcResponseMode, oidcRedirectUri;
   final String? lnInvoice;
   final Map<String, dynamic>? lnInvoiceRequest;
   final List<VerifiableCredential>? paymentCards;
@@ -76,7 +77,8 @@ class PresentationRequestDialog extends StatefulWidget {
       this.requesterCert,
       this.oidcResponseMode,
       this.oidcState,
-      this.oidcClientMetadata});
+      this.oidcClientMetadata,
+      this.oidcRedirectUri});
 
   @override
   PresentationRequestDialogState createState() =>
@@ -237,9 +239,10 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     input: [i],
                     outerPos: pos,
                   );
-                  (res, index) = await Navigator.of(context).push(Platform.isIOS
-                      ? CupertinoPageRoute(builder: (context) => target)
-                      : MaterialPageRoute(builder: (context) => target));
+                  (res, index) = await Navigator.of(context).push(
+                      io.Platform.isIOS
+                          ? CupertinoPageRoute(builder: (context) => target)
+                          : MaterialPageRoute(builder: (context) => target));
                   if (res.isNotEmpty) {
                     var wallet = Provider.of<WalletProvider>(
                         navigatorKey.currentContext!,
@@ -875,10 +878,25 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                 '${removePaddingFromBase64(base64UrlEncode(utf8.encode(jsonEncode(header))))}..${removePaddingFromBase64(base64UrlEncode(encrypted.initializationVector!))}.${removePaddingFromBase64(base64UrlEncode(encrypted.data))}.${removePaddingFromBase64(base64UrlEncode(encrypted.authenticationTag!))}';
 
             logger.d('jwe: $jwe');
-            res = await post(Uri.parse(widget.otherEndpoint),
-                headers: {'content-type': 'application/x-www-form-urlencoded'},
-                body:
-                    'response=${Uri.encodeQueryComponent(jwe)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+            var httpClient = io.HttpClient();
+            var request =
+                await httpClient.postUrl(Uri.parse(widget.otherEndpoint));
+            request.headers
+                .set('Content-Type', 'application/x-www-form-urlencoded');
+            request.write(
+                'response=${Uri.encodeQueryComponent(jwe)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+
+            var response = await request.close();
+            res = Response(await response.transform(utf8.decoder).join(),
+                response.statusCode);
+            // res = await post(Uri.parse(widget.otherEndpoint),
+            //     headers: {'content-type': 'application/x-www-form-urlencoded'},
+            //     body:
+            //         'response=${Uri.encodeQueryComponent(jwe)}${widget.oidcState != null ? '&state=${Uri.encodeQueryComponent(widget.oidcState!)}' : ''}');
+            if (widget.oidcRedirectUri != null) {
+              launchUrl(Uri.parse(widget.oidcRedirectUri!),
+                  mode: LaunchMode.externalApplication);
+            }
           } else {
             throw Exception('Unsupported alg ${header['alg']}');
           }
@@ -970,6 +988,16 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
             });
 
         //Navigator.of(context).pop();
+
+        try {
+          Map bodyData = jsonDecode(res.body);
+          if (bodyData.containsKey('redirect_uri')) {
+            launchUrl(Uri.parse(bodyData['redirect_uri']),
+                mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          logger.d('no json response: $e');
+        }
       } else {
         if (casted != null) {
           for (var cred in casted.verifiableCredential!) {

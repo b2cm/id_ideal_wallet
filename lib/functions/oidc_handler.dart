@@ -1127,7 +1127,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
         'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
     var target = PresentationRequestDialog(
-      definition: definition!,
+      definition: definition,
       definitionHash: '',
       otherEndpoint: responseUri ?? redirectUri ?? clientId,
       receiverDid: clientId,
@@ -1138,6 +1138,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       oidcState: state,
       oidcResponseMode: responseMode,
       oidcClientMetadata: clientMetaData,
+      oidcRedirectUri: redirectUri,
     );
 
     Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
