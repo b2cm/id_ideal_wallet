@@ -689,9 +689,9 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           vp.add(await buildPresentation(
               finalSend, wallet.wallet, widget.nonce!,
               loadDocumentFunction: loadDocumentFast));
-          casted = VerifiablePresentation.fromJson(vp);
+          casted = VerifiablePresentation.fromJson(vp.last);
           submission = casted.presentationSubmission!;
-          logger.d(await verifyPresentation(vp, widget.nonce!,
+          logger.d(await verifyPresentation(vp.last, widget.nonce!,
               loadDocumentFunction: loadDocumentFast));
 
           logger.d(vp);

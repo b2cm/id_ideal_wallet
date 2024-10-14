@@ -207,6 +207,7 @@ class AboOverviewState extends State<AboOverview>
                                           e.containsKey('mainbgimage') &&
                                                   e['mainbgimage']!.isNotEmpty
                                               ? CachedImage(
+                                                  key: UniqueKey(),
                                                   imageUrl: e['mainbgimage']!,
                                                   placeholder: e['name'],
                                                 )
