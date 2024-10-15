@@ -31,7 +31,7 @@ class NavigationProvider extends ChangeNotifier {
 
   NavigationProvider(this.showWelcome) {
     getInitialUri().then((l) {
-      if (l != null && !l.toString().contains("Failed to Invoke")) {
+      if (l != null && !l.toString().contains("No initial link has been stored yet")) {
         handleLink(l);
       }
     });
