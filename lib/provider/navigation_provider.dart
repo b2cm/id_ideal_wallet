@@ -30,11 +30,7 @@ class NavigationProvider extends ChangeNotifier {
   static const stream = EventChannel('app.channel.deeplink/events');
 
   NavigationProvider(this.showWelcome) {
-    getInitialUri().then((l) {
-      if (l != null && !l.toString().contains("No initial link has been stored yet")) {
-        handleLink(l);
-      }
-    });
+    getInitialUri().then((l) => handleLink(l));
     stream.receiveBroadcastStream().listen((link) => handleLink(link));
     logger.d('listen link stream');
   }
@@ -177,6 +173,8 @@ class NavigationProvider extends ChangeNotifier {
             AppLocalizations.of(navigatorKey.currentContext!)!
                 .unknownQrCodeNote);
       }
+    } else if(link.contains("No initial link has been stored yet")) {
+        return;
     } else {
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.unknownQrCode,
