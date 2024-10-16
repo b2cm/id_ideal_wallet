@@ -173,6 +173,8 @@ class NavigationProvider extends ChangeNotifier {
             AppLocalizations.of(navigatorKey.currentContext!)!
                 .unknownQrCodeNote);
       }
+    } else if(link.contains("No initial link has been stored yet")) {
+        return;
     } else {
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.unknownQrCode,
