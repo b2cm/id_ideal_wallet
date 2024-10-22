@@ -13,6 +13,8 @@ import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class NavigationProvider extends ChangeNotifier {
   NavigationPage activeIndex = NavigationPage.abo;
@@ -74,7 +76,10 @@ class NavigationProvider extends ChangeNotifier {
 
   Future<dynamic> getInitialUri() async {
     try {
-      return platform.invokeMethod('getInitialLink');
+        final initialUri = await platform.invokeMethod('getInitialLink');
+        if (initialUri != null) {
+          return initialUri;
+        }
     } on PlatformException catch (e) {
       logger.d('Failed to Invoke Link from Android: ${e.message}.');
       return "Failed to Invoke: '${e.message}'.";
@@ -113,8 +118,11 @@ class NavigationProvider extends ChangeNotifier {
       var tcTokenUrl = asUri.queryParameters['tcTokenURL'] ??
           asUri.queryParameters['tcTokenUrl'];
       logger.d(tcTokenUrl);
-      Navigator.of(navigatorKey.currentContext!)
-          .push(MaterialPageRoute(builder: (context) => const AusweisView()));
+      Navigator.of(navigatorKey.currentContext!).push(
+        Platform.isIOS
+        ? CupertinoPageRoute(builder: (context) => const AusweisView())
+        : MaterialPageRoute(builder: (context) => const AusweisView())
+      );
       Provider.of<AusweisProvider>(navigatorKey.currentContext!, listen: false)
           .startProgress(tcTokenUrl);
     }
@@ -165,6 +173,8 @@ class NavigationProvider extends ChangeNotifier {
             AppLocalizations.of(navigatorKey.currentContext!)!
                 .unknownQrCodeNote);
       }
+    } else if(link.contains("No initial link has been stored yet")) {
+        return;
     } else {
       showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!.unknownQrCode,

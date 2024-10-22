@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/ausweis/ausweis_data.dart';
 import 'package:id_ideal_wallet/basicUi/ausweis/enter_can.dart';
@@ -54,7 +56,7 @@ class AusweisViewState extends State<AusweisView> {
   @override
   void dispose() {
     Provider.of<AusweisProvider>(navigatorKey.currentContext!, listen: false)
-        .reset();
+        .reset(false);
     super.dispose();
   }
 
@@ -62,6 +64,27 @@ class AusweisViewState extends State<AusweisView> {
   Widget build(BuildContext context) {
     return Consumer<AusweisProvider>(builder: (context, ausweis, child) {
       return Scaffold(
+        appBar: ausweis.screen == AusweisScreen.start
+            ? AppBar(
+                title: Center(
+                  child: Text(
+                    "Ausweis",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).primaryTextTheme.headlineLarge,
+                  ),
+                ),
+                automaticallyImplyLeading: !Platform.isAndroid,
+                // Show the back button only on iOS
+                // leading: Platform.isIOS
+                //     ? IconButton(
+                //         icon: const Icon(Icons.arrow_back),
+                //         onPressed: () {
+                //           Navigator.of(context).pop();
+                //         },
+                //       )
+                //     : null,
+              )
+            : null,
         body: SafeArea(child: getBody(ausweis)),
       );
     });

@@ -25,6 +25,8 @@ enum AusweisScreen {
   error
 }
 
+typedef CustomTypeHandler = void Function(dynamic data);
+
 class AusweisProvider extends ChangeNotifier {
   static const method = MethodChannel('app.channel.method');
   static const stream = EventChannel('app.channel.event');
@@ -44,9 +46,25 @@ class AusweisProvider extends ChangeNotifier {
   bool connected = false;
   bool pause = false;
 
-  AusweisProvider();
+  late final Map<Type, CustomTypeHandler> typeHandlers;
 
-  void reset() {
+  AusweisProvider() {
+    typeHandlers = {
+      InsertCardMessage: handleInsertCardMessage,
+      PauseMessage: handlePauseMessage,
+      EnterPinMessage: handleEnterPinMessage,
+      AccessRightsMessage: handleAccessRightsMessage,
+      CertificateMessage: handleCertificateMessage,
+      AuthMessage: handleAuthMessage,
+      StatusMessage: handleStatusMessage,
+      ReaderMessage: handleReaderMessage,
+      DisconnectMessage: handleDisconnectMessage,
+      EnterCanMessage: handleEnterCanMessage,
+      EnterPukMessage: handleEnterPukMessage
+    };
+  }
+
+  void reset([bool notify = true]) {
     screen = AusweisScreen.start;
     requestedAttributes = [];
     requesterCert = null;
@@ -60,7 +78,7 @@ class AusweisProvider extends ChangeNotifier {
     selfInfo = true;
     pause = false;
     disconnectSdk();
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   void startListening() {
@@ -111,116 +129,12 @@ class AusweisProvider extends ChangeNotifier {
 
     var message = AusweisMessage.fromJson(data);
 
-    if (message is InsertCardMessage) {
-      if (screen == AusweisScreen.enterPin ||
-          screen == AusweisScreen.enterCan ||
-          screen == AusweisScreen.enterPuk) {
-      } else {
-        screen = AusweisScreen.insertCard;
-      }
-    } else if (message is PauseMessage) {
-      screen = AusweisScreen.insertCard;
-      pause = true;
-      logger.d('set pause: $pause');
-    } else if (message is EnterPinMessage) {
-      screen = AusweisScreen.enterPin;
-      pinRetry = message.reader?.cardRetryCounter ?? 3;
-      pinEntered = false;
-    } else if (message is AccessRightsMessage) {
-      requestedAttributes = message.effectiveRights;
-      if (requesterCert == null) {
-        getCertificate();
-      }
-    } else if (message is CertificateMessage) {
-      requesterCert = message;
-    } else if (message is AuthMessage) {
-      if (message.major ==
-          'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#ok') {
-        // successful response
-        if (selfInfo) {
-          var response = await get(Uri.parse(message.url!),
-              headers: {'Accept': 'text/html'});
-          logger.d('${response.statusCode} / ${response.body}');
-          if (response.statusCode == 200) {
-            readData = {};
-            var document = XmlDocument.parse(response.body);
-            var t = document.findAllElements('td').toList();
-            for (int i = 0; i < t.length; i += 2) {
-              logger.d('${t[i].innerText} ${t[i + 1].innerText}');
-              readData![t[i].innerText] = t[i + 1].innerText;
-            }
-
-            screen = AusweisScreen.finish;
-            requestedAttributes = [];
-            requesterCert = null;
-            disconnectSdk();
-          }
-        } else {
-          launchUrl(
-            Uri.parse(message.url!),
-          );
-          reset();
-        }
-      } else if (message.major ==
-          'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#error') {
-        if (message.minor ==
-            'http://www.bsi.bund.de/ecard/api/1.1/resultminor/sal#cancellationByUser') {
-          if (message.reason == 'User_Cancelled') {
-            reset();
-          } else {
-            errorDescription =
-                message.description ?? 'Es ist ein Fehler aufgetreten';
-            errorMessage = message.message ??
-                'Es liegt keine Beschreibung des Fehlers vor';
-            screen = AusweisScreen.error;
-          }
-        }
-      }
-    } else if (message is StatusMessage) {
-      if (pinEntered) {
-        screen = AusweisScreen.finish;
-      } else {
-        screen = AusweisScreen.main;
-      }
-      statusProgress =
-          message.progress == null ? null : message.progress! / 100;
-      logger.d(statusProgress);
-    } else if (message is ReaderMessage) {
-      if (start) {
-        if (tcTokenUrl == null) {
-          runDemoAuth();
-        } else {
-          runAuth(tcTokenUrl: tcTokenUrl!);
-          selfInfo = false;
-        }
-        start = false;
-      }
-      if (message.cardRetryCounter != null) {
-        pinRetry = 3;
-      }
-      logger.d(pause);
-      if (pause) {
-        if (message.cardRetryCounter != null &&
-            message.cardDeactivated != null &&
-            message.cardInoperative != null) {
-          sendContinue();
-          if (pinEntered) {
-            screen = AusweisScreen.finish;
-          } else {
-            screen = AusweisScreen.main;
-          }
-          pause = false;
-        }
-      }
-    } else if (message is DisconnectMessage) {
-      logger.d('Successfully disconnected');
-    } else if (message is EnterCanMessage) {
-      screen = AusweisScreen.enterCan;
-    } else if (message is EnterPukMessage) {
-      screen = AusweisScreen.enterPuk;
+    CustomTypeHandler? handler = typeHandlers[message.runtimeType];
+    if (handler != null) {
+      handler(message);
+    } else {
+      logger.d("No handler for ${data.runtimeType}");
     }
-
-    notifyListeners();
   }
 
   void connectSdk() {
@@ -498,5 +412,193 @@ class AusweisProvider extends ChangeNotifier {
       logger.d('Failed to connect to sdk: ${e.message}.');
     }
     screen = AusweisScreen.finish;
+  }
+
+  void handleInsertCardMessage(dynamic message) {
+    if (message is InsertCardMessage) {
+      if (screen != AusweisScreen.enterPin &&
+          screen != AusweisScreen.enterCan &&
+          screen != AusweisScreen.enterPuk) {
+        screen = AusweisScreen.insertCard;
+      }
+    } else {
+      logger.d("Incorrect type for handleInsertCardMessage");
+    }
+    notifyListeners();
+  }
+
+  void handlePauseMessage(dynamic message) {
+    if (message is PauseMessage) {
+      screen = AusweisScreen.insertCard;
+      pause = true;
+      logger.d('set pause: $pause');
+    } else {
+      logger.d("Incorrect type for handlePauseMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleEnterPinMessage(dynamic message) {
+    if (message is EnterPinMessage) {
+      screen = AusweisScreen.enterPin;
+      pinRetry = message.reader?.cardRetryCounter ?? 3;
+      pinEntered = false;
+    } else {
+      logger.d("Incorrect type for handleEnterPinMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleAccessRightsMessage(dynamic message) {
+    if (message is AccessRightsMessage) {
+      requestedAttributes = message.effectiveRights;
+      if (requesterCert == null) {
+        getCertificate();
+      }
+    } else {
+      logger.d("Incorrect type for handleAccessRightsMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleCertificateMessage(dynamic message) {
+    if (message is CertificateMessage) {
+      requesterCert = message;
+    } else {
+      logger.d("Incorrect type for handleCertificateMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleAuthMessage(dynamic message) async {
+    if (message is AuthMessage) {
+      if (message.major ==
+          'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#ok') {
+        // successful response
+        if (selfInfo) {
+          var response = await get(Uri.parse(message.url!),
+              headers: {'Accept': 'text/html'});
+          logger.d('${response.statusCode} / ${response.body}');
+
+          if (response.statusCode == 200) {
+            readData = {};
+            var document = XmlDocument.parse(response.body);
+            var t = document.findAllElements('td').toList();
+            for (int i = 0; i < t.length; i += 2) {
+              logger.d('${t[i].innerText} ${t[i + 1].innerText}');
+              readData![t[i].innerText] = t[i + 1].innerText;
+            }
+
+            screen = AusweisScreen.finish;
+            requestedAttributes = [];
+            requesterCert = null;
+            disconnectSdk();
+          }
+        } else {
+          launchUrl(Uri.parse(message.url!),
+              mode: LaunchMode.externalApplication);
+          logger.d('launched');
+          Navigator.pop(navigatorKey.currentContext!);
+          logger.d('page changed?');
+          reset(false);
+        }
+      } else if (message.major ==
+              'http://www.bsi.bund.de/ecard/api/1.1/resultmajor#error' &&
+          message.minor ==
+              'http://www.bsi.bund.de/ecard/api/1.1/resultminor/sal#cancellationByUser') {
+        if (message.reason == 'User_Cancelled') {
+          reset();
+        } else {
+          errorDescription =
+              message.description ?? 'Es ist ein Fehler aufgetreten';
+          errorMessage =
+              message.message ?? 'Es liegt keine Beschreibung des Fehlers vor';
+          screen = AusweisScreen.error;
+        }
+      }
+    } else {
+      logger.d("Incorrect type for handleAuthMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleStatusMessage(dynamic message) {
+    if (message is StatusMessage) {
+      if (pinEntered) {
+        screen = AusweisScreen.finish;
+      } else {
+        screen = AusweisScreen.main;
+      }
+      statusProgress =
+          message.progress == null ? null : message.progress! / 100;
+      logger.d(statusProgress);
+    } else {
+      logger.d("Incorrect type for handleStatusMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleReaderMessage(dynamic message) {
+    if (message is ReaderMessage) {
+      if (start) {
+        if (tcTokenUrl == null) {
+          runDemoAuth();
+        } else {
+          runAuth(tcTokenUrl: tcTokenUrl!);
+          selfInfo = false;
+        }
+        start = false;
+      }
+
+      if (message.cardRetryCounter != null) {
+        pinRetry = 3;
+      }
+
+      logger.d(pause);
+
+      if (pause) {
+        if (message.cardRetryCounter != null &&
+            message.cardDeactivated != null &&
+            message.cardInoperative != null) {
+          sendContinue();
+          if (pinEntered) {
+            screen = AusweisScreen.finish;
+          } else {
+            screen = AusweisScreen.main;
+          }
+          pause = false;
+        }
+      }
+    } else {
+      logger.d("Incorrect type for handleReaderMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleDisconnectMessage(dynamic message) {
+    if (message is DisconnectMessage) {
+      logger.d('Successfully disconnected');
+    } else {
+      logger.d("Incorrect type for handleDisconnectMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleEnterCanMessage(dynamic message) {
+    if (message is EnterCanMessage) {
+      screen = AusweisScreen.enterCan;
+    } else {
+      logger.d("Incorrect type for handleEnterCanMessage");
+    }
+    notifyListeners();
+  }
+
+  void handleEnterPukMessage(dynamic message) {
+    if (message is EnterPukMessage) {
+      screen = AusweisScreen.enterPuk;
+    } else {
+      logger.d("Incorrect type for handleEnterPukMessage");
+    }
+    notifyListeners();
   }
 }

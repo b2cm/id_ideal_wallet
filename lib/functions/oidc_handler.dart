@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
@@ -19,10 +20,11 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/credential_offer.dart';
+import 'package:id_ideal_wallet/views/credential_offer_new.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
+import 'package:sd_jwt/sd_jwt.dart' as sdJwt;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart' as x509;
@@ -119,7 +121,11 @@ Future<void> handleOfferOidc(String offerUri) async {
   }
   for (String t in credentialToRequest) {
     var credConfig = issuerMetadata.credentialsSupported[t];
-    offeredCredentials.add(credConfig!);
+    if (credConfig == null) {
+      showErrorMessage('Credential ohne Konfiguration');
+      return;
+    }
+    offeredCredentials.add(credConfig);
   }
 
   dynamic res = true;
@@ -127,7 +133,7 @@ Future<void> handleOfferOidc(String offerUri) async {
     return await showCupertinoModalPopup(
       context: navigatorKey.currentContext!,
       barrierColor: Colors.white,
-      builder: (BuildContext context) => CredentialOfferDialog(
+      builder: (BuildContext context) => CredentialOfferDialogNew(
           oidcIssuer: issuerString,
           isOid: true,
           requestOidcTan: offer.grants != null &&
@@ -141,7 +147,7 @@ Future<void> handleOfferOidc(String offerUri) async {
               .map((e) => VerifiableCredential(
                   context: [credentialsV1Iri],
                   type: e.credentialType ?? [],
-                  issuer: {'name': issuerString},
+                  issuer: {'oidcEndpoint': issuerString, 'id': issuerString},
                   credentialSubject: findClaims(e.claims),
                   issuanceDate: DateTime.now()))
               .toList()),
@@ -535,7 +541,13 @@ Future<void> getCredential(
     });
 
     if (credentialResponse.statusCode != 200) {
-      tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      try {
+        tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      } catch (e) {
+        logger.d(e);
+        showErrorMessage('Kaine nonce');
+        return;
+      }
     }
   }
 
@@ -848,7 +860,69 @@ storeCredential(String format, dynamic credential, String credentialDid,
           signedData.docType);
     }
   } else if (format == OidcCredentialFormat.sdJwt) {
-    showErrorMessage('Format nicht unterstützt');
+    printWrapped(credential);
+    var parsed = sdJwt.SdJws.fromCompactSerialization(credential);
+    logger.d(parsed.jsonContent());
+    var iss = parsed.jsonContent()['payload']['iss'];
+    var issMetaUrl = '$iss/.well-known/jwt-vc-issuer';
+
+    logger.d(issMetaUrl);
+
+    var metaRes = await get(Uri.parse(issMetaUrl));
+    if (metaRes.statusCode != 200) {
+      showErrorMessage('Kein Public Key', 'Verifikation nicht möglich');
+    }
+
+    var data = jsonDecode(metaRes.body);
+    List keys = data['jwks ']['keys'];
+    logger.d(keys);
+    Map k = keys.first;
+    var jwk = sdJwt.Jwk.fromJson(
+        k.map((key, value) => MapEntry(key as String, value)));
+    var sd = sdJwt.SdJwt.verified(parsed, jwk);
+
+    var cnf = sd.confirmation!.toJson();
+    logger.d(cnf['jwk']);
+    var multibase = jwkToMultiBase(cnf['jwk']);
+    logger.d('$credentialDid, did:key:$multibase');
+    var restoredDid = 'did:key:$multibase';
+    if (restoredDid != credentialDid) {
+      showErrorMessage('Credential für jemand anderen');
+    }
+
+    var claims = sd.claims;
+    var type = claims.remove('vct');
+    claims['id'] = restoredDid;
+
+    var vc = VerifiableCredential(
+        id: restoredDid,
+        context: [credentialsV1Iri, schemaOrgIri],
+        type: ['VerifiableCredential', type],
+        issuer: {
+          'id': credentialIssuer,
+          if (jwk.x509CertificateChain != null)
+            'certificate': jwk.x509CertificateChain!.first
+        },
+        credentialSubject: claims,
+        issuanceDate: sd.issuedAt ?? DateTime.now(),
+        expirationDate: sd.expirationTime);
+
+    var storageCred = wallet.getCredential(restoredDid);
+    if (storageCred == null) {
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveError,
+          AppLocalizations.of(navigatorKey.currentContext!)!.saveErrorNote);
+      return;
+    }
+
+    wallet.storeCredential(vc.toString(), storageCred.hdPath,
+        isoMdlData: '$sdPrefix:$credential', keyType: keyType);
+    wallet.storeExchangeHistoryEntry(
+        credentialDid, DateTime.now(), 'issue', credentialIssuer);
+
+    showSuccessMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.credentialReceived,
+        type);
     return;
   } else {
     logger.d(credential);
@@ -954,6 +1028,10 @@ Future<void> handlePresentationRequestOidc(String request) async {
       'Accept': 'application/json'
     });
     logger.d(requestRaw.statusCode);
+    if (requestRaw.statusCode != 200) {
+      showErrorMessage('Request nicht gefunden');
+      return;
+    }
     logger.d(requestRaw.headers);
     logger.d(requestRaw.body);
 
@@ -1010,6 +1088,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
   var isoCreds = wallet.isoMdocCredentials;
   List<VerifiableCredential> creds = [];
   List<IssuerSignedObject> isoCredsParsed = [];
+  List<sdJwt.SdJws> sdJwtCredentials = [];
   allCreds.forEach((key, value) {
     if (value.w3cCredential != '') {
       var vc = VerifiableCredential.fromJson(value.w3cCredential);
@@ -1025,6 +1104,11 @@ Future<void> handlePresentationRequestOidc(String request) async {
         base64Decode(cred.plaintextCredential.replaceAll('$isoPrefix:', ''))));
   }
 
+  for (var c in wallet.sdJwtCredentials) {
+    sdJwtCredentials.add(sdJwt.SdJws.fromCompactSerialization(
+        c.plaintextCredential.replaceAll('$sdPrefix:', '')));
+  }
+
   if (definition == null) {
     logger.d('No presentation definition');
     showErrorMessage(
@@ -1036,27 +1120,30 @@ Future<void> handlePresentationRequestOidc(String request) async {
   try {
     logger.d(isoCredsParsed.length);
     var filtered = searchCredentialsForPresentationDefinition(definition,
-        credentials: creds, isoMdocCredentials: isoCredsParsed);
+        credentials: creds,
+        isoMdocCredentials: isoCredsParsed,
+        sdJwtCredentials: sdJwtCredentials);
     logger.d(
-        'successfully filtered: isoLength: ${filtered.first.isoMdocCredentials?.length}');
+        'successfully filtered: sdLength: ${filtered.first.sdJwtCredentials?.length}');
 
-    Navigator.of(navigatorKey.currentContext!).push(
-      MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
-          definition: definition!,
-          definitionHash: '',
-          otherEndpoint: responseUri ?? redirectUri ?? clientId,
-          receiverDid: clientId,
-          myDid: 'myDid',
-          results: filtered,
-          isOidc: true,
-          nonce: nonce,
-          oidcState: state,
-          oidcResponseMode: responseMode,
-          oidcClientMetadata: clientMetaData,
-        ),
-      ),
+    var target = PresentationRequestDialog(
+      definition: definition,
+      definitionHash: '',
+      otherEndpoint: responseUri ?? redirectUri ?? clientId,
+      receiverDid: clientId,
+      myDid: 'myDid',
+      results: filtered,
+      isOidc: true,
+      nonce: nonce,
+      oidcState: state,
+      oidcResponseMode: responseMode,
+      oidcClientMetadata: clientMetaData,
+      oidcRedirectUri: redirectUri,
     );
+
+    Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
+        ? CupertinoPageRoute(builder: (context) => target)
+        : MaterialPageRoute(builder: (context) => target));
   } catch (e) {
     logger.e(e);
     showErrorMessage(

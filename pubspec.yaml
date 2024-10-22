@@ -15,11 +15,11 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 3.2.8+62
+version: 3.4.1-test+65
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.16.0 <3.23.0"
+  flutter: ">=3.22.0 <3.24.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -39,12 +39,16 @@ dependencies:
   #  dart_ssi:
   #    path: ../flutter_ssi_wallet
   #dart_ssi: ^3.0.0
+  sd_jwt:
+    git:
+      url: https://github.com/b2cm/sd_jwt
+    #path: ../sd-jwt
   path_provider: ^2.0.12
   local_auth: ^2.2.0
-  flutter_secure_storage:
+  flutter_secure_storage: ^9.2.2
   random_password_generator:
   uuid: any
-  mobile_scanner: 5.1.1
+  mobile_scanner: 5.2.3
   http: ^1.0.0
   qr_flutter:
     git:
@@ -67,8 +71,8 @@ dependencies:
     git:
       url: https://github.com/SaOtto/flutter_json_schema_form
   # device_info_plus: ^9.1.1
-  android_id: ^0.3.3
-  flutter_inappwebview: ^6.0.0-beta.22
+  # android_id: ^0.4.0
+  flutter_inappwebview: ^6.1.3
   action_slider: any
   crypto: any
   dart_multihash: any
@@ -97,6 +101,9 @@ dependencies:
 
   local_auth_android: any
   local_auth_darwin: any
+
+dependency_overrides:
+  pinenacl: ^0.6.0
 
 dev_dependencies:
   flutter_test:

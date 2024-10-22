@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:crypto/crypto.dart';
 import 'package:dart_ssi/credentials.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -40,6 +42,7 @@ class WebViewWindowState extends State<WebViewWindow> {
       allowBackgroundAudioPlaying: false,
       mediaPlaybackRequiresUserGesture: true,
       allowsInlineMediaPlayback: false,
+      supportMultipleWindows: true,
       iframeAllowFullscreen: true);
 
   PullToRefreshController? pullToRefreshController;
@@ -172,6 +175,10 @@ class WebViewWindowState extends State<WebViewWindow> {
                           return ServerTrustAuthResponse(
                               action: ServerTrustAuthResponseAction.PROCEED);
                         },
+                        onCreateWindow: (a, b) async {
+                          logger.d('Open request');
+                          return false;
+                        },
                         onWebViewCreated: (controller) {
                           webViewController = controller;
                           webViewController?.addJavaScriptHandler(
@@ -291,7 +298,7 @@ class WebViewWindowState extends State<WebViewWindow> {
     );
   }
 
-  Future<VerifiablePresentation?> requestPresentationNoSign(
+  Future<Map<String, dynamic>> requestPresentationNoSign(
       dynamic request, String initialUrl, List<String>? trusted) async {
     var asUri = Uri.parse(initialUrl);
     var toCheck =
@@ -308,7 +315,7 @@ class WebViewWindowState extends State<WebViewWindow> {
 
     logger.d('$trusted contains? $toCheck');
     if (!trusted.contains(toCheck)) {
-      return null;
+      return {'error': 'untrusted site'};
     }
 
     var definition = PresentationDefinition.fromJson(request);
@@ -331,30 +338,37 @@ class WebViewWindowState extends State<WebViewWindow> {
         }
       }
     });
-    var filtered = searchCredentialsForPresentationDefinition(definition,
-        credentials: creds);
-    logger.d('successfully filtered');
     List<VerifiableCredential> toSend = [];
-    for (var entry in filtered) {
-      if (entry.fulfilled && entry.credentials != null) {
-        toSend.addAll(entry.credentials!.map((e) {
-          return VerifiableCredential(
-              id: e.id,
-              context: e.context,
-              type: e.type,
-              credentialSubject: e.credentialSubject,
-              issuer: {},
-              issuanceDate: e.issuanceDate);
-        }));
+    try {
+      var filtered = searchCredentialsForPresentationDefinition(definition,
+          credentials: creds);
+      logger.d('successfully filtered');
+
+      for (var entry in filtered) {
+        if (entry.fulfilled && entry.credentials != null) {
+          toSend.addAll(entry.credentials!.map((e) {
+            return VerifiableCredential(
+                id: e.id,
+                context: e.context,
+                type: e.type,
+                credentialSubject: e.credentialSubject,
+                issuer: {},
+                issuanceDate: e.issuanceDate);
+          }));
+        }
       }
+    } catch (e) {
+      logger.d(e);
+      return {'error': 'no matching credentials'};
     }
     if (toSend.isNotEmpty) {
       return VerifiablePresentation(
-          context: [credentialsV1Iri],
-          type: ['VerifiablePresentation'],
-          verifiableCredential: toSend);
+              context: [credentialsV1Iri],
+              type: ['VerifiablePresentation'],
+              verifiableCredential: toSend)
+          .toJson();
     }
-    return null;
+    return {'error': 'no matching credentials'};
   }
 
   Future<VerifiablePresentation?> requestPresentationHandler(dynamic request,
@@ -422,22 +436,22 @@ class WebViewWindowState extends State<WebViewWindow> {
             loadDocumentFunction: loadDocumentFast);
         vp = VerifiablePresentation.fromJson(tmp);
       } else {
-        vp = await Navigator.of(navigatorKey.currentContext!).push(
-          MaterialPageRoute(
-            builder: (context) => PresentationRequestDialog(
-              definition: definition,
-              definitionHash: definitionHash.toString(),
-              askForBackground: askForBackground,
-              name: definition.name,
-              purpose: definition.purpose,
-              otherEndpoint: initialUrl,
-              receiverDid: '',
-              myDid: '',
-              results: filtered,
-              nonce: nonce,
-            ),
-          ),
+        var target = PresentationRequestDialog(
+          definition: definition,
+          definitionHash: definitionHash.toString(),
+          askForBackground: askForBackground,
+          name: definition.name,
+          purpose: definition.purpose,
+          otherEndpoint: initialUrl,
+          receiverDid: '',
+          myDid: '',
+          results: filtered,
+          nonce: nonce,
         );
+        vp = await Navigator.of(navigatorKey.currentContext!).push(
+            Platform.isIOS
+                ? CupertinoPageRoute(builder: (context) => target)
+                : MaterialPageRoute(builder: (context) => target));
       }
 
       return vp;

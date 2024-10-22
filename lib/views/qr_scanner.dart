@@ -8,6 +8,8 @@ import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/views/add_member_card.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 class QrScanner extends StatefulWidget {
   const QrScanner({super.key});
@@ -34,7 +36,11 @@ class QrScannerState extends State<QrScanner> {
     var navigator = Provider.of<NavigationProvider>(context, listen: false);
     if (code.length < 35 && !code.contains('://')) {
       navigator.goBack();
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context).push(
+        Platform.isIOS
+        ? CupertinoPageRoute(builder: (context) => AddMemberCard(
+              initialNumber: code, initialBarcodeType: barcode.format.name))
+        : MaterialPageRoute(
           builder: (context) => AddMemberCard(
               initialNumber: code, initialBarcodeType: barcode.format.name)));
     } else {

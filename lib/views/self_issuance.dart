@@ -12,6 +12,8 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_schema2/json_schema.dart';
 import 'package:json_schema_form/json_schema_form.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 final emailSchema = JsonSchema.create({
   'type': 'object',
@@ -57,15 +59,26 @@ class SelfIssueList extends StatelessWidget {
         child: Column(
           children: [
             ElevatedButton(
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                onPressed: () => Navigator.of(context).push(
+                  Platform.isIOS
+                  ? CupertinoPageRoute(builder: (context) => FixedSelfIssue(
+                        schema: emailSchema, type: 'EMailCredential'))
+                  : MaterialPageRoute(
                     builder: (context) => FixedSelfIssue(
-                        schema: emailSchema, type: 'EMailCredential'))),
+                        schema: emailSchema, type: 'EMailCredential'))
+                ),
                 child: Text(AppLocalizations.of(context)!.mailAddress)),
             ElevatedButton(
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                onPressed: () => Navigator.of(context).push(
+                  Platform.isIOS
+                  ? CupertinoPageRoute(builder: (context) => FixedSelfIssue(
+                        schema: socialMediaSchema,
+                        type: 'SocialMediaAccountCredential'))
+                  : MaterialPageRoute(
                     builder: (context) => FixedSelfIssue(
                         schema: socialMediaSchema,
-                        type: 'SocialMediaAccountCredential'))),
+                        type: 'SocialMediaAccountCredential'))
+                ),
                 child: const Text('Social Media Account')),
             // ElevatedButton(
             //     onPressed: () async {

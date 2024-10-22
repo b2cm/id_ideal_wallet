@@ -70,8 +70,10 @@ class IssuerInfoTextState extends State<IssuerInfoText> {
         issuerName = '$org\n(${AppLocalizations.of(context)!.verified})';
 
         setState(() {});
-      } else if (widget.endpoint != null) {
-        var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+      } else if (widget.endpoint != null ||
+          widget.issuer.containsKey('oidcEndpoint')) {
+        var certInfo = await getCertificateInfoFromUrl(
+            widget.endpoint ?? widget.issuer['oidcEndpoint']);
         issuerName = certInfo?.subjectOrganization ??
             certInfo?.subjectCommonName ??
             AppLocalizations.of(navigatorKey.currentContext!)!.anonymousIssuer;
@@ -209,8 +211,10 @@ class IssuerInfoIconState extends State<IssuerInfoIcon> {
           iconColor = Colors.green;
         }
         if (mounted) setState(() {});
-      } else if (widget.endpoint != null) {
-        var certInfo = await getCertificateInfoFromUrl(widget.endpoint!);
+      } else if (widget.endpoint != null ||
+          widget.issuer.containsKey('oidcEndpoint')) {
+        var certInfo = await getCertificateInfoFromUrl(
+            widget.endpoint ?? widget.issuer['oidcEndpoint']);
         if (certInfo != null && certInfo.valid != null && certInfo.valid!) {
           marker = Icons.verified_outlined;
           iconColor = Colors.green;

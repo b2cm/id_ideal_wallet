@@ -21,6 +21,8 @@ import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 
 enum BleMdocTransmissionState {
   uninitialized,
@@ -377,10 +379,10 @@ class MdocProvider extends ChangeNotifier {
     } else {
       leMax = int.parse(hex.encode(le), radix: 16);
       logger.d(leMax);
-      if (offset == 5) {
-        logger.d('short message; maybe end of communication');
-        return;
-      }
+      // if (offset == 5) {
+      //   logger.d('short message; maybe end of communication');
+      //   return;
+      // }
       handleNfcRequest();
     }
   }
@@ -434,7 +436,7 @@ class MdocProvider extends ChangeNotifier {
       });
     } else {
       bytesSend += leMax;
-      var content = responseToSend!.sublist(bytesSend - leMax, leMax);
+      var content = responseToSend!.sublist(bytesSend - leMax, bytesSend);
       logger.d('content length = ${content.length}');
       int remaining = responseToSend!.length - bytesSend;
       sendApdu(content + [97, remaining > 255 ? 0 : remaining]);
@@ -580,10 +582,7 @@ class MdocProvider extends ChangeNotifier {
         isoMdocCredentials: toShow,
         matchingDescriptorIds: [],
         presentationDefinitionId: '');
-
-    var res = await Navigator.of(navigatorKey.currentContext!).push(
-      MaterialPageRoute(
-        builder: (context) => PresentationRequestDialog(
+    var target = PresentationRequestDialog(
           definition: PresentationDefinition(inputDescriptors: []),
           definitionHash: '',
           otherEndpoint: '',
@@ -592,8 +591,11 @@ class MdocProvider extends ChangeNotifier {
           results: [asFilter],
           isIso: true,
           requesterCert: requesterCert,
-        ),
-      ),
+        );
+    var res = await Navigator.of(navigatorKey.currentContext!).push(
+      Platform.isIOS
+      ? CupertinoPageRoute(builder: (context) => target)
+      : MaterialPageRoute(builder: (context) => target)
     );
 
     if (res != null) {

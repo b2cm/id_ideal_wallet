@@ -11,6 +11,11 @@ import 'package:random_password_generator/random_password_generator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:x509b/x509.dart' as x509;
 
+void printWrapped(String text) {
+  final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+  pattern.allMatches(text).forEach((match) => print(match.group(0)));
+}
+
 Future<bool> isOnboard() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   final bool? onboard = prefs.getBool('onboard');
