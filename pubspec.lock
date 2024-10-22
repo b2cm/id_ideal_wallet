@@ -278,7 +278,7 @@ packages:
     description:
       path: "."
       ref: development
-      resolved-ref: dba3a04c26d6cd1e380ad9560b97ea4917778891
+      resolved-ref: c64acaca26eeb006a9ac87c6569074365b7aeafb
       url: "https://github.com/b2cm/dart_ssi"
     source: git
     version: "4.0.0"
@@ -988,7 +988,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
+      ref: "11647deaeaf89a0b2b347085ae5439a9408c0ff3"
       resolved-ref: "11647deaeaf89a0b2b347085ae5439a9408c0ff3"
       url: "https://github.com/b2cm/sd_jwt"
     source: git
@@ -1258,10 +1258,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "2735daae5150e8b1dfeb3eb0544b4d3af0061e9e82cef063adcd583bdae4306a"
+      sha256: e1d0cc62e65dc2561f5071fcbccecf58ff20c344f8f3dc7d4922df372a11df1f
       url: "https://pub.dev"
     source: hosted
-    version: "5.7.0"
+    version: "5.7.1"
   x25519:
     dependency: transitive
     description:

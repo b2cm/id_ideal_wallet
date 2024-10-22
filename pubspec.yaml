@@ -42,6 +42,7 @@ dependencies:
   sd_jwt:
     git:
       url: https://github.com/b2cm/sd_jwt
+      ref: 11647deaeaf89a0b2b347085ae5439a9408c0ff3
     #path: ../sd-jwt
   path_provider: ^2.0.12
   local_auth: ^2.2.0
