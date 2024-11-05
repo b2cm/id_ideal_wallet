@@ -61,7 +61,7 @@ class HistoryEntries extends StatelessWidget {
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          // side: const BorderSide(color: Colors.black26)
+          side: const BorderSide(color: Color.fromARGB(255, 122, 122, 122))
         ),
         clipBehavior: Clip.antiAlias,
         margin: EdgeInsets.zero,
@@ -232,6 +232,39 @@ class CredentialDetailState extends State<CredentialDetailView> {
   }
 }
 
+class RefreshIcon extends StatefulWidget {
+  final WalletProvider wallet;
+
+  const RefreshIcon({super.key, required this.wallet});
+
+  @override
+  _RefreshIconState createState() => _RefreshIconState();
+}
+
+
+class _RefreshIconState extends State<RefreshIcon> {
+  double _rotationAngle = 0.0;
+
+  void _changeIconRotation() {
+    setState(() {
+      _rotationAngle += 1.0; // Full rotation
+    });
+    widget.wallet.checkValidity();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _changeIconRotation,
+      child: AnimatedRotation(
+        turns: _rotationAngle,
+        duration: const Duration(milliseconds: 750),
+        child: const Icon(Icons.refresh, size: 25),
+      )
+    );
+  }
+}
+
 class CredentialInfo extends StatelessWidget {
   final VerifiableCredential credential;
   final bool showStatus;
@@ -343,10 +376,7 @@ class CredentialInfo extends StatelessWidget {
         leadingAndTrailingTextStyle: const TextStyle(color: Colors.black38),
         leading: Text(AppLocalizations.of(context)!.state),
         title: Text(statusText),
-        trailing: InkWell(
-          child: const Icon(Icons.refresh, size: 25),
-          onTap: () => wallet.checkValidity(),
-        ),
+        trailing: RefreshIcon(wallet: wallet),
       );
     });
     if (showStatus) otherData.add(statusTile);
@@ -360,6 +390,7 @@ class CredentialInfo extends StatelessWidget {
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Color.fromARGB(255, 122, 122, 122)),
           //side: const BorderSide(color: Colors.black26)
         ),
         clipBehavior: Clip.antiAlias,
