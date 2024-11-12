@@ -8,12 +8,11 @@ import 'package:id_ideal_wallet/basicUi/standard/modal_dismiss_wrapper.dart';
 import 'package:id_ideal_wallet/basicUi/standard/payment_finished.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:json_schema2/json_schema.dart';
 import 'package:json_schema_form/json_schema_form.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:io' show Platform;
 
 final emailSchema = JsonSchema.create({
   'type': 'object',
@@ -59,26 +58,13 @@ class SelfIssueList extends StatelessWidget {
         child: Column(
           children: [
             ElevatedButton(
-                onPressed: () => Navigator.of(context).push(
-                  Platform.isIOS
-                  ? CupertinoPageRoute(builder: (context) => FixedSelfIssue(
-                        schema: emailSchema, type: 'EMailCredential'))
-                  : MaterialPageRoute(
-                    builder: (context) => FixedSelfIssue(
-                        schema: emailSchema, type: 'EMailCredential'))
-                ),
+                onPressed: () => navigateClassic(FixedSelfIssue(
+                    schema: emailSchema, type: 'EMailCredential')),
                 child: Text(AppLocalizations.of(context)!.mailAddress)),
             ElevatedButton(
-                onPressed: () => Navigator.of(context).push(
-                  Platform.isIOS
-                  ? CupertinoPageRoute(builder: (context) => FixedSelfIssue(
-                        schema: socialMediaSchema,
-                        type: 'SocialMediaAccountCredential'))
-                  : MaterialPageRoute(
-                    builder: (context) => FixedSelfIssue(
-                        schema: socialMediaSchema,
-                        type: 'SocialMediaAccountCredential'))
-                ),
+                onPressed: () => navigateClassic(FixedSelfIssue(
+                    schema: socialMediaSchema,
+                    type: 'SocialMediaAccountCredential')),
                 child: const Text('Social Media Account')),
             // ElevatedButton(
             //     onPressed: () async {

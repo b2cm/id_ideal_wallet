@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
-import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
+import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 class AboOverview extends StatefulWidget {
@@ -58,54 +60,58 @@ class AboOverviewState extends State<AboOverview>
         backgroundColor: Colors.transparent,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
             child: Consumer<WalletProvider>(builder: (context, wallet, child) {
               return wallet.aboList.isNotEmpty
                   ? SizedBox.expand(
                       child: SingleChildScrollView(
-                        child: Wrap(
-                          alignment: WrapAlignment.spaceEvenly,
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          crossAxisSpacing: 15,
+                          crossAxisCount: 3,
                           children:
                               List.generate(wallet.aboList.length + 1, (index) {
-                            if (index == wallet.aboList.length) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 5),
-                                child: InkWell(
-                                  onTap: () {
-                                    Provider.of<NavigationProvider>(context,
-                                            listen: false)
-                                        .changePage(
-                                            [NavigationPage.searchNewAbo]);
-                                  },
-                                  child: SizedBox(
+                            if (index == 0) {
+                              return InkWell(
+                                onTap: () {
+                                  Provider.of<NavigationProvider>(context,
+                                          listen: false)
+                                      .changePage(
+                                          [NavigationPage.searchNewAbo]);
+                                },
+                                child: Column(children: [
+                                  Container(
                                     width:
-                                        MediaQuery.of(context).size.width * 0.4,
-                                    child: const IconCard(
-                                      cardTitle: '',
-                                      subjectName: '',
-                                      icon: Icons.add,
-                                      borderWidth: 1,
-                                      edgeRadius: 10,
+                                        MediaQuery.of(context).size.width * 0.2,
+                                    height:
+                                        MediaQuery.of(context).size.width * 0.2,
+                                    decoration: BoxDecoration(
+                                        color: Colors.black12,
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                    child: const Icon(
+                                      Icons.add,
+                                      size: 45,
                                     ),
                                   ),
-                                ),
+                                  Text(AppLocalizations.of(context)!.add)
+                                ]),
                               );
                             }
-                            var e = wallet.aboList[index];
+                            var e = wallet.aboList[index - 1];
                             return GestureDetector(
                               onTapDown: (details) {
                                 tapPosition = details.globalPosition;
                               },
                               onLongPress: () {
-                                controllers[index].forward();
-                                controllers[index].repeat(reverse: true);
+                                controllers[index - 1].forward();
+                                controllers[index - 1].repeat(reverse: true);
 
                                 final RenderBox overlay = Overlay.of(context)
                                     .context
                                     .findRenderObject() as RenderBox;
 
-                                final RenderBox card = cardKeys[index]
+                                final RenderBox card = cardKeys[index - 1]
                                     .currentContext!
                                     .findRenderObject() as RenderBox;
 
@@ -148,7 +154,7 @@ class AboOverviewState extends State<AboOverview>
                                 ).then((value) async {
                                   if (deleteSelected) {
                                     await showDialog(
-                                      context: context,
+                                      context: navigatorKey.currentContext!,
                                       builder: (context) => AlertDialog(
                                         title: Text(
                                             AppLocalizations.of(context)!
@@ -167,7 +173,7 @@ class AboOverviewState extends State<AboOverview>
                                                       .cancel)),
                                           TextButton(
                                               onPressed: () async {
-                                                wallet.deleteAbo(index);
+                                                wallet.deleteAbo(index - 1);
                                                 Navigator.of(context).pop();
                                               },
                                               child: Text(
@@ -177,59 +183,44 @@ class AboOverviewState extends State<AboOverview>
                                       ),
                                     );
                                   }
-                                  controllers[index].reset();
+                                  controllers[index - 1].reset();
                                   deleteSelected = false;
                                 });
                               },
                               onTap: () {
-                                Provider.of<NavigationProvider>(context,
-                                        listen: false)
-                                    .changePage([NavigationPage.webView],
-                                        webViewUrl: e['url']
-                                            .toString()
-                                            .replaceAll('wid=',
-                                                'wid=${wallet.lndwId}'));
+                                navigateClassic(WebViewWindow(
+                                  initialUrl: e['url'].toString().replaceAll(
+                                      'wid=', 'wid=${wallet.lndwId}'),
+                                  title: e['name'] ?? '',
+                                  iconUrl: e['mainbgimage'],
+                                ));
                               },
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 5),
-                                child: SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.4,
-                                  child: SlideTransition(
-                                    position: animations[index],
-                                    child: ContextCredentialCard(
-                                      key: cardKeys[index],
-                                      borderWidth: 1,
-                                      edgeRadius: 10,
-                                      cardTitle: '',
-                                      backgroundImage:
-                                          e.containsKey('mainbgimage') &&
-                                                  e['mainbgimage']!.isNotEmpty
-                                              ? CachedImage(
-                                                  key: UniqueKey(),
-                                                  imageUrl: e['mainbgimage']!,
-                                                  placeholder: e['name'],
-                                                )
-                                              : null,
-                                      backgroundColor: Colors.green.shade300,
-                                      cardTitleColor: const Color.fromARGB(
-                                          255, 255, 255, 255),
-                                      subjectName: e['name'] != null &&
-                                              e['name']!.isNotEmpty
-                                          ? e['name']!
-                                          : e['url'] != null
-                                              ? e['url']!
-                                              : '',
-                                      bottomLeftText: const SizedBox(
-                                        width: 0,
+                              child: SlideTransition(
+                                position: animations[index - 1],
+                                child: Column(children: [
+                                  SizedBox(
+                                    key: cardKeys[index - 1],
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.2,
+                                    height:
+                                        MediaQuery.of(context).size.width * 0.2,
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.all(
+                                        Radius.circular(10),
                                       ),
-                                      bottomRightText: const SizedBox(
-                                        width: 0,
+                                      child: CachedImage(
+                                        key: UniqueKey(),
+                                        imageUrl: e['mainbgimage']!,
+                                        placeholder: e['name'],
                                       ),
                                     ),
                                   ),
-                                ),
+                                  Text(
+                                    e['name'] ?? '',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                ]),
                               ),
                             );
                           }).toList(),
@@ -245,16 +236,20 @@ class AboOverviewState extends State<AboOverview>
                                   listen: false)
                               .changePage([NavigationPage.searchNewAbo]);
                         },
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.4,
-                          child: const IconCard(
-                            cardTitle: '',
-                            subjectName: '',
-                            icon: Icons.add,
-                            borderWidth: 1,
-                            edgeRadius: 10,
+                        child: Column(children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.2,
+                            height: MediaQuery.of(context).size.width * 0.2,
+                            decoration: BoxDecoration(
+                                color: Colors.black12,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(
+                              Icons.add,
+                              size: 45,
+                            ),
                           ),
-                        ),
+                          Text(AppLocalizations.of(context)!.add)
+                        ]),
                       ),
                     );
             }),

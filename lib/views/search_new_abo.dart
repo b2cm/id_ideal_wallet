@@ -6,10 +6,10 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
 import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
-import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/provider/navigation_provider.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 class SearchNewAbo extends StatefulWidget {
@@ -77,10 +77,11 @@ class SearchNewAboState extends State<SearchNewAbo> {
                         var e = toShow[index];
                         return InkWell(
                           onTap: () {
-                            Provider.of<NavigationProvider>(context,
-                                    listen: false)
-                                .changePage([NavigationPage.webView],
-                                    webViewUrl: e['url']);
+                            navigateClassic(WebViewWindow(
+                              initialUrl: e['url'],
+                              title: e['name'],
+                              iconUrl: e['mainbgimg'],
+                            ));
                           },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 5),

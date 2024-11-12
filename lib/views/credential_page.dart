@@ -66,15 +66,8 @@ class CredentialPageState extends State<CredentialPage> {
             appBarActions: wallet.isoMdocCredentials.isNotEmpty
                 ? [
                     InkWell(
-                        onTap: () {
-                          Navigator.of(context).push(Platform.isIOS
-                              ? CupertinoPageRoute(
-                                  builder: (context) =>
-                                      const IsoCredentialRequest())
-                              : MaterialPageRoute(
-                                  builder: (context) =>
-                                      const IsoCredentialRequest()));
-                        },
+                        onTap: () =>
+                            navigateClassic(const IsoCredentialRequest()),
                         child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Icon(Icons.qr_code_2, size: 30)))

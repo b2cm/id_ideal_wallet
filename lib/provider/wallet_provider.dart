@@ -21,6 +21,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:pkcs7/pkcs7.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -751,8 +752,8 @@ class WalletProvider extends ChangeNotifier {
     if (nav.redirectWebViewUrl != null) {
       nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        nav.changePage([NavigationPage.webView],
-            webViewUrl: nav.redirectWebViewUrl);
+        my_util.navigateClassic(
+            WebViewWindow(initialUrl: nav.redirectWebViewUrl!, title: ''));
         nav.redirectWebViewUrl = null;
       });
     }

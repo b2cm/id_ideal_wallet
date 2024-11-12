@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:cbor/cbor.dart';
 import 'package:crypto/crypto.dart';
@@ -14,7 +13,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
-import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
@@ -22,6 +20,7 @@ import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/credential_offer_new.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:sd_jwt/sd_jwt.dart' as sdJwt;
@@ -267,9 +266,8 @@ Future<void> handleOfferOidc(String offerUri) async {
             authRequest += '&scope=${offeredCredentials.first.scope}';
           }
           logger.d(authRequest);
-          Provider.of<NavigationProvider>(navigatorKey.currentContext!,
-                  listen: false)
-              .changePage([NavigationPage.webView], webViewUrl: authRequest);
+          navigateClassic(
+              WebViewWindow(initialUrl: authRequest, title: 'Autorisierung'));
           //launchUrl(Uri.parse(authRequest));
           return;
         } else {
@@ -1141,9 +1139,7 @@ Future<void> handlePresentationRequestOidc(String request) async {
       oidcRedirectUri: redirectUri,
     );
 
-    Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
-        ? CupertinoPageRoute(builder: (context) => target)
-        : MaterialPageRoute(builder: (context) => target));
+    navigateClassic(target);
   } catch (e) {
     logger.e(e);
     showErrorMessage(

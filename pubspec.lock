@@ -45,10 +45,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: "6b151826fcc95ff246cd219a0bf4c753ea14f4081ad71c61939becf3aba27f70"
+      sha256: "4bae5ae63e6d6dd17c4aac8086f3dec26c0236f6a0f03416c6c19d830c367cf5"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.5"
+    version: "1.5.8"
   async:
     dependency: transitive
     description:
@@ -626,10 +626,10 @@ packages:
     dependency: transitive
     description:
       name: json_rpc_2
-      sha256: "5e469bffa23899edacb7b22787780068d650b106a21c76db3c49218ab7ca447e"
+      sha256: "246b321532f0e8e2ba474b4d757eaa558ae4fdd0688fdbc1e1ca9705f9b8ca0e"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.3"
   json_schema:
     dependency: "direct main"
     description:
@@ -803,18 +803,18 @@ packages:
     dependency: transitive
     description:
       name: path_parsing
-      sha256: e3e67b1629e6f7e8100b367d3db6ba6af4b1f0bb80f64db18ef1fbabd2fa9ccf
+      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.1.0"
   path_provider:
     dependency: "direct main"
     description:
       name: path_provider
-      sha256: fec0d61223fba3154d87759e3cc27fe2c8dc498f6386c6d6fc80d1afdd1bf378
+      sha256: "50c5dd5b6e1aaf6fb3a78b33f6aa3afca52bf903a8a5298f53101fdaee55bbcd"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.1.5"
   path_provider_android:
     dependency: transitive
     description:
@@ -931,10 +931,10 @@ packages:
     dependency: "direct main"
     description:
       name: printing
-      sha256: b576764370c920b510cedf3eac7dc199d6d4af34336d608e97546392c0113362
+      sha256: b535d177fc6e8f8908e19b0ff5c1d4a87e3c4d0bf675e05aa2562af1b7853906
       url: "https://pub.dev"
     source: hosted
-    version: "5.13.3"
+    version: "5.13.4"
   provider:
     dependency: "direct main"
     description:
@@ -1005,10 +1005,10 @@ packages:
     dependency: "direct main"
     description:
       name: shared_preferences
-      sha256: "746e5369a43170c25816cc472ee016d3a66bc13fcf430c0bc41ad7b4b2922051"
+      sha256: "95f9997ca1fb9799d494d0cb2a780fd7be075818d59f00c43832ed112b158a82"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.2"
+    version: "2.3.3"
   shared_preferences_android:
     dependency: transitive
     description:
@@ -1154,10 +1154,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_android
-      sha256: "8fc3bae0b68c02c47c5c86fa8bfa74471d42687b0eded01b78de87872db745e2"
+      sha256: "6fc2f56536ee873eeb867ad176ae15f304ccccc357848b351f6f0d8d4a40d193"
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.12"
+    version: "6.3.14"
   url_launcher_ios:
     dependency: transitive
     description:
@@ -1258,10 +1258,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: e1d0cc62e65dc2561f5071fcbccecf58ff20c344f8f3dc7d4922df372a11df1f
+      sha256: "84ba388638ed7a8cb3445a320c8273136ab2631cd5f2c57888335504ddab1bc2"
       url: "https://pub.dev"
     source: hosted
-    version: "5.7.1"
+    version: "5.8.0"
   x25519:
     dependency: transitive
     description:

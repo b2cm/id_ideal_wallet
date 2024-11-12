@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -128,4 +131,10 @@ extension HexColor on Color {
       '${red.toRadixString(16).padLeft(2, '0')}'
       '${green.toRadixString(16).padLeft(2, '0')}'
       '${blue.toRadixString(16).padLeft(2, '0')}';
+}
+
+Future navigateClassic(Widget newView) {
+  return Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
+      ? CupertinoPageRoute(builder: (context) => newView)
+      : MaterialPageRoute(builder: (context) => newView));
 }

@@ -10,7 +10,6 @@ import 'package:dart_ssi/didcomm.dart';
 import 'package:dart_ssi/oidc.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
@@ -239,10 +238,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
                     input: [i],
                     outerPos: pos,
                   );
-                  (res, index) = await Navigator.of(context).push(
-                      io.Platform.isIOS
-                          ? CupertinoPageRoute(builder: (context) => target)
-                          : MaterialPageRoute(builder: (context) => target));
+                  (res, index) = await navigateClassic(target);
                   if (res.isNotEmpty) {
                     var wallet = Provider.of<WalletProvider>(
                         navigatorKey.currentContext!,
