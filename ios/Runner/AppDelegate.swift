@@ -77,7 +77,25 @@ import AusweisApp2SDKWrapper
         
         return handled
     }
-    
+ 
+    override func application(_ application: UIApplication,
+                              continue userActivity: NSUserActivity,
+                              restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb {
+            guard let url = userActivity.webpageURL else {
+                return false
+            }
+            
+            // Store it for your method handler
+            self.initialLink = url.absoluteString
+            
+            // Notify Flutter via EventChannel
+            EventChannelManagerDeepLink.shared.sendEvent(url.absoluteString)
+            return true
+        }
+        return false
+    }
 }
 
 /**
