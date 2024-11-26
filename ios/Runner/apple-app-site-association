@@ -4,10 +4,7 @@
     "details": [
       {
         "appIDs": [
-          "WBLTXUKX28.eu.hidy.app"
-        ],
-        "paths": [
-          "*"
+          "9MY7ZZP3KS.eu.hidy.app"
         ],
         "components": [
           {
@@ -19,7 +16,7 @@
   },
   "webcredentials": {
     "apps": [
-      "WBLTXUKX28.eu.hidy.app"
+      "9MY7ZZP3KS.eu.hidy.app"
     ]
   }
 }
