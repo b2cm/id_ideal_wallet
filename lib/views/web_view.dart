@@ -16,6 +16,7 @@ import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class WebViewWindow extends StatefulWidget {
   final String initialUrl;
@@ -77,12 +78,8 @@ class WebViewWindowState extends State<WebViewWindow> {
         Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
             .aboList;
 
-    List<String> allAbos = currentAbos.map((e) {
-      var u = e['url']!;
-      var asUri = Uri.parse(u);
-      return removeTrailingSlash(
-          '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}');
-    }).toList();
+    List<String> allAbos =
+        currentAbos.map((e) => e.getComparableUrl()).toList();
 
     var asUri = Uri.parse(widget.initialUrl);
     var toCheck =
@@ -112,7 +109,7 @@ class WebViewWindowState extends State<WebViewWindow> {
       logger.d(imageUrl);
       logger.d('add $urlToAdd as abo');
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(urlToAdd, imageUrl, uriToTitle[toCheck] ?? '');
+          .addAbo(AboData(uriToTitle[toCheck] ?? '', urlToAdd, imageUrl));
     }
   }
 
@@ -165,7 +162,40 @@ class WebViewWindowState extends State<WebViewWindow> {
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close)),
             actions: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert))
+              Directionality(
+                textDirection: TextDirection.rtl,
+                child: MenuAnchor(
+                  alignmentOffset: Offset(10, 2),
+                  menuChildren: [
+                    MenuItemButton(
+                        trailingIcon: Icon(Icons.share),
+                        onPressed: () {
+                          Share.share(
+                              'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.initialUrl)}&title=${widget.title}');
+                        },
+                        child: Text('Teilen')),
+                    MenuItemButton(
+                      trailingIcon: Icon(Icons.refresh),
+                      onPressed: () {
+                        webViewController?.reload();
+                      },
+                      child: Text('Laden'),
+                    )
+                  ],
+                  builder: (_, MenuController controller, Widget? child) {
+                    return IconButton(
+                      onPressed: () {
+                        if (controller.isOpen) {
+                          controller.close();
+                        } else {
+                          controller.open();
+                        }
+                      },
+                      icon: const Icon(Icons.more_vert),
+                    );
+                  },
+                ),
+              )
             ],
             centerTitle: true,
             title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [

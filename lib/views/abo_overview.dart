@@ -189,10 +189,10 @@ class AboOverviewState extends State<AboOverview>
                               },
                               onTap: () {
                                 navigateClassic(WebViewWindow(
-                                  initialUrl: e['url'].toString().replaceAll(
+                                  initialUrl: e.url.replaceAll(
                                       'wid=', 'wid=${wallet.lndwId}'),
-                                  title: e['name'] ?? '',
-                                  iconUrl: e['mainbgimage'],
+                                  title: e.name,
+                                  iconUrl: e.pictureUrl,
                                 ));
                               },
                               child: SlideTransition(
@@ -210,13 +210,13 @@ class AboOverviewState extends State<AboOverview>
                                       ),
                                       child: CachedImage(
                                         key: UniqueKey(),
-                                        imageUrl: e['mainbgimage']!,
-                                        placeholder: e['name'],
+                                        imageUrl: e.pictureUrl,
+                                        placeholder: e.name,
                                       ),
                                     ),
                                   ),
                                   Text(
-                                    e['name'] ?? '',
+                                    e.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   )
