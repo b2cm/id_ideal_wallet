@@ -123,7 +123,7 @@
 	<key>NFCReaderUsageDescription</key>
 	<string>Diese App nutzt NFC um den Personalausweis auszulesen</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>no clue will add later</string>
+	<string>Diese App nutzt Bluetooth um auch ohne Internet Nachweise zu teilen</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App nutzt die Kamera, um QR-Codes zu scannen.</string>
 	<key>NSFaceIDUsageDescription</key>
