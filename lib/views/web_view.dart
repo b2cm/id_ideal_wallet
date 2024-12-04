@@ -256,6 +256,16 @@ class WebViewWindowState extends State<WebViewWindow> {
                               return args;
                             });
                         webViewController?.addJavaScriptHandler(
+                            handlerName: 'shareHandler',
+                            callback: (args) async {
+                              var res = await Share.share(args.first);
+                              if (res.status == ShareResultStatus.success) {
+                                return true;
+                              } else {
+                                return false;
+                              }
+                            });
+                        webViewController?.addJavaScriptHandler(
                             handlerName: 'presentationRequestHandler',
                             callback: (args) async {
                               logger.d(args);
