@@ -15,6 +15,7 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
+import 'package:id_ideal_wallet/views/rate_sub_app.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -180,6 +181,21 @@ class WebViewWindowState extends State<WebViewWindow> {
                         webViewController?.reload();
                       },
                       child: Text('Laden'),
+                    ),
+                    MenuItemButton(
+                      trailingIcon: Icon(Icons.star_border),
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Dialog(
+                                child: RateSubApp(
+                                    abo: AboData(widget.title,
+                                        widget.initialUrl, widget.iconUrl!)),
+                              );
+                            });
+                      },
+                      child: Text('Bewerten'),
                     )
                   ],
                   builder: (_, MenuController controller, Widget? child) {
@@ -259,6 +275,24 @@ class WebViewWindowState extends State<WebViewWindow> {
                             handlerName: 'shareHandler',
                             callback: (args) async {
                               var res = await Share.share(args.first);
+                              if (res.status == ShareResultStatus.success) {
+                                return true;
+                              } else {
+                                return false;
+                              }
+                            });
+                        webViewController?.addJavaScriptHandler(
+                            handlerName: 'shareImageHandler',
+                            callback: (args) async {
+                              var d = UriData.fromUri(Uri.parse(args.first));
+                              var res = await Share.shareXFiles([
+                                XFile.fromData(
+                                  d.contentAsBytes(),
+                                  mimeType: d.mimeType,
+                                )
+                              ], fileNameOverrides: [
+                                'hidy.jpg'
+                              ]);
                               if (res.status == ShareResultStatus.success) {
                                 return true;
                               } else {

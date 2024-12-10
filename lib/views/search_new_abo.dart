@@ -8,6 +8,8 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/abo_detail_view.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 class SearchNewAbo extends StatefulWidget {
@@ -28,11 +30,6 @@ class SearchNewAboState extends State<SearchNewAbo> {
   }
 
   Future<void> searchAbos() async {
-    var inAbo =
-        Provider.of<WalletProvider>(context, listen: false).aboList.map((e) {
-      return e.getComparableUrl();
-    }).toList();
-
     var res = await get(Uri.parse(applicationEndpoint));
     List<AboData> available = [];
     if (res.statusCode == 200) {
@@ -40,15 +37,15 @@ class SearchNewAboState extends State<SearchNewAbo> {
       available = dec.map((e) => AboData.fromJson(e)).toList();
     }
 
-    toShow = [];
+    toShow = available;
 
-    if (available.isNotEmpty) {
-      for (var entry in available) {
-        if (!inAbo.contains(entry.getComparableUrl())) {
-          toShow.add(entry);
-        }
-      }
-    }
+    // if (available.isNotEmpty) {
+    //   for (var entry in available) {
+    //     if (!inAbo.contains(entry.getComparableUrl())) {
+    //       toShow.add(entry);
+    //     }
+    //   }
+    // }
 
     setState(() {
       searching = false;
@@ -66,8 +63,17 @@ class SearchNewAboState extends State<SearchNewAbo> {
               : ListView.separated(
                   itemCount: toShow.length,
                   itemBuilder: (context, index) {
+                    var wallet =
+                        Provider.of<WalletProvider>(context, listen: false);
+                    var inAbo = wallet.aboList.map((e) {
+                      return e.getComparableUrl();
+                    });
                     var e = toShow[index];
                     return ListTile(
+                      onTap: () => navigateClassic(AboDetailView(
+                        abo: e,
+                        isInAbo: inAbo.contains(e.getComparableUrl()),
+                      )),
                       leading: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.15,
                         height: MediaQuery.of(context).size.width * 0.15,
@@ -84,14 +90,25 @@ class SearchNewAboState extends State<SearchNewAbo> {
                       ),
                       title: Text(e.name),
                       subtitle: Text('Beschreibung'),
-                      trailing: ElevatedButton(
-                          onPressed: () {
-                            Provider.of<WalletProvider>(context, listen: false)
-                                .addAbo(e);
-                            toShow.removeAt(index);
-                            setState(() {});
-                          },
-                          child: Text('Holen')),
+                      trailing: inAbo.contains(e.getComparableUrl())
+                          ? ElevatedButton(
+                              onPressed: () {
+                                navigateClassic(WebViewWindow(
+                                  initialUrl: e.url.replaceAll(
+                                      'wid=', 'wid=${wallet.lndwId}'),
+                                  title: e.name,
+                                  iconUrl: e.pictureUrl,
+                                ));
+                              },
+                              child: Text('Öffnen'))
+                          : ElevatedButton(
+                              onPressed: () {
+                                Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .addAbo(e);
+                                setState(() {});
+                              },
+                              child: Text('Holen')),
                     );
                   },
                   separatorBuilder: (BuildContext context, int index) {

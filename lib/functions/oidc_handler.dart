@@ -16,8 +16,10 @@ import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
+import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/ausweis_view.dart';
 import 'package:id_ideal_wallet/views/credential_offer_new.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
@@ -266,8 +268,16 @@ Future<void> handleOfferOidc(String offerUri) async {
             authRequest += '&scope=${offeredCredentials.first.scope}';
           }
           logger.d(authRequest);
-          navigateClassic(
-              WebViewWindow(initialUrl: authRequest, title: 'Autorisierung'));
+          if (clientMetaData['pidIssuer'] != null &&
+              clientMetaData['pidIssuer']) {
+            navigateClassic(const AusweisView());
+            Provider.of<AusweisProvider>(navigatorKey.currentContext!,
+                    listen: false)
+                .startProgress(authRequest);
+          } else {
+            navigateClassic(
+                WebViewWindow(initialUrl: authRequest, title: 'Autorisierung'));
+          }
           //launchUrl(Uri.parse(authRequest));
           return;
         } else {

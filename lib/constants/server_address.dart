@@ -38,6 +38,18 @@ Map knownAuthServer = {
   'https://localhost:4443/idp/realms/pid-issuer-realm': {
     'client_id': 'wallet-dev',
     'redirect_uri': 'eudi-openid4ci://authorize'
+  },
+  'https://demo.pid-issuer.bundesdruckerei.de/c': {
+    'client_id': 'fed79862-af36-4fee-8e64-89e3c91091ed',
+    'pidIssuer': true
+  },
+  'https://demo.pid-issuer.bundesdruckerei.de/c2': {
+    'client_id': 'fed79862-af36-4fee-8e64-89e3c91091ed',
+    'pidIssuer': true
+  },
+  'https://demo.pid-issuer.bundesdruckerei.de/c1': {
+    'client_id': 'fed79862-af36-4fee-8e64-89e3c91091ed',
+    'pidIssuer': true
   }
 };
 

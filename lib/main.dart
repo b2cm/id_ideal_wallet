@@ -386,8 +386,8 @@ class HomeScreen extends StatelessWidget {
                     height: MediaQuery.of(context).size.height * 0.2,
                   ),
                   Image.asset(
-                    'assets/icons/app_icon-playstore.png',
-                    height: 100,
+                    'assets/images/HidyLogoNoBack.png',
+                    height: 150,
                   ),
                   SizedBox(
                     width: double.infinity,

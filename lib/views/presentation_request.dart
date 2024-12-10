@@ -639,6 +639,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
       String definitionId = '';
       List<InputDescriptorMappingObject> descriptorMap = [];
+      bool hasW3cCreds = false;
 
       for (FilterResult entry in finalSend) {
         definitionId = entry.presentationDefinitionId;
@@ -682,15 +683,7 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
 
         if (entry.credentials != null && entry.credentials!.isNotEmpty) {
           logger.d('handle w3c');
-          vp.add(await buildPresentation(
-              finalSend, wallet.wallet, widget.nonce!,
-              loadDocumentFunction: loadDocumentFast));
-          casted = VerifiablePresentation.fromJson(vp.last);
-          submission = casted.presentationSubmission!;
-          logger.d(await verifyPresentation(vp.last, widget.nonce!,
-              loadDocumentFunction: loadDocumentFast));
-
-          logger.d(vp);
+          hasW3cCreds = true;
         }
 
         int arrayIndex = 0;
@@ -746,6 +739,18 @@ class PresentationRequestDialogState extends State<PresentationRequestDialog> {
           }
         }
       }
+
+      if (hasW3cCreds) {
+        vp.add(await buildPresentation(finalSend, wallet.wallet, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast));
+        casted = VerifiablePresentation.fromJson(vp.last);
+        descriptorMap = casted.presentationSubmission!.descriptorMap;
+        logger.d(await verifyPresentation(vp.last, widget.nonce!,
+            loadDocumentFunction: loadDocumentFast));
+
+        logger.d(vp);
+      }
+
       submission = PresentationSubmission(
           presentationDefinitionId: definitionId, descriptorMap: descriptorMap);
 
