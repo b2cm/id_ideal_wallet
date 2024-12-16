@@ -93,6 +93,7 @@ dependencies:
   cbor:
   base_codecs:
   crypto_keys:
+  share_plus: ^10.1.0
 
 
   # The following adds the Cupertino Icons font to your application.

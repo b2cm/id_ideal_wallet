@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
-import 'package:id_ideal_wallet/basicUi/standard/id_card.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
-import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
-import 'package:id_ideal_wallet/provider/navigation_provider.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 class SearchNewAbo extends StatefulWidget {
@@ -21,7 +20,7 @@ class SearchNewAbo extends StatefulWidget {
 
 class SearchNewAboState extends State<SearchNewAbo> {
   bool searching = true;
-  List<Map<String, dynamic>> toShow = [];
+  List<AboData> toShow = [];
 
   @override
   void initState() {
@@ -30,31 +29,22 @@ class SearchNewAboState extends State<SearchNewAbo> {
   }
 
   Future<void> searchAbos() async {
-    var inAbo =
-        Provider.of<WalletProvider>(context, listen: false).aboList.map((e) {
-      var u = e['url']!;
-      var asUri = Uri.parse(u);
-      return '${asUri.scheme.isNotEmpty ? asUri.scheme : 'https'}://${asUri.host}${asUri.path}';
-    }).toList();
-
     var res = await get(Uri.parse(applicationEndpoint));
-    List<Map<String, dynamic>> available = [];
+    List<AboData> available = [];
     if (res.statusCode == 200) {
       List dec = jsonDecode(res.body);
-      available = dec.map((e) => (e as Map).cast<String, dynamic>()).toList();
+      available = dec.map((e) => AboData.fromJson(e)).toList();
     }
 
-    toShow = [];
+    toShow = available;
 
-    if (available.isNotEmpty) {
-      for (var entry in available) {
-        var asUri = Uri.parse(entry['url']);
-        var toCheck = '${asUri.scheme}://${asUri.host}${asUri.path}';
-        if (!inAbo.contains(toCheck)) {
-          toShow.add(entry);
-        }
-      }
-    }
+    // if (available.isNotEmpty) {
+    //   for (var entry in available) {
+    //     if (!inAbo.contains(entry.getComparableUrl())) {
+    //       toShow.add(entry);
+    //     }
+    //   }
+    // }
 
     setState(() {
       searching = false;
@@ -69,53 +59,63 @@ class SearchNewAboState extends State<SearchNewAbo> {
           ? const Center(child: CircularProgressIndicator())
           : toShow.isEmpty
               ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
-              : SizedBox.expand(
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceEvenly,
-                      children: List.generate(toShow.length, (index) {
-                        var e = toShow[index];
-                        return InkWell(
-                          onTap: () {
-                            Provider.of<NavigationProvider>(context,
-                                    listen: false)
-                                .changePage([NavigationPage.webView],
-                                    webViewUrl: e['url']);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.4,
-                              child: ContextCredentialCard(
-                                borderWidth: 1,
-                                edgeRadius: 10,
-                                cardTitle: '',
-                                backgroundImage: e.containsKey('mainbgimg') &&
-                                        e['mainbgimg']!.isNotEmpty
-                                    ? CachedImage(imageUrl: e['mainbgimg']!)
-                                    : null,
-                                backgroundColor: Colors.green.shade300,
-                                cardTitleColor:
-                                    const Color.fromARGB(255, 255, 255, 255),
-                                subjectName:
-                                    e['name'] != null && e['name']!.isNotEmpty
-                                        ? e['name']!
-                                        : e['url'] != null
-                                            ? e['url']!
-                                            : '',
-                                bottomLeftText: const SizedBox(
-                                  width: 0,
-                                ),
-                                bottomRightText: const SizedBox(
-                                  width: 0,
-                                ),
-                              ),
-                            ),
+              : ListView.separated(
+                  itemCount: toShow.length,
+                  itemBuilder: (context, index) {
+                    var wallet =
+                        Provider.of<WalletProvider>(context, listen: false);
+                    var inAbo = wallet.aboList.map((e) {
+                      return e.getComparableUrl();
+                    });
+                    var e = toShow[index];
+                    return ListTile(
+                      // TODO uncomment when details view is usable
+                      // onTap: () => navigateClassic(AboDetailView(
+                      //   abo: e,
+                      //   isInAbo: inAbo.contains(e.getComparableUrl()),
+                      // )),
+                      leading: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.15,
+                        height: MediaQuery.of(context).size.width * 0.15,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(10),
                           ),
-                        );
-                      }),
-                    ),
-                  ),
+                          child: CachedImage(
+                            key: UniqueKey(),
+                            imageUrl: e.pictureUrl,
+                            placeholder: e.name,
+                          ),
+                        ),
+                      ),
+                      title: Text(e.name),
+                      //subtitle: Text('Beschreibung'),
+                      trailing: inAbo.contains(e.getComparableUrl())
+                          ? ElevatedButton(
+                              onPressed: () {
+                                navigateClassic(WebViewWindow(
+                                  initialUrl: e.url.replaceAll(
+                                      'wid=', 'wid=${wallet.lndwId}'),
+                                  title: e.name,
+                                  iconUrl: e.pictureUrl,
+                                ));
+                              },
+                              child: Text('Öffnen'))
+                          : ElevatedButton(
+                              onPressed: () {
+                                Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .addAbo(e);
+                                setState(() {});
+                              },
+                              child: Text('Holen')),
+                    );
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return const SizedBox(
+                      height: 7,
+                    );
+                  },
                 ),
     );
   }

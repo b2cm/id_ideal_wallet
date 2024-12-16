@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_darwin/local_auth_darwin.dart';
@@ -128,4 +134,37 @@ extension HexColor on Color {
       '${red.toRadixString(16).padLeft(2, '0')}'
       '${green.toRadixString(16).padLeft(2, '0')}'
       '${blue.toRadixString(16).padLeft(2, '0')}';
+}
+
+Future navigateClassic(Widget newView) {
+  return Navigator.of(navigatorKey.currentContext!).push(Platform.isIOS
+      ? CupertinoPageRoute(builder: (context) => newView)
+      : MaterialPageRoute(builder: (context) => newView));
+}
+
+class AboData {
+  String name, url, pictureUrl;
+
+  AboData(this.name, this.url, this.pictureUrl);
+
+  factory AboData.fromJson(dynamic jsonData) {
+    var data = credentialToMap(jsonData);
+
+    return AboData(data['name'] ?? '', data['url'],
+        data['mainbgimg'] ?? data['mainbgimage']);
+  }
+
+  String getComparableUrl() {
+    var asUri = Uri.parse(url);
+    return removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'name': name, 'url': url, 'mainbgimage': pictureUrl};
+  }
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
+  }
 }

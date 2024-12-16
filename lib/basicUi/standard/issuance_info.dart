@@ -6,8 +6,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/property_names.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:json_schema/json_schema.dart';
 import 'package:provider/provider.dart';
 
@@ -75,8 +77,9 @@ class IssuanceInfoState extends State<IssuanceInfo> {
               nav.changePage([NavigationPage.credential], track: false);
               Timer(
                   const Duration(milliseconds: 5),
-                  () => nav.changePage([NavigationPage.webView],
-                      webViewUrl: layout['issuerUrl']));
+                  () => navigateClassic(WebViewWindow(
+                      initialUrl: layout['issuerUrl']!,
+                      title: 'Aussteller-Info')));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,

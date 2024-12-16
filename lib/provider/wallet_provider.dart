@@ -21,6 +21,7 @@ import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:pkcs7/pkcs7.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -54,7 +55,7 @@ class WalletProvider extends ChangeNotifier {
   List<String> issuanceRunning = [];
 
   //[[url, pic-url], [url, pic-url], ...]
-  List<Map<String, String>> aboList = [];
+  List<my_util.AboData> aboList = [];
   Map<String, Map<String, String>> credentialStyling = {};
 
   DateTime? lastCheckRevocation;
@@ -239,7 +240,7 @@ class WalletProvider extends ChangeNotifier {
       var e = _wallet.getConfigEntry('aboList');
       if (e != null) {
         List dec = jsonDecode(e);
-        aboList = dec.map((e) => (e as Map).cast<String, String>()).toList();
+        aboList = dec.map((e) => my_util.AboData.fromJson(e)).toList();
       }
 
       var t = wallet.getConfigEntry('tosUrl');
@@ -342,23 +343,15 @@ class WalletProvider extends ChangeNotifier {
 
   void deleteAbo(int index) async {
     aboList.removeAt(index);
-    await wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+    await wallet.storeConfigEntry(
+        'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
     notifyListeners();
   }
 
-  Map<String, dynamic> getAboData(String id) {
-    var e = _wallet.getConfigEntry(id);
-    if (e != null) {
-      return jsonDecode(e) as Map<String, dynamic>;
-    } else {
-      return {};
-    }
-  }
-
-  void addAbo(String url, String pictureUrl, String title,
-      [bool cheat = false, bool notify = true]) {
-    aboList.add({'url': url, 'mainbgimage': pictureUrl, 'name': title});
-    wallet.storeConfigEntry('aboList', jsonEncode(aboList));
+  void addAbo(my_util.AboData abo, [bool cheat = false, bool notify = true]) {
+    aboList.add(abo);
+    wallet.storeConfigEntry(
+        'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
 
     if (notify) notifyListeners();
   }
@@ -733,13 +726,12 @@ class WalletProvider extends ChangeNotifier {
 
     if (type == 'PieceOfArt') {
       List<String> allAbos = aboList.map((e) {
-        return e['url']!;
+        return e.url;
       }).toList();
       if (!allAbos.contains('https://test.hidy.app/kigallery')) {
         addAbo(
-            'https://test.hidy.app/kigallery',
-            'https://hidy.app/styles/kigalerie_contextbg.jpg',
-            'KI-Galerie',
+            my_util.AboData('KI-Galerie', 'https://test.hidy.app/kigallery',
+                'https://hidy.app/styles/kigalerie_contextbg.jpg'),
             true,
             false);
       }
@@ -751,8 +743,8 @@ class WalletProvider extends ChangeNotifier {
     if (nav.redirectWebViewUrl != null) {
       nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        nav.changePage([NavigationPage.webView],
-            webViewUrl: nav.redirectWebViewUrl);
+        my_util.navigateClassic(
+            WebViewWindow(initialUrl: nav.redirectWebViewUrl!, title: ''));
         nav.redirectWebViewUrl = null;
       });
     }

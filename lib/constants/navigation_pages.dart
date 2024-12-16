@@ -13,4 +13,5 @@ enum NavigationPage {
   topUp,
   paymentOverview,
   ausweis,
+  aboDetail
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:io';
 
 import 'package:base_codecs/base_codecs.dart';
@@ -9,20 +10,20 @@ import 'package:dart_ssi/credentials.dart';
 import 'package:dart_ssi/did.dart';
 import 'package:dart_ssi/util.dart';
 import 'package:dart_ssi/wallet.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:x509b/x509.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:io' show Platform;
 
 enum BleMdocTransmissionState {
   uninitialized,
@@ -583,20 +584,16 @@ class MdocProvider extends ChangeNotifier {
         matchingDescriptorIds: [],
         presentationDefinitionId: '');
     var target = PresentationRequestDialog(
-          definition: PresentationDefinition(inputDescriptors: []),
-          definitionHash: '',
-          otherEndpoint: '',
-          receiverDid: '',
-          myDid: '',
-          results: [asFilter],
-          isIso: true,
-          requesterCert: requesterCert,
-        );
-    var res = await Navigator.of(navigatorKey.currentContext!).push(
-      Platform.isIOS
-      ? CupertinoPageRoute(builder: (context) => target)
-      : MaterialPageRoute(builder: (context) => target)
+      definition: PresentationDefinition(inputDescriptors: []),
+      definitionHash: '',
+      otherEndpoint: '',
+      receiverDid: '',
+      myDid: '',
+      results: [asFilter],
+      isIso: true,
+      requesterCert: requesterCert,
     );
+    var res = await navigateClassic(target);
 
     if (res != null) {
       String type = '';

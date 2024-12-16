@@ -251,7 +251,7 @@ class HomeScreen extends StatelessWidget {
       if (wallet.isOpen()) {
         return Consumer<NavigationProvider>(
             builder: (context, navigator, child) {
-              Widget content = getContent(navigator, wallet);
+          Widget content = getContent(navigator, wallet);
 
           // Only add the swipe gesture on iOS
           if (Platform.isIOS) {
@@ -267,7 +267,7 @@ class HomeScreen extends StatelessWidget {
           }
           return PopScope(
               canPop: navigator.canPop,
-              onPopInvoked: (_) => navigator.goBack(),
+              onPopInvokedWithResult: (_, a) => navigator.goBack(),
               child: Scaffold(
                   body: Stack(children: [
                     Column(
@@ -326,7 +326,7 @@ class HomeScreen extends StatelessWidget {
                                   const SizedBox(
                                     height: 5,
                                   ),
-                                  CircularProgressIndicator()
+                                  const CircularProgressIndicator()
                                 ],
                               ),
                             ),
@@ -352,11 +352,51 @@ class HomeScreen extends StatelessWidget {
         );
       } else {
         wallet.openWallet();
-        return const Scaffold(
+        return Scaffold(
           body: SafeArea(
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: Stack(children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.only(left: 10, right: 10, bottom: 5),
+                    child: Image(
+                      image: const AssetImage('assets/images/stempel.png'),
+                      width: MediaQuery.of(context).orientation ==
+                              Orientation.portrait
+                          ? MediaQuery.of(context).size.width
+                          : null,
+                      height: MediaQuery.of(context).orientation ==
+                              Orientation.landscape
+                          ? MediaQuery.of(context).size.height
+                          : null,
+                      fit: BoxFit.fill,
+                    ),
+                  )
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.2,
+                  ),
+                  Image.asset(
+                    'assets/images/HidyLogoNoBack.png',
+                    height: 150,
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.1,
+                  ),
+                  const CircularProgressIndicator()
+                ],
+              )
+            ]),
           ),
         );
       }

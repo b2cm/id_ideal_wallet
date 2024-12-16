@@ -1,6 +1,7 @@
 import 'package:barcode_widget/barcode_widget.dart' as barcode;
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/footer_buttons.dart';
+import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -71,13 +72,14 @@ class AddMemberCardState extends State<AddMemberCard> {
         'number': numberController.text
       });
       List<String> allAbos = wallet.aboList.map((e) {
-        return e['url']!;
+        return e.url;
       }).toList();
       if (!allAbos.contains('https://test.hidy.app/ccards')) {
-        wallet.addAbo(
-            'https://test.hidy.app/ccards',
-            'https://hidy.app/styles/kundenkarten_contextbg.jpg',
-            'Kundenkarten');
+        wallet.addAbo(AboData(
+          'Kundenkarten',
+          'https://test.hidy.app/ccards',
+          'https://hidy.app/styles/kundenkarten_contextbg.jpg',
+        ));
       }
       Navigator.of(context).popUntil((route) => route.isFirst);
     }

@@ -1,7 +1,4 @@
-import 'dart:io' show Platform;
-
 import 'package:dart_ssi/credentials.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
@@ -60,9 +57,8 @@ class HistoryEntries extends StatelessWidget {
       return Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: Color.fromARGB(255, 122, 122, 122))
-        ),
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Color.fromARGB(255, 122, 122, 122))),
         clipBehavior: Clip.antiAlias,
         margin: EdgeInsets.zero,
         child: ExpansionTile(
@@ -142,9 +138,7 @@ class CredentialDetailState extends State<CredentialDetailView> {
           title: Text(AppLocalizations.of(context)!.invoice),
           trailing: InkWell(
               child: const Icon(Icons.picture_as_pdf),
-              onTap: () => Navigator.of(context).push(Platform.isIOS
-                  ? CupertinoPageRoute(builder: (context) => target)
-                  : MaterialPageRoute(builder: (context) => target))),
+              onTap: () => navigateClassic(target)),
           expandedAlignment: Alignment.centerLeft,
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: buildCredSubject(receiptVc.credentialSubject),
@@ -241,7 +235,6 @@ class RefreshIcon extends StatefulWidget {
   _RefreshIconState createState() => _RefreshIconState();
 }
 
-
 class _RefreshIconState extends State<RefreshIcon> {
   double _rotationAngle = 0.0;
 
@@ -255,13 +248,12 @@ class _RefreshIconState extends State<RefreshIcon> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: _changeIconRotation,
-      child: AnimatedRotation(
-        turns: _rotationAngle,
-        duration: const Duration(milliseconds: 750),
-        child: const Icon(Icons.refresh, size: 25),
-      )
-    );
+        onTap: _changeIconRotation,
+        child: AnimatedRotation(
+          turns: _rotationAngle,
+          duration: const Duration(milliseconds: 750),
+          child: const Icon(Icons.refresh, size: 25),
+        ));
   }
 }
 
