@@ -15,7 +15,6 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/presentation_request.dart';
-import 'package:id_ideal_wallet/views/rate_sub_app.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -182,21 +181,22 @@ class WebViewWindowState extends State<WebViewWindow> {
                       },
                       child: Text('Laden'),
                     ),
-                    MenuItemButton(
-                      trailingIcon: Icon(Icons.star_border),
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (context) {
-                              return Dialog(
-                                child: RateSubApp(
-                                    abo: AboData(widget.title,
-                                        widget.initialUrl, widget.iconUrl!)),
-                              );
-                            });
-                      },
-                      child: Text('Bewerten'),
-                    )
+                    // TODO uncomment if rating feature ready to use
+                    // MenuItemButton(
+                    //   trailingIcon: Icon(Icons.star_border),
+                    //   onPressed: () {
+                    //     showDialog(
+                    //         context: context,
+                    //         builder: (context) {
+                    //           return Dialog(
+                    //             child: RateSubApp(
+                    //                 abo: AboData(widget.title,
+                    //                     widget.initialUrl, widget.iconUrl!)),
+                    //           );
+                    //         });
+                    //   },
+                    //   child: Text('Bewerten'),
+                    // )
                   ],
                   builder: (_, MenuController controller, Widget? child) {
                     return IconButton(

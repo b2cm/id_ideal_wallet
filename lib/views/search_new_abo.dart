@@ -8,7 +8,6 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/abo_detail_view.dart';
 import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
@@ -70,10 +69,11 @@ class SearchNewAboState extends State<SearchNewAbo> {
                     });
                     var e = toShow[index];
                     return ListTile(
-                      onTap: () => navigateClassic(AboDetailView(
-                        abo: e,
-                        isInAbo: inAbo.contains(e.getComparableUrl()),
-                      )),
+                      // TODO uncomment when details view is usable
+                      // onTap: () => navigateClassic(AboDetailView(
+                      //   abo: e,
+                      //   isInAbo: inAbo.contains(e.getComparableUrl()),
+                      // )),
                       leading: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.15,
                         height: MediaQuery.of(context).size.width * 0.15,
@@ -89,7 +89,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                         ),
                       ),
                       title: Text(e.name),
-                      subtitle: Text('Beschreibung'),
+                      //subtitle: Text('Beschreibung'),
                       trailing: inAbo.contains(e.getComparableUrl())
                           ? ElevatedButton(
                               onPressed: () {
