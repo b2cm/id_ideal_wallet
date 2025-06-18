@@ -17,7 +17,6 @@ import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sd_jwt/sd_jwt.dart' as sd_jwt;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:xml/xml.dart';
 
 import '../l10n/app_localizations.dart';
 
@@ -586,19 +585,20 @@ class AusweisProvider extends ChangeNotifier {
         // successful response
         if (selfInfo) {
           var response = await get(Uri.parse(message.url!),
-              headers: {'Accept': 'text/html'});
+              headers: {'Accept': 'application/json'});
           logger.d('${response.statusCode} / ${response.body}');
 
           if (response.statusCode == 200) {
-            readData = {};
-            var document = XmlDocument.parse(response.body);
-            var t = document.findAllElements('td').toList();
-            for (int i = 0; i < t.length; i += 2) {
-              logger.d('${t[i].innerText} ${t[i + 1].innerText}');
-              readData![t[i].innerText] = t[i + 1].innerText;
-            }
+            readData = jsonDecode(response.body);
 
             screen = AusweisScreen.finish;
+            requestedAttributes = [];
+            requesterCert = null;
+            disconnectSdk();
+          } else {
+            errorDescription = 'Es ist ein Fehler aufgetreten';
+            errorMessage = 'Daten können nicht abgerufen werden';
+            screen = AusweisScreen.error;
             requestedAttributes = [];
             requesterCert = null;
             disconnectSdk();
