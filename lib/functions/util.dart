@@ -47,7 +47,7 @@ Future<bool> checkAuthSupport() {
   return auth.isDeviceSupported();
 }
 
-Future<bool> openWallet(WalletStore wallet) async {
+Future<bool> openWallet(WalletStore wallet, bool newUser) async {
   try {
     if (!wallet.isWalletOpen()) {
       var messages = AndroidAuthMessages(
@@ -81,10 +81,17 @@ Future<bool> openWallet(WalletStore wallet) async {
       if (didAuthWork) {
         const storage = FlutterSecureStorage();
         String? pw = await storage.read(key: 'password');
+        // iOS do not delete keychain items on uninstall, so delete old passwords
+        if (newUser) {
+          logger.d('new install');
+          pw = null;
+          await storage.delete(key: 'password');
+        }
         if (pw == null) {
           pw = hexEncode(getSecureRandom().nextBytes(20));
           await storage.write(key: 'password', value: pw);
         }
+        logger.d('pw: $pw');
         var s = DateTime.now();
         await wallet.openBoxes(
             password: pw,

@@ -40,6 +40,7 @@ class WalletProvider extends ChangeNotifier {
   bool _authRunning = false;
   bool onboard;
   bool withFirebase;
+  bool newUser = false;
 
   bool openError = false;
 
@@ -342,6 +343,7 @@ class WalletProvider extends ChangeNotifier {
 
   void onBoarded() {
     onboard = true;
+    newUser = true;
   }
 
   void openWallet() async {
@@ -349,7 +351,8 @@ class WalletProvider extends ChangeNotifier {
       Provider.of<MdocProvider>(navigatorKey.currentContext!, listen: false)
           .startListening();
       _authRunning = true;
-      var isOpen = await my_util.openWallet(_wallet);
+      logger.d('onboard: $onboard');
+      var isOpen = await my_util.openWallet(_wallet, newUser);
       if (!isOpen) {
         openError = true;
         return;
