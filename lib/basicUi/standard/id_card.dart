@@ -91,7 +91,8 @@ class IdCard extends StatelessWidget {
       var map = {
         'PKBarcodeFormatQR': BarcodeType.QrCode,
         'PKBarcodeFormatPDF417': BarcodeType.PDF417,
-        'PKBarcodeFormatAztec': BarcodeType.Aztec
+        'PKBarcodeFormatAztec': BarcodeType.Aztec,
+        'PKBarcodeFormatCode128': BarcodeType.Code128
       };
       var barcodeFormat = credential.credentialSubject['barcode']?['format'];
       var barcodeData = credential.credentialSubject['barcode']?['message'];
@@ -651,6 +652,8 @@ class PkPassCard extends IdCard {
 
   @override
   Widget buildCenterOverlay() {
+    logger.d(barcodeData);
+    logger.d(barcodeType);
     return Center(
       child: Container(
         color: Colors.white,

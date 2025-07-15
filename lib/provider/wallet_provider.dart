@@ -118,7 +118,8 @@ class WalletProvider extends ChangeNotifier {
   String rgbColorToHex(String rgb) {
     var color = rgb.replaceAll('rgb(', '').replaceAll(')', '');
     var values = color.split(',');
-    var asInt = values.map((e) => int.parse(e.trim()).toRadixString(16));
+    var asInt = values.map((e) =>
+        int.parse(e.trim()).toRadixString(16).toString().padLeft(2, '0'));
     var hexColor = asInt.join();
     return '#$hexColor';
   }
@@ -145,7 +146,8 @@ class WalletProvider extends ChangeNotifier {
           } else {
             var passHash = hexEncode(SHA1Digest().process(passFile.content));
             logger.d('$passHash ==? $givenPassHash');
-            valid = givenPassHash == passHash;
+            valid = (givenPassHash as String).toLowerCase() ==
+                passHash.toLowerCase();
           }
           if (!valid) {
             logger.d('Invalid pkpass signature');
