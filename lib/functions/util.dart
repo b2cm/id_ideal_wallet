@@ -93,16 +93,11 @@ Future<bool> openWallet(WalletStore wallet, bool newUser) async {
         }
         logger.d('pw: $pw');
         var s = DateTime.now();
-        await wallet.openBoxes(
-            password: pw,
-            keyStorage: Platform.isAndroid
-                ? {
-                    'software':
-                        SoftwareKeyStoreBackend(pw, await getNameExpansion()),
-                    'system': OsKeyStore(),
-                    'software2': SoftwareKeyStoreBackend(),
-                  }
-                : null);
+        await wallet.openBoxes(password: pw, keyStorage: {
+          'software': SoftwareKeyStoreBackend(pw, await getNameExpansion()),
+          'system': OsKeyStore(),
+          'software2': SoftwareKeyStoreBackend(),
+        });
         var s2 = DateTime.now();
         logger.d(s2.difference(s).inMilliseconds);
       } else {
