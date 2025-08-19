@@ -177,6 +177,7 @@ class WebViewWindowState extends State<WebViewWindow> {
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            titleSpacing: 0,
             backgroundColor: titleBgColor,
             leading: IconButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -251,7 +252,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                       Radius.circular(4),
                     ),
                     child: CachedImage(
-                      key: UniqueKey(),
+                      // key: UniqueKey(),
                       imageUrl: imageUrl!,
                       placeholder: title,
                     ),
@@ -261,9 +262,12 @@ class WebViewWindowState extends State<WebViewWindow> {
                 const SizedBox(
                   width: 3,
                 ),
-              Text(
-                title,
-                style: TextStyle(color: titleFontColor),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(color: titleFontColor),
+                  overflow: TextOverflow.ellipsis,
+                ),
               )
             ]),
           ),

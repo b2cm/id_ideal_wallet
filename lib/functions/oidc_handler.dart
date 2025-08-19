@@ -83,7 +83,9 @@ Map<String, dynamic> getClaimsFromDescriptionObject(
     List<ClaimsDescriptionObject> description) {
   var claims = <String, dynamic>{};
   for (var d in description) {
-    d.path.setValueAtPath(d.display?.first.description ?? [], claims);
+    logger.d(claims);
+    d.path.setValueAtPath(
+        d.display?.first.description ?? d.display?.first.name ?? '', claims);
   }
 
   return claims;
@@ -96,18 +98,27 @@ Future<void> handleOfferOid(String offerUri) async {
   logger.d('$issuerString/.well-known/openid-credential-issuer');
 
   // get metadata
-  var issuerMetaReq = await get(
-      Uri.parse('$issuerString/.well-known/openid-credential-issuer'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }).timeout(const Duration(seconds: 20), onTimeout: () {
-    return Response('Timeout', 400);
-  });
+  Response issuerMetaReq;
+  try {
+    issuerMetaReq = await get(
+        Uri.parse('$issuerString/.well-known/openid-credential-issuer'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }).timeout(const Duration(seconds: 20), onTimeout: () {
+      return Response('Timeout', 400);
+    });
 
-  if (issuerMetaReq.statusCode != 200) {
-    logger.d(
-        'Bad Status code: ${issuerMetaReq.statusCode} /${issuerMetaReq.body}');
+    if (issuerMetaReq.statusCode != 200) {
+      logger.d(
+          'Bad Status code: ${issuerMetaReq.statusCode} /${issuerMetaReq.body}');
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.oidMetadataError,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .oidMetadataErrorNote);
+      return;
+    }
+  } catch (e) {
     showErrorMessage(
         AppLocalizations.of(navigatorKey.currentContext!)!.oidMetadataError,
         AppLocalizations.of(navigatorKey.currentContext!)!
@@ -277,7 +288,8 @@ Future<void> handleOfferOid(String offerUri) async {
       if (parEndpoint != null) {
         if (offeredCredentials.length == 1 &&
             offeredCredentials.first.scope != null) {
-          authServerQuery += '&scope=${offeredCredentials.first.scope}';
+          authServerQuery +=
+              '&scope=${Uri.encodeQueryComponent(offeredCredentials.first.scope!)}';
         } else {
           List<Map> authDetails = [];
           for (var entry in offeredCredentials) {
@@ -758,17 +770,6 @@ Future<void> getCredential(
         credentialIssuer,
         clientId,
         k);
-  } else if (credentialMetadata.proofTypesSupported!.containsKey('ldp_vp')) {
-    proofType = 'ldp_vp';
-    credentialDid = await wallet.newCredentialDid();
-    // create VP
-    var presentation = VerifiablePresentation(holder: credentialDid);
-    var (signer, type) = await getCredentialSigningStuff(wallet, credentialDid);
-    presentation.addProof(signer, type,
-        challenge: tokenResponse.cNonce, domain: credentialIssuer);
-    // end VP creation
-    proofValue = presentation.toJson();
-    keyType = KeyType.ed25519;
   } else if (credentialMetadata.proofTypesSupported!.containsKey('jwt')) {
     proofType = 'jwt';
     (credentialDid, proofValue, keyType) = await buildJwt(
@@ -782,6 +783,17 @@ Future<void> getCredential(
         credentialIssuer,
         clientId,
         k);
+  } else if (credentialMetadata.proofTypesSupported!.containsKey('ldp_vp')) {
+    proofType = 'ldp_vp';
+    credentialDid = await wallet.newCredentialDid();
+    // create VP
+    var presentation = VerifiablePresentation(holder: credentialDid);
+    var (signer, type) = await getCredentialSigningStuff(wallet, credentialDid);
+    await presentation.addProof(signer, type,
+        challenge: tokenResponse.cNonce, domain: credentialIssuer);
+    // end VP creation
+    proofValue = presentation.toJson();
+    keyType = KeyType.ed25519;
   } else {
     logger.d('Proof type nicht unterstützt');
     showErrorMessage(
@@ -918,21 +930,23 @@ Future<void> getCredential(
               decodedCredentialResponse.transactionId!,
               decryptionKey));
     } else {
-      storeCredential(
-          format,
-          decodedCredentialResponse.credential ??
-              decodedCredentialResponse.credentials?.first.credential,
-          credentialDid,
-          wallet,
-          credentialIssuer);
+      try {
+        storeCredential(
+            format,
+            decodedCredentialResponse.credential ??
+                decodedCredentialResponse.credentials?.first.credential,
+            credentialDid,
+            wallet,
+            credentialIssuer);
+      } catch (e) {
+        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+            .credentialDownloadFailed);
+      }
     }
   } else {
     logger.d(credentialResponse.statusCode);
     logger.d(credentialResponse.headers);
     logger.d(credentialResponse.body);
-
-    showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
-        .credentialDownloadFailed);
   }
 }
 
@@ -1156,8 +1170,14 @@ storeCredential(String format, dynamic credential, String credentialDid,
     }
   } else if (format == OidCredentialFormat.sdJwt ||
       format == OidCredentialFormat.sdJwtDc) {
-    printWrapped(credential);
-    var parsed = sd_jwt.SdJws.fromCompactSerialization(credential);
+    sd_jwt.SdJws parsed;
+    try {
+      parsed = sd_jwt.SdJws.fromCompactSerialization(credential);
+    } catch (e) {
+      showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+          .credentialDownloadFailed);
+      return;
+    }
     logger.d(parsed.jsonContent());
     var iss = parsed.jsonContent()['payload']['iss'];
     var issMetaUrl = '$iss/.well-known/jwt-vc-issuer';

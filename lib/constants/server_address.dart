@@ -37,6 +37,14 @@ Map knownAuthServer = {
     'client_id': 'wallet-dev',
     'redirect_uri': 'eudi-openid4ci://authorize'
   },
+  'http://localhost:8080/realms/test-realm': {
+    'client_id': 'hidy',
+    'redirect_uri': "https://wallet.bccm.dev/redirect"
+  },
+  'http://localhost:8080/realms/pid-issuer-realm': {
+    'client_id': 'wallet-dev',
+    'redirect_uri': "eudi-openid4ci://authorize"
+  },
   'https://authenticate.eudiw.dev/realms/pid-issuer-realm': {
     'client_id': 'wallet-dev',
     'redirect_uri': 'eudi-openid4ci://authorize'
@@ -90,7 +98,7 @@ var stylingEndpoint = 'https://test.hidy.app/walletcontext/layouts';
 var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
 var messagingBackend =
     'https://test.hidy.app/walletcontext/fbm/registeraccount';
-String versionNumber = '4.1.1-test';
+String versionNumber = '4.2.0-test';
 String baseUrl = 'https://test.hidy.app';
 bool testBuild = true;
 
