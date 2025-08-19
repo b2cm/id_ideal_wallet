@@ -76,31 +76,31 @@ Map knownAuthServer = {
 
 // *****Endpoints for Public release*****
 
-// var contextEndpoint =
-//     'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
-// var applicationEndpoint =
-//     'https://hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
-// var stylingEndpoint = 'https://hidy.app/walletcontext/layouts';
-// var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
-// var messagingBackend =
-//     'https://test.hidy.app/walletcontext/fbm/registeraccount';
-// String versionNumber = '4.0.8';
-// String baseUrl = 'https://hidy.app';
-// bool testBuild = false;
+var contextEndpoint =
+    'https://hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
+var applicationEndpoint =
+    'https://hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
+var stylingEndpoint = 'https://hidy.app/walletcontext/layouts';
+var termsVersionEndpoint = 'https://hidy.app/walletcontext/terms';
+var messagingBackend =
+    'https://test.hidy.app/walletcontext/fbm/registeraccount';
+String versionNumber = '4.2.0';
+String baseUrl = 'https://hidy.app';
+bool testBuild = false;
 
 // ******Endpoints for Test-Release******
 
-var contextEndpoint =
-    'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
-var applicationEndpoint =
-    'https://test.hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
-var stylingEndpoint = 'https://test.hidy.app/walletcontext/layouts';
-var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
-var messagingBackend =
-    'https://test.hidy.app/walletcontext/fbm/registeraccount';
-String versionNumber = '4.2.0-test';
-String baseUrl = 'https://test.hidy.app';
-bool testBuild = true;
+// var contextEndpoint =
+//     'https://test.hidy.app/walletcontext?plattform=${Platform.isIOS ? '1' : '2'}';
+// var applicationEndpoint =
+//     'https://test.hidy.app/walletcontext/apps?plattform=${Platform.isIOS ? '1' : '2'}';
+// var stylingEndpoint = 'https://test.hidy.app/walletcontext/layouts';
+// var termsVersionEndpoint = 'https://test.hidy.app/walletcontext/terms';
+// var messagingBackend =
+//     'https://test.hidy.app/walletcontext/fbm/registeraccount';
+// String versionNumber = '4.2.0-test';
+// String baseUrl = 'https://test.hidy.app';
+// bool testBuild = true;
 
 bool inOidcTest = false;
 

@@ -157,12 +157,12 @@ class HomeScreen extends StatelessWidget {
                     activeIndices: const [NavigationPage.abo],
                     navigator: navigator),
                 CustomNavigationItem(
-                    text: 'Identität',
-                    // text: 'Credentials',
+                    // text: 'Identität',
+                    text: 'Credentials',
                     activeIcon: Icons.co_present,
                     inactiveIcon: Icons.co_present_outlined,
                     activeIndices: const [
-                      NavigationPage.identityOverview,
+                      // NavigationPage.identityOverview,
                       NavigationPage.credential,
                       NavigationPage.credentialDetail,
                       NavigationPage.email
