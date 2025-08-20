@@ -12,7 +12,6 @@ import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/ausweis_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
 import 'package:id_ideal_wallet/views/ausweis_view.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
@@ -166,16 +165,7 @@ class NavigationProvider extends ChangeNotifier {
       } else if (link.contains('/webview')) {
         var asUri = Uri.parse(link);
         var uriToCall = Uri.parse(asUri.queryParameters['url']!);
-        var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
-            listen: false);
-        // changePage([NavigationPage.credential], track: false);
-        Timer(
-            const Duration(milliseconds: 10),
-            () => navigateClassic(WebViewWindow(
-                initialUrl: uriToCall
-                    .toString()
-                    .replaceAll('wid=', 'wid=${wallet.lndwId}'),
-                title: '')));
+        handleWebViewLink(uriToCall);
       } else if (link.contains('redirect')) {
         handleRedirect(link);
       }

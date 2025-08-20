@@ -5,7 +5,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
@@ -191,12 +190,7 @@ class AboOverviewState extends State<AboOverview>
                               onTap: () {
                                 wallet.removeOutstandingMessages(
                                     e.getComparableUrl());
-                                navigateClassic(WebViewWindow(
-                                  initialUrl: e.url.replaceAll(
-                                      'wid=', 'wid=${wallet.lndwId}'),
-                                  title: e.name,
-                                  iconUrl: e.pictureUrl,
-                                ));
+                                loadWebview(e);
                               },
                               child: SlideTransition(
                                 position: animations[index - 1],

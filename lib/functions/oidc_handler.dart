@@ -332,9 +332,15 @@ Future<void> handleOfferOid(String offerUri) async {
                 .startProgress(authRequest, true);
           } else {
             navigateClassic(WebViewWindow(
-                initialUrl: authRequest,
-                title: AppLocalizations.of(navigatorKey.currentContext!)!
-                    .authorization));
+              webViewData: AboData(
+                  AppLocalizations.of(navigatorKey.currentContext!)!
+                      .authorization,
+                  authRequest,
+                  '',
+                  '',
+                  '',
+                  null),
+            ));
           }
           //launchUrl(Uri.parse(authRequest));
           return;

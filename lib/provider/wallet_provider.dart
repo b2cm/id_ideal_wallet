@@ -23,7 +23,6 @@ import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/notification_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:pkcs7/pkcs7.dart';
 import 'package:pointycastle/export.dart';
 import 'package:provider/provider.dart';
@@ -439,10 +438,7 @@ class WalletProvider extends ChangeNotifier {
   void onMessageOpen(SimplifiedNotification message) {
     var vc = accountVcs.values.firstWhere((v) => v.id == message.targetAccount);
     removeOutstandingMessages(vc.credentialSubject['webview']);
-    my_util.navigateClassic(WebViewWindow(
-      initialUrl: vc.credentialSubject['webview'],
-      title: '',
-    ));
+    my_util.handleWebViewLink(Uri.parse(vc.credentialSubject['webview']));
   }
 
   void removeOutstandingMessages(String webviewUrl) {
@@ -593,6 +589,16 @@ class WalletProvider extends ChangeNotifier {
         'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
 
     if (notify) notifyListeners();
+  }
+
+  void updateAbo(my_util.AboData newAbo) {
+    var toUpdate = aboList
+        .firstWhere((e) => e.getComparableUrl() == newAbo.getComparableUrl());
+    toUpdate.offlineVersion = newAbo.offlineVersion;
+    toUpdate.name = newAbo.name;
+    toUpdate.titleBgColorCode = newAbo.titleBgColorCode;
+    toUpdate.titleFontColorCode = newAbo.titleFontColorCode;
+    toUpdate.pictureUrl = newAbo.pictureUrl;
   }
 
   List<String> getAuthorizedApps() {
@@ -1005,8 +1011,13 @@ class WalletProvider extends ChangeNotifier {
       }).toList();
       if (!allAbos.contains('https://test.hidy.app/kigallery')) {
         addAbo(
-            my_util.AboData('KI-Galerie', 'https://test.hidy.app/kigallery',
-                'https://hidy.app/styles/kigalerie_contextbg.jpg', '', ''),
+            my_util.AboData(
+                'KI-Galerie',
+                'https://test.hidy.app/kigallery',
+                'https://hidy.app/styles/kigalerie_contextbg.jpg',
+                '',
+                '',
+                null),
             true,
             false);
       }
@@ -1018,8 +1029,7 @@ class WalletProvider extends ChangeNotifier {
     if (nav.redirectWebViewUrl != null) {
       nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        my_util.navigateClassic(
-            WebViewWindow(initialUrl: nav.redirectWebViewUrl!, title: ''));
+        my_util.handleWebViewLink(Uri.parse(nav.redirectWebViewUrl!));
         nav.redirectWebViewUrl = null;
       });
     }

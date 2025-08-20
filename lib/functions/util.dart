@@ -14,9 +14,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart';
 import 'package:id_ideal_wallet/constants/root_certificates.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
+import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
 import 'package:id_ideal_wallet/functions/oidc_handler.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
+import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:iso_mdoc/iso_mdoc.dart';
 import 'package:keystore_plugin/keystore_plugin.dart';
 import 'package:local_auth/local_auth.dart';
@@ -390,9 +392,10 @@ Future navigateClassic(Widget newView, [bool storeRoute = false]) {
 
 class AboData {
   String name, url, pictureUrl, titleBgColorCode, titleFontColorCode;
+  int? offlineVersion;
 
   AboData(this.name, this.url, this.pictureUrl, this.titleBgColorCode,
-      this.titleFontColorCode);
+      this.titleFontColorCode, this.offlineVersion);
 
   factory AboData.fromJson(dynamic jsonData) {
     var data = credentialToMap(jsonData);
@@ -402,7 +405,8 @@ class AboData {
         data['url'],
         data['mainbgimg'] ?? data['mainbgimage'],
         data['titleBgColor'] ?? '',
-        data['titleBgColor'] ?? '');
+        data['titleBgColor'] ?? '',
+        data['offlineVersion'] ?? -1);
   }
 
   String getComparableUrl() {
@@ -428,7 +432,8 @@ class AboData {
       'url': url,
       'mainbgimage': pictureUrl,
       'titleBgColor': titleBgColorCode,
-      'titleFontColor': titleFontColorCode
+      'titleFontColor': titleFontColorCode,
+      'offlineVersion': offlineVersion
     };
   }
 
@@ -490,4 +495,120 @@ SecureRandom getSecureRandom() {
   secureRandom.seed(KeyParameter(Uint8List.fromList(seed)));
 
   return secureRandom;
+}
+
+handleWebViewLink(Uri url) async {
+  var wallet =
+      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
+
+  var currentAbos = wallet.aboList;
+
+  List<String> allAbos = currentAbos.map((e) => e.getComparableUrl()).toList();
+
+  var toCheck = removeTrailingSlash(
+      '${url.scheme.isEmpty ? 'https' : url.scheme}://${url.host}${url.path}');
+  bool inLocalAboList = allAbos.contains(toCheck);
+  logger.d('$allAbos contains? $toCheck');
+
+  AboData? webView;
+  if (!inLocalAboList) {
+    var res = await get(Uri.parse(applicationEndpoint));
+    // Todo cache trusted sites
+    Map<String, AboData> available = {};
+    if (res.statusCode == 200) {
+      List dec = jsonDecode(res.body);
+      for (var entry in dec) {
+        var data = AboData.fromJson(entry);
+        available[data.getComparableUrl()] = data;
+      }
+    }
+    var trustedSites = available.keys.toList();
+    logger.d('$trustedSites contains? $toCheck');
+
+    if (trustedSites.contains(toCheck)) {
+      webView = available[toCheck]!;
+      wallet.addAbo(available[toCheck]!);
+    }
+  } else {
+    webView = currentAbos.firstWhere((e) => e.getComparableUrl() == toCheck);
+  }
+
+  if (webView == null) {
+    showErrorMessage('Nicht vertrauenswürdig');
+    return;
+  }
+
+  loadWebview(webView);
+}
+
+loadWebview(AboData webView) async {
+  try {
+    var versionRequest = await get(
+            Uri.parse('${webView.getComparableUrl()}/api/offline/version'))
+        .timeout(const Duration(seconds: 20), onTimeout: () {
+      return Response('Timeout', 400);
+    });
+    var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+        listen: false);
+    if (versionRequest.statusCode == 200) {
+      var versionData = jsonDecode(versionRequest.body);
+      var version = versionData['version'];
+      logger.d('$version > ${webView.offlineVersion}');
+      if (version > webView.offlineVersion) {
+        // cache new version
+        var dataRequest =
+            await get(Uri.parse('${webView.getComparableUrl()}/offline'))
+                .timeout(const Duration(seconds: 20), onTimeout: () {
+          return Response('Timeout', 400);
+        });
+
+        if (dataRequest.statusCode == 200) {
+          var cache = await getApplicationCacheDirectory();
+          var folderName = webView.getComparableUrl().replaceAll('/', '_');
+          var dataDir = Directory('${cache.path}/$folderName');
+          await dataDir.create();
+          var file = File('${dataDir.path}/index.html');
+          await file.writeAsString(dataRequest.body);
+
+          webView.offlineVersion = version;
+          wallet.updateAbo(webView);
+        }
+      }
+
+      // load online version
+      navigateClassic(WebViewWindow(
+        webViewData: webView,
+      ));
+    } else if (versionRequest.statusCode == 404) {
+      // no offline support
+
+      // load online version
+      navigateClassic(WebViewWindow(
+        webViewData: webView,
+      ));
+    } else {
+      // load cached version
+      _loadCachedWebView(webView);
+    }
+  } catch (e) {
+    // load cached version -> no internet access
+    _loadCachedWebView(webView);
+  }
+}
+
+_loadCachedWebView(AboData webView) async {
+  var cache = await getApplicationCacheDirectory();
+  var folderName = webView.getComparableUrl().replaceAll('/', '_');
+  var file = File('${cache.path}/$folderName/index.html');
+  var data = await file.readAsString();
+  String contentBase64 = base64Encode(utf8.encode(data));
+  navigateClassic(WebViewWindow(
+    webViewData: AboData(
+        webView.name,
+        'data:text/html;base64,$contentBase64',
+        webView.pictureUrl,
+        webView.titleBgColorCode,
+        webView.titleFontColorCode,
+        webView.offlineVersion),
+  ));
 }

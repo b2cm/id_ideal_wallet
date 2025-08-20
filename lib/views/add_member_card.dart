@@ -75,8 +75,13 @@ class AddMemberCardState extends State<AddMemberCard> {
         return e.url;
       }).toList();
       if (!allAbos.contains('https://test.hidy.app/ccards')) {
-        wallet.addAbo(AboData('Kundenkarten', 'https://test.hidy.app/ccards',
-            'https://hidy.app/styles/kundenkarten_contextbg.jpg', '', ''));
+        wallet.addAbo(AboData(
+            'Kundenkarten',
+            'https://test.hidy.app/ccards',
+            'https://hidy.app/styles/kundenkarten_contextbg.jpg',
+            '',
+            '',
+            null));
       }
       Navigator.of(context).popUntil((route) => route.isFirst);
     }

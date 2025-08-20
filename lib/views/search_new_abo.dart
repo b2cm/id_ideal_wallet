@@ -7,7 +7,6 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
@@ -94,12 +93,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                       trailing: inAbo.contains(e.getComparableUrl())
                           ? ElevatedButton(
                               onPressed: () {
-                                navigateClassic(WebViewWindow(
-                                  initialUrl: e.url.replaceAll(
-                                      'wid=', 'wid=${wallet.lndwId}'),
-                                  title: e.name,
-                                  iconUrl: e.pictureUrl,
-                                ));
+                                loadWebview(e);
                               },
                               child: Text('Öffnen'))
                           : ElevatedButton(

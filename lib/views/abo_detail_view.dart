@@ -1,7 +1,6 @@
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../functions/util.dart';
@@ -89,12 +88,7 @@ class AboDetailViewState extends State<AboDetailView> {
         ElevatedButton(
           onPressed: () {
             if (widget.isInAbo) {
-              navigateClassic(WebViewWindow(
-                initialUrl: widget.abo.url.replaceAll('wid=',
-                    'wid=${Provider.of<WalletProvider>(context, listen: false).lndwId}'),
-                title: widget.abo.name,
-                iconUrl: widget.abo.pictureUrl,
-              ));
+              loadWebview(widget.abo);
             } else {
               Provider.of<WalletProvider>(context, listen: false)
                   .addAbo(widget.abo);
