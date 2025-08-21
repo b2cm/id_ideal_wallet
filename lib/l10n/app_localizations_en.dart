@@ -895,4 +895,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backside => 'Back';
+
+  @override
+  String get failedLoad => 'Loading failed';
+
+  @override
+  String get failedLoadNote =>
+      'The application cannot be opened. Could it be that your device does not have an Internet connection?';
 }

@@ -340,6 +340,7 @@ Future<void> handleOfferOid(String offerUri) async {
                   '',
                   '',
                   null),
+              isSecure: false,
             ));
           }
           //launchUrl(Uri.parse(authRequest));

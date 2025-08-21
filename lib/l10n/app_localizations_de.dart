@@ -901,4 +901,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get backside => 'Rückseite';
+
+  @override
+  String get failedLoad => 'Lade fehlgeschlagen';
+
+  @override
+  String get failedLoadNote =>
+      'Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?';
 }

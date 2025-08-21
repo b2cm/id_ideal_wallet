@@ -27,8 +27,10 @@ import '../l10n/app_localizations.dart';
 
 class WebViewWindow extends StatefulWidget {
   final AboData webViewData;
+  final bool isSecure;
 
-  const WebViewWindow({super.key, required this.webViewData});
+  const WebViewWindow(
+      {super.key, required this.webViewData, this.isSecure = true});
 
   @override
   State<StatefulWidget> createState() => WebViewWindowState();
@@ -170,14 +172,15 @@ class WebViewWindowState extends State<WebViewWindow> {
                 child: MenuAnchor(
                   alignmentOffset: Offset(10, 2),
                   menuChildren: [
-                    MenuItemButton(
-                        trailingIcon: Icon(Icons.share),
-                        onPressed: () {
-                          SharePlus.instance.share(ShareParams(
-                              uri: Uri.parse(
-                                  'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.webViewData.url)}&title=${widget.webViewData.name}')));
-                        },
-                        child: Text('Teilen')),
+                    if (widget.isSecure)
+                      MenuItemButton(
+                          trailingIcon: Icon(Icons.share),
+                          onPressed: () {
+                            SharePlus.instance.share(ShareParams(
+                                uri: Uri.parse(
+                                    'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.webViewData.url)}&title=${widget.webViewData.name}')));
+                          },
+                          child: Text('Teilen')),
                     MenuItemButton(
                       trailingIcon: Icon(Icons.refresh),
                       onPressed: () {
@@ -222,7 +225,7 @@ class WebViewWindowState extends State<WebViewWindow> {
             ],
             centerTitle: true,
             title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (imageUrl != null)
+              if (imageUrl != null && imageUrl!.isNotEmpty)
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.07,
                   height: MediaQuery.of(context).size.width * 0.07,
@@ -237,7 +240,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                     ),
                   ),
                 ),
-              if (imageUrl != null)
+              if (imageUrl != null && imageUrl!.isNotEmpty)
                 const SizedBox(
                   width: 3,
                 ),
@@ -273,108 +276,111 @@ class WebViewWindowState extends State<WebViewWindow> {
                       },
                       onWebViewCreated: (controller) {
                         webViewController = controller;
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandlerAsync',
-                            callback: (args) async {
-                              await Future.delayed(const Duration(seconds: 2));
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandler',
-                            callback: (args) {
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'shareHandler',
-                            callback: (args) async {
-                              var res = await SharePlus.instance
-                                  .share(ShareParams(text: args.first));
-                              return res.status == ShareResultStatus.success;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'initiateProximitySharing',
-                            callback: (args) async {
-                              navigateClassic(
-                                  const IsoCredentialRequest(), true);
-                              return true;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'shareImageHandler',
-                            callback: (args) async {
-                              var d = UriData.fromUri(Uri.parse(args.first));
-                              var res = await SharePlus.instance
-                                  .share(ShareParams(files: [
-                                XFile.fromData(
-                                  d.contentAsBytes(),
-                                  mimeType: d.mimeType,
-                                )
-                              ], fileNameOverrides: [
-                                'hidyShare.${d.mimeType.split('/').last}'
-                              ]));
-                              return res.status == ShareResultStatus.success;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestHandler',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationHandler(
-                                  args.first,
-                                  widget.webViewData.url,
-                                  args[1],
-                                  args[2]);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestNoSignature',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationNoSign(
-                                  args.first, widget.webViewData.url);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'initializeSigningKey',
-                            callback: (args) async {
-                              if (args.isEmpty) {
-                                return await getSigningKey(
-                                  true,
-                                  true,
-                                  2,
-                                );
-                              } else {
-                                return await getSigningKey(
-                                    args.first, args[1], args.last);
-                              }
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'signData',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await signData(args.first, args.last);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'scanQrCode',
-                            callback: (args) async {
-                              return await navigateClassic(QrScanner(
-                                inApp: false,
-                              ));
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'addAccount',
-                            callback: (args) async {
-                              var pseudo = await Provider.of<WalletProvider>(
-                                      context,
-                                      listen: false)
-                                  .generatePseudonym(baseUrl);
-                              logger.d(pseudo);
-                              return pseudo.toJson();
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'loginToAccount',
-                            callback: (args) {
-                              return Provider.of<WalletProvider>(context,
-                                      listen: false)
-                                  .accountVcs[baseUrl]
-                                  ?.toJson();
-                            });
+                        if (widget.isSecure) {
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandlerAsync',
+                              callback: (args) async {
+                                await Future.delayed(
+                                    const Duration(seconds: 2));
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandler',
+                              callback: (args) {
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'shareHandler',
+                              callback: (args) async {
+                                var res = await SharePlus.instance
+                                    .share(ShareParams(text: args.first));
+                                return res.status == ShareResultStatus.success;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'initiateProximitySharing',
+                              callback: (args) async {
+                                navigateClassic(
+                                    const IsoCredentialRequest(), true);
+                                return true;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'shareImageHandler',
+                              callback: (args) async {
+                                var d = UriData.fromUri(Uri.parse(args.first));
+                                var res = await SharePlus.instance
+                                    .share(ShareParams(files: [
+                                  XFile.fromData(
+                                    d.contentAsBytes(),
+                                    mimeType: d.mimeType,
+                                  )
+                                ], fileNameOverrides: [
+                                  'hidyShare.${d.mimeType.split('/').last}'
+                                ]));
+                                return res.status == ShareResultStatus.success;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestHandler',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationHandler(
+                                    args.first,
+                                    widget.webViewData.url,
+                                    args[1],
+                                    args[2]);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestNoSignature',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationNoSign(
+                                    args.first, widget.webViewData.url);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'initializeSigningKey',
+                              callback: (args) async {
+                                if (args.isEmpty) {
+                                  return await getSigningKey(
+                                    true,
+                                    true,
+                                    2,
+                                  );
+                                } else {
+                                  return await getSigningKey(
+                                      args.first, args[1], args.last);
+                                }
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'signData',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await signData(args.first, args.last);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'scanQrCode',
+                              callback: (args) async {
+                                return await navigateClassic(QrScanner(
+                                  inApp: false,
+                                ));
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'addAccount',
+                              callback: (args) async {
+                                var pseudo = await Provider.of<WalletProvider>(
+                                        context,
+                                        listen: false)
+                                    .generatePseudonym(baseUrl);
+                                logger.d(pseudo);
+                                return pseudo.toJson();
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'loginToAccount',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .accountVcs[baseUrl]
+                                    ?.toJson();
+                              });
+                        }
                       },
                       onLoadStart: (controller, url) {
                         setState(() {});

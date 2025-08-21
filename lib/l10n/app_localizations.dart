@@ -1735,6 +1735,18 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Rückseite'**
   String get backside;
+
+  /// No description provided for @failedLoad.
+  ///
+  /// In de, this message translates to:
+  /// **'Lade fehlgeschlagen'**
+  String get failedLoad;
+
+  /// No description provided for @failedLoadNote.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?'**
+  String get failedLoadNote;
 }
 
 class _AppLocalizationsDelegate

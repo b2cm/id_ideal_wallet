@@ -293,5 +293,7 @@
   "sendSuccess": "Send Successful",
   "finish": "Finish",
   "frontside": "Front",
-  "backside": "Back"
+  "backside": "Back",
+  "failedLoad": "Loading failed",
+  "failedLoadNote": "The application cannot be opened. Could it be that your device does not have an Internet connection?"
 }

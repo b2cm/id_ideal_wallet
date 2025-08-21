@@ -293,5 +293,7 @@
   "sendSuccess": "Senden Erfolgreich",
   "finish": "Fertig",
   "frontside": "Vorderseite",
-  "backside": "Rückseite"
+  "backside": "Rückseite",
+  "failedLoad": "Lade fehlgeschlagen",
+  "failedLoadNote": "Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?"
 }

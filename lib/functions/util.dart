@@ -500,6 +500,18 @@ SecureRandom getSecureRandom() {
   return secureRandom;
 }
 
+Future<Map<String, AboData>> _getAboDataFromCache() async {
+  Map<String, AboData> available = {};
+  var cache = await getApplicationCacheDirectory();
+  var file = File('${cache.path}/trusted_application.json');
+  var data = jsonDecode(await file.readAsString());
+  for (var entry in data) {
+    var data = AboData.fromJson(entry);
+    available[data.getComparableUrl()] = data;
+  }
+  return available;
+}
+
 handleWebViewLink(Uri url) async {
   var wallet =
       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false);
@@ -515,14 +527,31 @@ handleWebViewLink(Uri url) async {
 
   AboData? webView;
   if (!inLocalAboList) {
-    var res = await get(Uri.parse(applicationEndpoint));
-    // Todo cache trusted sites
     Map<String, AboData> available = {};
-    if (res.statusCode == 200) {
-      List dec = jsonDecode(res.body);
-      for (var entry in dec) {
-        var data = AboData.fromJson(entry);
-        available[data.getComparableUrl()] = data;
+    Response res;
+    try {
+      res = await get(Uri.parse(applicationEndpoint));
+
+      if (res.statusCode == 200) {
+        List dec = jsonDecode(res.body);
+        for (var entry in dec) {
+          var data = AboData.fromJson(entry);
+          available[data.getComparableUrl()] = data;
+        }
+        var cache = await getApplicationCacheDirectory();
+        var file = File('${cache.path}/trusted_application.json');
+        await file.writeAsString(res.body);
+      } else {
+        available = await _getAboDataFromCache();
+      }
+    } catch (e) {
+      try {
+        available = await _getAboDataFromCache();
+      } catch (e) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.failedLoad,
+            AppLocalizations.of(navigatorKey.currentContext!)!.failedLoadNote);
+        return;
       }
     }
     var trustedSites = available.keys.toList();
@@ -600,18 +629,24 @@ loadWebview(AboData webView) async {
 }
 
 _loadCachedWebView(AboData webView) async {
-  var cache = await getApplicationCacheDirectory();
-  var folderName = webView.getComparableUrl().replaceAll('/', '_');
-  var file = File('${cache.path}/$folderName/index.html');
-  var data = await file.readAsString();
-  String contentBase64 = base64Encode(utf8.encode(data));
-  navigateClassic(WebViewWindow(
-    webViewData: AboData(
-        webView.name,
-        'data:text/html;base64,$contentBase64',
-        webView.pictureUrl,
-        webView.titleBgColorCode,
-        webView.titleFontColorCode,
-        webView.offlineVersion),
-  ));
+  try {
+    var cache = await getApplicationCacheDirectory();
+    var folderName = webView.getComparableUrl().replaceAll('/', '_');
+    var file = File('${cache.path}/$folderName/index.html');
+    var data = await file.readAsString();
+    String contentBase64 = base64Encode(utf8.encode(data));
+    navigateClassic(WebViewWindow(
+      webViewData: AboData(
+          webView.name,
+          'data:text/html;base64,$contentBase64',
+          webView.pictureUrl,
+          webView.titleBgColorCode,
+          webView.titleFontColorCode,
+          webView.offlineVersion),
+    ));
+  } catch (e) {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.failedLoad,
+        AppLocalizations.of(navigatorKey.currentContext!)!.failedLoadNote);
+  }
 }
