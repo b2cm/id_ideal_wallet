@@ -64,7 +64,7 @@ dependencies:
       ref: main
   #path: ../cbor_test
   json_ld_processor: any
-  keystore_plugin:
+  keystore_plugin: #1.2.0
     git:
       url: https://github.com/b2cm/hidy_keystore_plugin/
       ref: development
