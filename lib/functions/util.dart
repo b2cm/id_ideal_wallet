@@ -233,6 +233,9 @@ class OsKeyStore extends KeyStoreBackend {
       case 3:
         authValue = AuthType.deviceCredentialOrBiometric;
         break;
+      case 4:
+        authValue = AuthType.userPresence;
+        break;
       default:
         authValue = AuthType.biometricOnly;
     }
