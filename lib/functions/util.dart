@@ -570,6 +570,8 @@ handleWebViewLink(Uri url) async {
     return;
   }
 
+  webView.url = url.toString();
+
   loadWebview(webView);
 }
 
