@@ -27,10 +27,14 @@ import '../l10n/app_localizations.dart';
 
 class WebViewWindow extends StatefulWidget {
   final AboData webViewData;
+  final String? initialHtml;
   final bool isSecure;
 
   const WebViewWindow(
-      {super.key, required this.webViewData, this.isSecure = true});
+      {super.key,
+      required this.webViewData,
+      this.isSecure = true,
+      this.initialHtml});
 
   @override
   State<StatefulWidget> createState() => WebViewWindowState();
@@ -260,8 +264,14 @@ class WebViewWindowState extends State<WebViewWindow> {
                   children: [
                     InAppWebView(
                       key: webViewKey,
-                      initialUrlRequest:
-                          URLRequest(url: WebUri(widget.webViewData.url)),
+                      initialUrlRequest: widget.initialHtml == null
+                          ? URLRequest(url: WebUri(widget.webViewData.url))
+                          : null,
+                      initialData: widget.initialHtml != null
+                          ? InAppWebViewInitialData(
+                              data: widget.initialHtml!,
+                              baseUrl: WebUri(widget.webViewData.url))
+                          : null,
                       initialSettings: settings,
                       pullToRefreshController: pullToRefreshController,
                       // Testing only: accept bad (self signed) certs

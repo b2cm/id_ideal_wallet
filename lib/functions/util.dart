@@ -570,9 +570,13 @@ handleWebViewLink(Uri url) async {
     return;
   }
 
-  webView.url = url.toString();
-
-  loadWebview(webView);
+  loadWebview(AboData(
+      webView.name,
+      url.toString(),
+      webView.pictureUrl,
+      webView.titleBgColorCode,
+      webView.titleFontColorCode,
+      webView.offlineVersion));
 }
 
 loadWebview(AboData webView) async {
@@ -584,6 +588,7 @@ loadWebview(AboData webView) async {
     });
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,
         listen: false);
+    logger.d(versionRequest.statusCode);
     if (versionRequest.statusCode == 200) {
       var versionData = jsonDecode(versionRequest.body);
       var version = versionData['version'];
@@ -615,7 +620,7 @@ loadWebview(AboData webView) async {
       ));
     } else if (versionRequest.statusCode == 404) {
       // no offline support
-
+      logger.d('no offline');
       // load online version
       navigateClassic(WebViewWindow(
         webViewData: webView,
@@ -625,6 +630,7 @@ loadWebview(AboData webView) async {
       _loadCachedWebView(webView);
     }
   } catch (e) {
+    logger.d(e);
     // load cached version -> no internet access
     _loadCachedWebView(webView);
   }
@@ -636,15 +642,10 @@ _loadCachedWebView(AboData webView) async {
     var folderName = webView.getComparableUrl().replaceAll('/', '_');
     var file = File('${cache.path}/$folderName/index.html');
     var data = await file.readAsString();
-    String contentBase64 = base64Encode(utf8.encode(data));
+
     navigateClassic(WebViewWindow(
-      webViewData: AboData(
-          webView.name,
-          'data:text/html;base64,$contentBase64',
-          webView.pictureUrl,
-          webView.titleBgColorCode,
-          webView.titleFontColorCode,
-          webView.offlineVersion),
+      initialHtml: data,
+      webViewData: webView,
     ));
   } catch (e) {
     showErrorMessage(
