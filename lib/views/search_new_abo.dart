@@ -29,14 +29,19 @@ class SearchNewAboState extends State<SearchNewAbo> {
   }
 
   Future<void> searchAbos() async {
-    var res = await get(Uri.parse(applicationEndpoint));
-    List<AboData> available = [];
-    if (res.statusCode == 200) {
-      List dec = jsonDecode(res.body);
-      available = dec.map((e) => AboData.fromJson(e)).toList();
-    }
+    try {
+      var res = await get(Uri.parse(applicationEndpoint))
+          .timeout(Duration(seconds: 120));
+      List<AboData> available = [];
+      if (res.statusCode == 200) {
+        List dec = jsonDecode(res.body);
+        available = dec.map((e) => AboData.fromJson(e)).toList();
+      }
 
-    toShow = available;
+      toShow = available;
+    } catch (_) {
+      toShow = <AboData>[];
+    }
 
     // if (available.isNotEmpty) {
     //   for (var entry in available) {

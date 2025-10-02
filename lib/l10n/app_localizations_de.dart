@@ -568,7 +568,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newAppTitle => 'Neue Anwendungen';
 
   @override
-  String get newAppNote => 'Keine neuen Anwendungen verfügbar';
+  String get newAppNote => 'Keine Anwendungen gefunden';
 
   @override
   String get unknownQrCode => 'Unbekannter Qr-Code';

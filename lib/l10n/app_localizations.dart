@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @newAppNote.
   ///
   /// In de, this message translates to:
-  /// **'Keine neuen Anwendungen verfügbar'**
+  /// **'Keine Anwendungen gefunden'**
   String get newAppNote;
 
   /// No description provided for @unknownQrCode.

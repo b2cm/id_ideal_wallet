@@ -69,9 +69,7 @@ Future<bool> performBackup(Map<String, dynamic> input) async {
       '$localhost/data'; // Replace with your server URL      // Replace with your API key
   String textData = hexEncode(sha256.process(password));
 
-  await sendStringAndFile(apiUrl, apiKey, textData, file);
-
-  return true;
+  return await sendStringAndFile(apiUrl, apiKey, textData, file);
 }
 
 Future<Map<String, Map<String, dynamic>>?> loadAndDecryptBackup(

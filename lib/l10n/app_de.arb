@@ -184,7 +184,7 @@
   "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.",
   "noAppNote": "Sie haben noch keine Anwendungen hinzugefügt",
   "newAppTitle": "Neue Anwendungen",
-  "newAppNote": "Keine neuen Anwendungen verfügbar",
+  "newAppNote": "Keine Anwendungen gefunden",
   "unknownQrCode": "Unbekannter Qr-Code",
   "unknownQrCodeNote": "Der gescannte Qr-Code enthält Daten, die nicht verarbeitet werden können.",
   "subscribe": "Abonieren",
@@ -294,6 +294,6 @@
   "finish": "Fertig",
   "frontside": "Vorderseite",
   "backside": "Rückseite",
-  "failedLoad": "Lade fehlgeschlagen",
+  "failedLoad": "Laden fehlgeschlagen",
   "failedLoadNote": "Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?"
 }
