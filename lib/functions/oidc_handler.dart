@@ -339,6 +339,7 @@ Future<void> handleOfferOid(String offerUri) async {
                   '',
                   '',
                   '',
+                  null,
                   null),
               isSecure: false,
             ));

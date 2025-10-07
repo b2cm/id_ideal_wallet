@@ -1017,6 +1017,7 @@ class WalletProvider extends ChangeNotifier {
                 'https://hidy.app/styles/kigalerie_contextbg.jpg',
                 '',
                 '',
+                null,
                 null),
             true,
             false);

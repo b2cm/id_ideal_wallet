@@ -103,90 +103,101 @@ class AboOverviewState extends State<AboOverview>
                               onTapDown: (details) {
                                 tapPosition = details.globalPosition;
                               },
-                              onLongPress: () {
-                                controllers[index - 1].forward();
-                                controllers[index - 1].repeat(reverse: true);
+                              onLongPress: e.delete
+                                  ? () {
+                                      controllers[index - 1].forward();
+                                      controllers[index - 1]
+                                          .repeat(reverse: true);
 
-                                final RenderBox overlay = Overlay.of(context)
-                                    .context
-                                    .findRenderObject() as RenderBox;
+                                      final RenderBox overlay =
+                                          Overlay.of(context)
+                                              .context
+                                              .findRenderObject() as RenderBox;
 
-                                final RenderBox card = cardKeys[index - 1]
-                                    .currentContext!
-                                    .findRenderObject() as RenderBox;
+                                      final RenderBox card = cardKeys[index - 1]
+                                          .currentContext!
+                                          .findRenderObject() as RenderBox;
 
-                                final RelativeRect position =
-                                    RelativeRect.fromRect(
-                                  Rect.fromPoints(
-                                    card.localToGlobal(
-                                      const Offset(0, -50),
-                                    ),
-                                    card.localToGlobal(
-                                      card.size.topLeft(Offset.zero) +
-                                          const Offset(55, 0),
-                                    ),
-                                  ),
-                                  Offset.zero & overlay.size,
-                                );
-
-                                showMenu(
-                                  color: Colors.white,
-                                  surfaceTintColor: Colors.white,
-                                  context: context,
-                                  position: position,
-                                  constraints: const BoxConstraints(
-                                      minWidth: 30, minHeight: 30),
-                                  items: [
-                                    CustomPopupMenuItem(
-                                      onTap: () {
-                                        deleteSelected = true;
-                                      },
-                                      color: Colors.white,
-                                      child: const SizedBox(
-                                        width: 30,
-                                        height: 30,
-                                        child: Icon(
-                                          Icons.delete,
+                                      final RelativeRect position =
+                                          RelativeRect.fromRect(
+                                        Rect.fromPoints(
+                                          card.localToGlobal(
+                                            const Offset(0, -50),
+                                          ),
+                                          card.localToGlobal(
+                                            card.size.topLeft(Offset.zero) +
+                                                const Offset(55, 0),
+                                          ),
                                         ),
-                                      ),
-                                    )
-                                  ],
-                                ).then((value) async {
-                                  if (deleteSelected) {
-                                    await showDialog(
-                                      context: navigatorKey.currentContext!,
-                                      builder: (context) => AlertDialog(
-                                        title: Text(
-                                            AppLocalizations.of(context)!
-                                                .delete),
-                                        content: Card(
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .deletionNoteApp)),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .cancel)),
-                                          TextButton(
-                                              onPressed: () async {
-                                                wallet.deleteAbo(index - 1);
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .delete))
+                                        Offset.zero & overlay.size,
+                                      );
+
+                                      showMenu(
+                                        color: Colors.white,
+                                        surfaceTintColor: Colors.white,
+                                        context: context,
+                                        position: position,
+                                        constraints: const BoxConstraints(
+                                            minWidth: 30, minHeight: 30),
+                                        items: [
+                                          CustomPopupMenuItem(
+                                            onTap: () {
+                                              deleteSelected = true;
+                                            },
+                                            color: Colors.white,
+                                            child: const SizedBox(
+                                              width: 30,
+                                              height: 30,
+                                              child: Icon(
+                                                Icons.delete,
+                                              ),
+                                            ),
+                                          )
                                         ],
-                                      ),
-                                    );
-                                  }
-                                  controllers[index - 1].reset();
-                                  deleteSelected = false;
-                                });
-                              },
+                                      ).then((value) async {
+                                        if (deleteSelected) {
+                                          await showDialog(
+                                            context:
+                                                navigatorKey.currentContext!,
+                                            builder: (context) => AlertDialog(
+                                              title: Text(
+                                                  AppLocalizations.of(context)!
+                                                      .delete),
+                                              content: Card(
+                                                  child: Text(
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .deletionNoteApp)),
+                                              actions: [
+                                                TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: Text(
+                                                        AppLocalizations.of(
+                                                                context)!
+                                                            .cancel)),
+                                                TextButton(
+                                                    onPressed: () async {
+                                                      wallet
+                                                          .deleteAbo(index - 1);
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: Text(
+                                                        AppLocalizations.of(
+                                                                context)!
+                                                            .delete))
+                                              ],
+                                            ),
+                                          );
+                                        }
+                                        controllers[index - 1].reset();
+                                        deleteSelected = false;
+                                      });
+                                    }
+                                  : null,
                               onTap: () {
                                 wallet.removeOutstandingMessages(
                                     e.getComparableUrl());

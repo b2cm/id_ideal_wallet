@@ -396,12 +396,22 @@ Future navigateClassic(Widget newView, [bool storeRoute = false]) {
 class AboData {
   String name, url, pictureUrl, titleBgColorCode, titleFontColorCode;
   int? offlineVersion;
+  Set<String>? credentialsRequired;
+  bool delete;
 
   AboData(this.name, this.url, this.pictureUrl, this.titleBgColorCode,
-      this.titleFontColorCode, this.offlineVersion);
+      this.titleFontColorCode, this.offlineVersion, this.credentialsRequired,
+      [bool? canDelete])
+      : delete = canDelete ?? true;
 
   factory AboData.fromJson(dynamic jsonData) {
     var data = credentialToMap(jsonData);
+
+    Set<String>? subAppVc;
+    if (data.containsKey('subappvc')) {
+      List tmp = data['subappvc'];
+      subAppVc = tmp.cast<String>().toSet();
+    }
 
     return AboData(
         data['name'] ?? '',
@@ -409,7 +419,9 @@ class AboData {
         data['mainbgimg'] ?? data['mainbgimage'],
         data['titleBgColor'] ?? '',
         data['titleBgColor'] ?? '',
-        data['offlineVersion'] ?? -1);
+        data['offlineVersion'] ?? -1,
+        subAppVc,
+        data['delete'] ?? true);
   }
 
   String getComparableUrl() {
@@ -436,7 +448,9 @@ class AboData {
       'mainbgimage': pictureUrl,
       'titleBgColor': titleBgColorCode,
       'titleFontColor': titleFontColorCode,
-      'offlineVersion': offlineVersion
+      'offlineVersion': offlineVersion,
+      'subappVc': credentialsRequired?.toList(),
+      'delete': delete
     };
   }
 
@@ -576,7 +590,8 @@ handleWebViewLink(Uri url) async {
       webView.pictureUrl,
       webView.titleBgColorCode,
       webView.titleFontColorCode,
-      webView.offlineVersion));
+      webView.offlineVersion,
+      webView.credentialsRequired));
 }
 
 loadWebview(AboData webView) async {
@@ -629,10 +644,14 @@ loadWebview(AboData webView) async {
       // load cached version
       _loadCachedWebView(webView);
     }
-  } catch (e) {
+  } on ClientException catch (e) {
     logger.d(e);
     // load cached version -> no internet access
     _loadCachedWebView(webView);
+  } catch (e) {
+    logger.d(e);
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.failedLoad);
   }
 }
 

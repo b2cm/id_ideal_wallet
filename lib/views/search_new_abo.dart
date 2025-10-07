@@ -38,7 +38,17 @@ class SearchNewAboState extends State<SearchNewAbo> {
         available = dec.map((e) => AboData.fromJson(e)).toList();
       }
 
-      toShow = available;
+      toShow = [];
+      var credTypes = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+              listen: false)
+          .credentialsTypes;
+      for (var e in available) {
+        if (e.credentialsRequired == null) {
+          toShow.add(e);
+        } else if (credTypes.intersection(e.credentialsRequired!).isNotEmpty) {
+          toShow.add(e);
+        }
+      }
     } catch (_) {
       toShow = <AboData>[];
     }

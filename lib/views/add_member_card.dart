@@ -81,6 +81,7 @@ class AddMemberCardState extends State<AddMemberCard> {
             'https://hidy.app/styles/kundenkarten_contextbg.jpg',
             '',
             '',
+            null,
             null));
       }
       Navigator.of(context).popUntil((route) => route.isFirst);

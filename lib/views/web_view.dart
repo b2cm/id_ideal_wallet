@@ -270,7 +270,8 @@ class WebViewWindowState extends State<WebViewWindow> {
                       initialData: widget.initialHtml != null
                           ? InAppWebViewInitialData(
                               data: widget.initialHtml!,
-                              baseUrl: WebUri(widget.webViewData.url))
+                              baseUrl: WebUri(widget.webViewData.url),
+                            )
                           : null,
                       initialSettings: settings,
                       pullToRefreshController: pullToRefreshController,

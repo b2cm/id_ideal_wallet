@@ -1739,7 +1739,7 @@ abstract class AppLocalizations {
   /// No description provided for @failedLoad.
   ///
   /// In de, this message translates to:
-  /// **'Lade fehlgeschlagen'**
+  /// **'Laden fehlgeschlagen'**
   String get failedLoad;
 
   /// No description provided for @failedLoadNote.

@@ -903,7 +903,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get backside => 'Rückseite';
 
   @override
-  String get failedLoad => 'Lade fehlgeschlagen';
+  String get failedLoad => 'Laden fehlgeschlagen';
 
   @override
   String get failedLoadNote =>
