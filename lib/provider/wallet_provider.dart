@@ -499,6 +499,7 @@ class WalletProvider extends ChangeNotifier {
       logger.d('with request');
       generateCredentialStyling(true);
       updateTosUrl();
+      await _updateAllAbos();
       _wallet.storeConfigEntry(
           'lastUpdateCheck', DateTime.now().toIso8601String());
     } else {
@@ -554,8 +555,6 @@ class WalletProvider extends ChangeNotifier {
       credentialStyling = (jsonDecode(s) as Map<String, dynamic>).map(
           (key, value) => MapEntry(key, (value as Map).cast<String, String>()));
     }
-
-    logger.d(credentialStyling);
   }
 
   Future<void> updateTosUrl() async {
@@ -599,6 +598,37 @@ class WalletProvider extends ChangeNotifier {
     toUpdate.titleBgColorCode = newAbo.titleBgColorCode;
     toUpdate.titleFontColorCode = newAbo.titleFontColorCode;
     toUpdate.pictureUrl = newAbo.pictureUrl;
+    toUpdate.credentialsRequired = newAbo.credentialsRequired;
+    toUpdate.delete = newAbo.delete;
+    wallet.storeConfigEntry(
+        'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
+  }
+
+  Future<void> _updateAllAbos() async {
+    try {
+      var res = await get(Uri.parse(applicationEndpoint))
+          .timeout(Duration(seconds: 120));
+      if (res.statusCode == 200) {
+        List dec = jsonDecode(res.body);
+        Map<String, my_util.AboData> available = {};
+        for (var e in dec) {
+          var tmp = my_util.AboData.fromJson(e);
+          available[tmp.getComparableUrl()] = e;
+        }
+        var newAboList = <my_util.AboData>[];
+        for (var entry in aboList) {
+          var newData = available[entry.getComparableUrl()];
+          if (newData == null) {
+            newAboList.add(entry);
+          } else {
+            newAboList.add(newData);
+          }
+        }
+        aboList = newAboList;
+        wallet.storeConfigEntry(
+            'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
+      }
+    } catch (_) {}
   }
 
   List<String> getAuthorizedApps() {

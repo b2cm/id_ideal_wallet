@@ -75,6 +75,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
           : toShow.isEmpty
               ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
               : ListView.separated(
+                  padding: EdgeInsets.only(bottom: 40),
                   itemCount: toShow.length,
                   itemBuilder: (context, index) {
                     var wallet =
