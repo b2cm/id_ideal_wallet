@@ -391,6 +391,30 @@ class WebViewWindowState extends State<WebViewWindow> {
                                     .accountVcs[baseUrl]
                                     ?.toJson();
                               });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'storeValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .storeWebViewValue(widget.webViewData.url,
+                                        args.first, jsonEncode(args.last));
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'getValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .getWebViewValue(
+                                        widget.webViewData.url, args.first);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'deleteValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .deleteWebViewValue(
+                                        widget.webViewData.url, args.first);
+                              });
                         }
                       },
                       onLoadStart: (controller, url) {

@@ -1121,6 +1121,36 @@ class WalletProvider extends ChangeNotifier {
     wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
   }
 
+  Future<bool> storeWebViewValue(
+      String webViewUrl, String key, String value) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      await _wallet.storeConfigEntry(generatedKey, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteWebViewValue(String webViewUrl, String key) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      await _wallet.deleteConfigEntry(generatedKey);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> getWebViewValue(String webViewUrl, String key) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      return _wallet.getConfigEntry(generatedKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
   WalletStore get wallet => _wallet;
 }
 
