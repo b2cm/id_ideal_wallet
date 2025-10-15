@@ -92,7 +92,40 @@ Map<String, dynamic> getClaimsFromDescriptionObject(
 }
 
 Future<void> handleOfferOid(String offerUri) async {
-  var offer = OidCredentialOffer.fromUri(offerUri);
+  var asUri = Uri.parse(offerUri);
+
+  OidCredentialOffer offer;
+  if (asUri.queryParameters.containsKey('credential_offer_uri')) {
+    var offerUri = asUri.queryParameters['credential_offer_uri'];
+    try {
+      var offerDataRes = await get(Uri.parse(offerUri!));
+
+      if (offerDataRes.statusCode != 200) {
+        showErrorMessage(
+            AppLocalizations.of(navigatorKey.currentContext!)!.oidMetadataError,
+            AppLocalizations.of(navigatorKey.currentContext!)!
+                .oidMetadataErrorNote);
+        return;
+      }
+
+      offer = OidCredentialOffer.fromJson(offerDataRes.body);
+    } catch (e) {
+      logger.d(e);
+      showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!.oidMetadataError,
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .oidMetadataErrorNote);
+      return;
+    }
+  } else if (asUri.queryParameters.containsKey('credential_offer')) {
+    offer = OidCredentialOffer.fromUri(offerUri);
+  } else {
+    showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!.oidMetadataError,
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .oidMetadataErrorNote);
+    return;
+  }
 
   var issuerString = removeTrailingSlash(offer.credentialIssuer);
   logger.d('$issuerString/.well-known/openid-credential-issuer');
@@ -695,23 +728,13 @@ Future<void> getCredential(
 
     metadata = CredentialIssuerMetaData.fromJson(issuerMetaReq.body);
   }
-
-  if (tokenResponse.cNonce == null) {
-    logger.d('need new c_nonce');
-    if (metadata.nonceEndpoint != null) {
-      var nonceResponse = await post(Uri.parse(metadata.nonceEndpoint!));
-      if (nonceResponse.statusCode == 200 || nonceResponse.statusCode == 201) {
-        try {
-          tokenResponse.cNonce = jsonDecode(nonceResponse.body)['c_nonce'];
-        } catch (e) {
-          logger.d('Keine nonce: $e');
-          showErrorMessage(
-            AppLocalizations.of(navigatorKey.currentContext!)!
-                .credentialDownloadFailed,
-          );
-          return;
-        }
-      } else {
+  if (metadata.nonceEndpoint != null) {
+    var nonceResponse = await post(Uri.parse(metadata.nonceEndpoint!));
+    if (nonceResponse.statusCode == 200 || nonceResponse.statusCode == 201) {
+      try {
+        tokenResponse.cNonce = jsonDecode(nonceResponse.body)['c_nonce'];
+      } catch (e) {
+        logger.d('Keine nonce: $e');
         showErrorMessage(
           AppLocalizations.of(navigatorKey.currentContext!)!
               .credentialDownloadFailed,
@@ -719,36 +742,65 @@ Future<void> getCredential(
         return;
       }
     } else {
-      // send false cred request to get cNonce
-      var credentialRequest = OidCredentialRequest(
-        format: credentialMetadata.format,
-        credentialType: credentialMetadata.credentialType,
+      showErrorMessage(
+        AppLocalizations.of(navigatorKey.currentContext!)!
+            .credentialDownloadFailed,
       );
+      return;
+    }
+  }
+  if (tokenResponse.cNonce == null) {
+    logger.d('already need new c_nonce');
+    // if (metadata.nonceEndpoint != null) {
+    //   var nonceResponse = await post(Uri.parse(metadata.nonceEndpoint!));
+    //   if (nonceResponse.statusCode == 200 || nonceResponse.statusCode == 201) {
+    //     try {
+    //       tokenResponse.cNonce = jsonDecode(nonceResponse.body)['c_nonce'];
+    //     } catch (e) {
+    //       logger.d('Keine nonce: $e');
+    //       showErrorMessage(
+    //         AppLocalizations.of(navigatorKey.currentContext!)!
+    //             .credentialDownloadFailed,
+    //       );
+    //       return;
+    //     }
+    //   } else {
+    //     showErrorMessage(
+    //       AppLocalizations.of(navigatorKey.currentContext!)!
+    //           .credentialDownloadFailed,
+    //     );
+    //     return;
+    //   }
+    // } else {
+    // send false cred request to get cNonce
+    var credentialRequest = OidCredentialRequest(
+      format: credentialMetadata.format,
+      credentialType: credentialMetadata.credentialType,
+    );
 
-      var credentialResponse =
-          await post(Uri.parse(metadata.credentialEndpoint),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ${tokenResponse.accessToken}'
-                  },
-                  body: credentialRequest.toString())
-              .timeout(const Duration(seconds: 20), onTimeout: () {
-        return Response('Timeout', 400);
-      });
+    var credentialResponse = await post(Uri.parse(metadata.credentialEndpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ${tokenResponse.accessToken}'
+            },
+            body: credentialRequest.toString())
+        .timeout(const Duration(seconds: 20), onTimeout: () {
+      return Response('Timeout', 400);
+    });
 
-      if (credentialResponse.statusCode != 200) {
-        try {
-          tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
-        } catch (e) {
-          logger.d('Keine nonce: $e');
-          showErrorMessage(
-            AppLocalizations.of(navigatorKey.currentContext!)!
-                .credentialDownloadFailed,
-          );
-          return;
-        }
+    if (credentialResponse.statusCode != 200) {
+      try {
+        tokenResponse.cNonce = jsonDecode(credentialResponse.body)['c_nonce'];
+      } catch (e) {
+        logger.d('Keine nonce: $e');
+        showErrorMessage(
+          AppLocalizations.of(navigatorKey.currentContext!)!
+              .credentialDownloadFailed,
+        );
+        return;
       }
     }
+    // }
   }
 
   logger.d('c_nonce: ${tokenResponse.cNonce}');
@@ -812,7 +864,9 @@ Future<void> getCredential(
   }
 
   var credentialRequest = OidCredentialRequest(
-      format: credentialMetadata.format,
+      format: credentialMetadata.credentialId == null
+          ? credentialMetadata.format
+          : null,
       credentialType: credentialMetadata.credentialType,
       context: credentialMetadata.context,
       credentialConfigurationId: credentialMetadata.credentialId,
@@ -896,7 +950,7 @@ Future<void> getCredential(
 
   if (credentialResponse.statusCode == 200) {
     OidCredentialResponse decodedCredentialResponse;
-    logger.d(credentialResponse.body);
+    logger.d(jsonDecode(credentialResponse.body)['credentials']);
     if (decryptionKey != null) {
       try {
         decodedCredentialResponse =
@@ -911,8 +965,15 @@ Future<void> getCredential(
         return;
       }
     } else {
-      decodedCredentialResponse =
-          OidCredentialResponse.fromJson(credentialResponse.body);
+      try {
+        decodedCredentialResponse =
+            OidCredentialResponse.fromJson(credentialResponse.body);
+      } catch (e) {
+        logger.d(e);
+        showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+            .credentialDownloadFailed);
+        return;
+      }
     }
     var format = credentialMetadata.format;
 
@@ -955,6 +1016,9 @@ Future<void> getCredential(
     logger.d(credentialResponse.statusCode);
     logger.d(credentialResponse.headers);
     logger.d(credentialResponse.body);
+    showErrorMessage(AppLocalizations.of(navigatorKey.currentContext!)!
+        .credentialDownloadFailed);
+    return;
   }
 }
 
