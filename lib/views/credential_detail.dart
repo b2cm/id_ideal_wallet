@@ -88,37 +88,76 @@ class CredentialDetailState extends State<CredentialDetailView> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.delete),
-        content: Card(child: Text(AppLocalizations.of(context)!.deletionNote)),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        content: RichText(
+            text: TextSpan(children: [
+          TextSpan(
+              text: AppLocalizations.of(context)!.deletionNote1,
+              style: Theme.of(context).primaryTextTheme.bodySmall),
+          TextSpan(text: '\n\n'),
+          WidgetSpan(
+            child: Container(
+              padding: const EdgeInsets.only(
+                right: 1,
+                bottom: 0,
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 18,
+                color: Colors.redAccent.shade700,
+              ),
+            ),
+          ),
+          TextSpan(
+              text: AppLocalizations.of(context)!.deletionNote2,
+              style: Theme.of(context).primaryTextTheme.titleMedium)
+        ])),
         actions: [
-          TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(AppLocalizations.of(context)!.cancel)),
-          TextButton(
-              onPressed: () async {
-                var credId = widget.credential.credentialSubject['id'];
-                if (credId == null || credId == '') {
-                  var type = getTypeToShow(widget.credential.type);
-                  credId =
-                      '${widget.credential.issuanceDate.toIso8601String()}$type';
-                }
-                wallet.deleteCredential(credId, true);
-                Navigator.of(context).pop();
-                //Navigator.of(context).pop();
-                if (widget.credential.type.contains('ContextCredential')) {
-                  Provider.of<NavigationProvider>(context, listen: false)
-                      .goBack();
-                } else {
-                  Provider.of<NavigationProvider>(context, listen: false)
-                      .goBack();
-                  // Navigator.of(context).pushReplacement(MaterialPageRoute(
-                  //     builder: (context) => const CredentialPage(
-                  //           initialSelection: 'all',
-                  //         )));
-                }
-              },
-              child: Text(AppLocalizations.of(context)!.delete))
+          Row(children: [
+            Expanded(
+                child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.greenAccent.shade700,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(AppLocalizations.of(context)!.cancel))),
+            SizedBox(
+              width: 10,
+            ),
+            Expanded(
+                child: ElevatedButton(
+                    onPressed: () async {
+                      var credId = widget.credential.credentialSubject['id'];
+                      if (credId == null || credId == '') {
+                        var type = getTypeToShow(widget.credential.type);
+                        credId =
+                            '${widget.credential.issuanceDate.toIso8601String()}$type';
+                      }
+                      wallet.deleteCredential(credId, true);
+                      Navigator.of(context).pop();
+                      //Navigator.of(context).pop();
+                      if (widget.credential.type
+                          .contains('ContextCredential')) {
+                        Provider.of<NavigationProvider>(context, listen: false)
+                            .goBack();
+                      } else {
+                        Provider.of<NavigationProvider>(context, listen: false)
+                            .goBack();
+                        // Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        //     builder: (context) => const CredentialPage(
+                        //           initialSelection: 'all',
+                        //         )));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(AppLocalizations.of(context)!.delete)))
+          ])
         ],
       ),
     );
@@ -183,45 +222,13 @@ class CredentialDetailState extends State<CredentialDetailView> {
       useBackSwipe: false,
       title: '',
       appBarActions: [
-        InkWell(
-            onTap: _deleteCredential,
-            child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Icon(Icons.delete_outline_sharp, size: 30)))
+        if (widget.credential.expirationDate?.isBefore(DateTime.now()) ?? true)
+          InkWell(
+              onTap: _deleteCredential,
+              child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Icon(Icons.delete_outline_sharp, size: 30)))
       ],
-      // footerButtons: [
-      //   TextButton(
-      //       onPressed: getHolderDidFromCredential(widget.credential.toJson()) ==
-      //               ''
-      //           ? () => Navigator.of(context).push(MaterialPageRoute(
-      //               builder: (context) => StyledScaffoldTitle(
-      //                   title:
-      //                       AppLocalizations.of(context)!.sellCredentialTitle,
-      //                   child: Consumer<WalletProvider>(
-      //                       builder: (context, wallet, child) {
-      //                     return TopUp(
-      //                         paymentMethods: wallet.paymentCredentials,
-      //                         onTopUpSats: (amount, memo, vc) =>
-      //                             Navigator.of(context)
-      //                                 .pushReplacement(MaterialPageRoute(
-      //                                     builder: (context) => QrRender(
-      //                                           credential: widget.credential,
-      //                                           amount: amount,
-      //                                           memo: memo,
-      //                                         ))),
-      //                         onTopUpFiat: (x) {});
-      //                   }))))
-      //           : () => Navigator.of(context).push(MaterialPageRoute(
-      //               builder: (context) =>
-      //                   QrRender(credential: widget.credential))),
-      //       child: Text(
-      //           getHolderDidFromCredential(widget.credential.toJson()) == ''
-      //               ? AppLocalizations.of(context)!.forSale
-      //               : AppLocalizations.of(context)!.forShow)),
-      //   TextButton(
-      //       onPressed: _deleteCredential,
-      //       child: Text(AppLocalizations.of(context)!.delete))
-      // ],
       child: _buildBody(),
     );
   }

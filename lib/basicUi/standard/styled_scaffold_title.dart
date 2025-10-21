@@ -9,7 +9,8 @@ class StyledScaffoldTitle extends StatelessWidget {
       this.footerButtons,
       this.appBarActions,
       this.fab,
-      this.useBackSwipe = true});
+      this.useBackSwipe = true,
+      this.leading = false});
 
   final dynamic title;
   final Widget child;
@@ -18,6 +19,7 @@ class StyledScaffoldTitle extends StatelessWidget {
   final List<Widget>? footerButtons;
   final List<Widget>? appBarActions;
   final bool useBackSwipe;
+  final bool leading;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,12 @@ class StyledScaffoldTitle extends StatelessWidget {
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,
+        leading: leading
+            ? IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         title: title is String
             ? Text(
                 title,

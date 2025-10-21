@@ -63,6 +63,7 @@ class QrScannerState extends State<QrScanner> {
       children: [
         StyledScaffoldTitle(
           currentlyActive: 1,
+          leading: !widget.inApp,
           title: 'QR-Code Scanner',
           child: GestureDetector(
             onScaleStart: (details) {

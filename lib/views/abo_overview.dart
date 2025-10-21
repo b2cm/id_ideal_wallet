@@ -163,32 +163,60 @@ class AboOverviewState extends State<AboOverview>
                                               title: Text(
                                                   AppLocalizations.of(context)!
                                                       .delete),
-                                              content: Card(
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .deletionNoteApp)),
+                                              content: Text(
+                                                  AppLocalizations.of(context)!
+                                                      .deletionNoteApp,
+                                                  maxLines: 4,
+                                                  style: Theme.of(context)
+                                                      .primaryTextTheme
+                                                      .bodySmall),
                                               actions: [
-                                                TextButton(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: Text(
-                                                        AppLocalizations.of(
-                                                                context)!
-                                                            .cancel)),
-                                                TextButton(
-                                                    onPressed: () async {
-                                                      wallet
-                                                          .deleteAbo(index - 1);
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: Text(
-                                                        AppLocalizations.of(
-                                                                context)!
-                                                            .delete))
+                                                Row(children: [
+                                                  Expanded(
+                                                      child: ElevatedButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .greenAccent
+                                                                    .shade700,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                          child: Text(
+                                                              AppLocalizations.of(
+                                                                      context)!
+                                                                  .cancel))),
+                                                  SizedBox(
+                                                    width: 10,
+                                                  ),
+                                                  Expanded(
+                                                      child: ElevatedButton(
+                                                          onPressed: () async {
+                                                            wallet.deleteAbo(
+                                                                index - 1);
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .redAccent,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                          child: Text(
+                                                              AppLocalizations.of(
+                                                                      context)!
+                                                                  .delete)))
+                                                ])
                                               ],
                                             ),
                                           );

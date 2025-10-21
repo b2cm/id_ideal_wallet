@@ -182,11 +182,17 @@ abstract class AppLocalizations {
   /// **'Löschen'**
   String get delete;
 
-  /// No description provided for @deletionNote.
+  /// No description provided for @deletionNote1.
   ///
   /// In de, this message translates to:
-  /// **'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.'**
-  String get deletionNote;
+  /// **'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten?'**
+  String get deletionNote1;
+
+  /// No description provided for @deletionNote2.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Vorgang kann nicht rückgängig gemacht werden.'**
+  String get deletionNote2;
 
   /// No description provided for @deletionNoteApp.
   ///

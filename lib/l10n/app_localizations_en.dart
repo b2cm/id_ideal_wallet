@@ -52,8 +52,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'delete';
 
   @override
-  String get deletionNote =>
-      'Are you sure you want to delete this credential? This operation cannot be undone.';
+  String get deletionNote1 =>
+      'Are you sure you want to delete this credential?';
+
+  @override
+  String get deletionNote2 => 'This operation cannot be undone.';
 
   @override
   String get deletionNoteApp =>

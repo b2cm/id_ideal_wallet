@@ -52,8 +52,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get delete => 'Löschen';
 
   @override
-  String get deletionNote =>
-      'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.';
+  String get deletionNote1 =>
+      'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten?';
+
+  @override
+  String get deletionNote2 =>
+      'Dieser Vorgang kann nicht rückgängig gemacht werden.';
 
   @override
   String get deletionNoteApp =>
