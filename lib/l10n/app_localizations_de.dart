@@ -912,4 +912,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get failedLoadNote =>
       'Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?';
+
+  @override
+  String get share => 'Teilen';
+
+  @override
+  String get load => 'Laden';
+
+  @override
+  String get open => 'Öffnen';
+
+  @override
+  String get get => 'Holen';
 }

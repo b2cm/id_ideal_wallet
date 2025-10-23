@@ -1,5 +1,6 @@
 import 'package:dart_ssi/credentials.dart';
 import 'package:flutter/material.dart';
+import 'package:id_ideal_wallet/basicUi/standard/delete_dialog.dart';
 import 'package:id_ideal_wallet/basicUi/standard/issuer_info.dart';
 import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
@@ -85,82 +86,49 @@ class CredentialDetailState extends State<CredentialDetailView> {
   void _deleteCredential() {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.delete),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        content: RichText(
-            text: TextSpan(children: [
-          TextSpan(
-              text: AppLocalizations.of(context)!.deletionNote1,
-              style: Theme.of(context).primaryTextTheme.bodySmall),
-          TextSpan(text: '\n\n'),
-          WidgetSpan(
-            child: Container(
-              padding: const EdgeInsets.only(
-                right: 1,
-                bottom: 0,
-              ),
-              child: Icon(
-                Icons.error_outline,
-                size: 18,
-                color: Colors.redAccent.shade700,
-              ),
-            ),
-          ),
-          TextSpan(
-              text: AppLocalizations.of(context)!.deletionNote2,
-              style: Theme.of(context).primaryTextTheme.titleMedium)
-        ])),
-        actions: [
-          Row(children: [
-            Expanded(
-                child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.greenAccent.shade700,
-                      foregroundColor: Colors.white,
+        context: context,
+        builder: (context) => DeleteDialog(
+            deleteNote: RichText(
+              text: TextSpan(children: [
+                TextSpan(
+                    text: AppLocalizations.of(context)!.deletionNote1,
+                    style: Theme.of(context).primaryTextTheme.bodySmall),
+                TextSpan(text: '\n\n'),
+                WidgetSpan(
+                  child: Container(
+                    padding: const EdgeInsets.only(
+                      right: 1,
+                      bottom: 0,
                     ),
-                    child: Text(AppLocalizations.of(context)!.cancel))),
-            SizedBox(
-              width: 10,
-            ),
-            Expanded(
-                child: ElevatedButton(
-                    onPressed: () async {
-                      var credId = widget.credential.credentialSubject['id'];
-                      if (credId == null || credId == '') {
-                        var type = getTypeToShow(widget.credential.type);
-                        credId =
-                            '${widget.credential.issuanceDate.toIso8601String()}$type';
-                      }
-                      wallet.deleteCredential(credId, true);
-                      Navigator.of(context).pop();
-                      //Navigator.of(context).pop();
-                      if (widget.credential.type
-                          .contains('ContextCredential')) {
-                        Provider.of<NavigationProvider>(context, listen: false)
-                            .goBack();
-                      } else {
-                        Provider.of<NavigationProvider>(context, listen: false)
-                            .goBack();
-                        // Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        //     builder: (context) => const CredentialPage(
-                        //           initialSelection: 'all',
-                        //         )));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 18,
+                      color: Colors.redAccent.shade700,
                     ),
-                    child: Text(AppLocalizations.of(context)!.delete)))
-          ])
-        ],
-      ),
-    );
+                  ),
+                ),
+                TextSpan(
+                    text: AppLocalizations.of(context)!.deletionNote2,
+                    style: Theme.of(context).primaryTextTheme.titleMedium)
+              ]),
+            ),
+            deleteFunction: () async {
+              var credId = widget.credential.credentialSubject['id'];
+              if (credId == null || credId == '') {
+                var type = getTypeToShow(widget.credential.type);
+                credId =
+                    '${widget.credential.issuanceDate.toIso8601String()}$type';
+              }
+              wallet.deleteCredential(credId, true);
+              Navigator.of(context).pop();
+              if (widget.credential.type.contains('ContextCredential')) {
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .goBack();
+              } else {
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .goBack();
+              }
+            }));
   }
 
   Widget buildReceipt() {

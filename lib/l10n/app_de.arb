@@ -296,5 +296,9 @@
   "frontside": "Vorderseite",
   "backside": "Rückseite",
   "failedLoad": "Laden fehlgeschlagen",
-  "failedLoadNote": "Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?"
+  "failedLoadNote": "Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?",
+  "share": "Teilen",
+  "load": "Laden",
+  "open": "Öffnen",
+  "get": "Holen"
 }

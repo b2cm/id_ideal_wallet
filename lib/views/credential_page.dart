@@ -51,7 +51,6 @@ class CredentialPageState extends State<CredentialPage> {
                 .where((element) => element.type.contains(selectedItem))
                 .toList();
         return StyledScaffoldTitle(
-            currentlyActive: 0,
             title: DropdownMenu<String>(
                 initialSelection: AppLocalizations.of(context)!.allCredentials,
                 inputDecorationTheme:

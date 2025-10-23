@@ -1753,6 +1753,30 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?'**
   String get failedLoadNote;
+
+  /// No description provided for @share.
+  ///
+  /// In de, this message translates to:
+  /// **'Teilen'**
+  String get share;
+
+  /// No description provided for @load.
+  ///
+  /// In de, this message translates to:
+  /// **'Laden'**
+  String get load;
+
+  /// No description provided for @open.
+  ///
+  /// In de, this message translates to:
+  /// **'Öffnen'**
+  String get open;
+
+  /// No description provided for @get.
+  ///
+  /// In de, this message translates to:
+  /// **'Holen'**
+  String get get;
 }
 
 class _AppLocalizationsDelegate

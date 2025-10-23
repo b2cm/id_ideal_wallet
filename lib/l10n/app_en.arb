@@ -296,5 +296,9 @@
   "frontside": "Front",
   "backside": "Back",
   "failedLoad": "Loading failed",
-  "failedLoadNote": "The application cannot be opened. Could it be that your device does not have an Internet connection?"
+  "failedLoadNote": "The application cannot be opened. Could it be that your device does not have an Internet connection?",
+  "share": "Share",
+  "load": "Load",
+  "open": "Open",
+  "get": "Get"
 }

@@ -149,13 +149,15 @@ class WebViewWindowState extends State<WebViewWindow> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, b) async {
+        if (didPop) return;
+        var nav = Navigator.of(context);
         if (webViewController != null && await webViewController!.canGoBack()) {
           webViewController?.goBack();
-          return false;
         } else {
-          return true;
+          if (mounted) nav.pop();
         }
       },
       child: Consumer<WalletProvider>(builder: (context, wallet, child) {
@@ -184,13 +186,13 @@ class WebViewWindowState extends State<WebViewWindow> {
                                 uri: Uri.parse(
                                     'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.webViewData.url)}&title=${widget.webViewData.name}')));
                           },
-                          child: Text('Teilen')),
+                          child: Text(AppLocalizations.of(context)!.share)),
                     MenuItemButton(
                       trailingIcon: Icon(Icons.refresh),
                       onPressed: () {
                         webViewController?.reload();
                       },
-                      child: Text('Laden'),
+                      child: Text(AppLocalizations.of(context)!.load),
                     ),
                     // TODO uncomment if rating feature ready to use
                     // MenuItemButton(
@@ -238,7 +240,6 @@ class WebViewWindowState extends State<WebViewWindow> {
                       Radius.circular(4),
                     ),
                     child: CachedImage(
-                      // key: UniqueKey(),
                       imageUrl: imageUrl!,
                       placeholder: title,
                     ),
@@ -276,11 +277,13 @@ class WebViewWindowState extends State<WebViewWindow> {
                       initialSettings: settings,
                       pullToRefreshController: pullToRefreshController,
                       // Testing only: accept bad (self signed) certs
-                      onReceivedServerTrustAuthRequest:
-                          (controller, challenge) async {
-                        return ServerTrustAuthResponse(
-                            action: ServerTrustAuthResponseAction.PROCEED);
-                      },
+                      onReceivedServerTrustAuthRequest: testBuild
+                          ? (controller, challenge) async {
+                              return ServerTrustAuthResponse(
+                                  action:
+                                      ServerTrustAuthResponseAction.PROCEED);
+                            }
+                          : null,
                       onCreateWindow: (a, b) async {
                         logger.d('Open request');
                         return false;

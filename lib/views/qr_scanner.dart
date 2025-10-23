@@ -62,7 +62,6 @@ class QrScannerState extends State<QrScanner> {
     return Stack(
       children: [
         StyledScaffoldTitle(
-          currentlyActive: 1,
           leading: !widget.inApp,
           title: 'QR-Code Scanner',
           child: GestureDetector(
@@ -111,10 +110,11 @@ class QrScannerState extends State<QrScanner> {
                   height: 10,
                 ),
                 DefaultTextStyle(
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                    child: Text(
-                      '${AppLocalizations.of(context)!.waiting}\n${AppLocalizations.of(context)!.waitingQrData}',
-                    ))
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  child: Text(
+                    '${AppLocalizations.of(context)!.waiting}\n${AppLocalizations.of(context)!.waitingQrData}',
+                  ),
+                )
               ],
             ),
           ),

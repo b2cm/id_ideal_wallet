@@ -98,7 +98,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                             Radius.circular(10),
                           ),
                           child: CachedImage(
-                            key: UniqueKey(),
+                            key: ValueKey('${e.pictureUrl}_${e.name}'),
                             imageUrl: e.pictureUrl,
                             placeholder: e.name,
                           ),
@@ -111,7 +111,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                               onPressed: () {
                                 loadWebview(e);
                               },
-                              child: Text('Öffnen'))
+                              child: Text(AppLocalizations.of(context)!.open))
                           : ElevatedButton(
                               onPressed: () {
                                 Provider.of<WalletProvider>(context,
@@ -119,7 +119,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                                     .addAbo(e);
                                 setState(() {});
                               },
-                              child: Text('Holen')),
+                              child: Text(AppLocalizations.of(context)!.get)),
                     );
                   },
                   separatorBuilder: (BuildContext context, int index) {

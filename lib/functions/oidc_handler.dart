@@ -950,7 +950,6 @@ Future<void> getCredential(
 
   if (credentialResponse.statusCode == 200) {
     OidCredentialResponse decodedCredentialResponse;
-    logger.d(jsonDecode(credentialResponse.body)['credentials']);
     if (decryptionKey != null) {
       try {
         decodedCredentialResponse =
