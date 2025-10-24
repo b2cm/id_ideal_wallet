@@ -233,8 +233,8 @@ class WebViewWindowState extends State<WebViewWindow> {
             title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (imageUrl != null && imageUrl!.isNotEmpty)
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.07,
-                  height: MediaQuery.of(context).size.width * 0.07,
+                  width: 27,
+                  height: 27,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.all(
                       Radius.circular(4),

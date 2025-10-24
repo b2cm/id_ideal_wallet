@@ -73,17 +73,12 @@ class HistoryEntries extends StatelessWidget {
   }
 }
 
-class CredentialDetailView extends StatefulWidget {
+class CredentialDetailView extends StatelessWidget {
   final VerifiableCredential credential;
 
   const CredentialDetailView({super.key, required this.credential});
 
-  @override
-  CredentialDetailState createState() => CredentialDetailState();
-}
-
-class CredentialDetailState extends State<CredentialDetailView> {
-  void _deleteCredential() {
+  void _deleteCredential(BuildContext context) {
     var wallet = Provider.of<WalletProvider>(context, listen: false);
     showDialog(
         context: context,
@@ -113,15 +108,14 @@ class CredentialDetailState extends State<CredentialDetailView> {
               ]),
             ),
             deleteFunction: () async {
-              var credId = widget.credential.credentialSubject['id'];
+              var credId = credential.credentialSubject['id'];
               if (credId == null || credId == '') {
-                var type = getTypeToShow(widget.credential.type);
-                credId =
-                    '${widget.credential.issuanceDate.toIso8601String()}$type';
+                var type = getTypeToShow(credential.type);
+                credId = '${credential.issuanceDate.toIso8601String()}$type';
               }
               wallet.deleteCredential(credId, true);
               Navigator.of(context).pop();
-              if (widget.credential.type.contains('ContextCredential')) {
+              if (credential.type.contains('ContextCredential')) {
                 Provider.of<NavigationProvider>(context, listen: false)
                     .goBack();
               } else {
@@ -132,18 +126,20 @@ class CredentialDetailState extends State<CredentialDetailView> {
   }
 
   Widget buildReceipt() {
-    if (widget.credential.credentialSubject is Map &&
-        widget.credential.credentialSubject.containsKey('receiptId')) {
-      var receipt = Provider.of<WalletProvider>(context, listen: false)
-          .getCredential(widget.credential.credentialSubject['receiptId']);
+    if (credential.credentialSubject is Map &&
+        credential.credentialSubject.containsKey('receiptId')) {
+      var receipt = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+              listen: false)
+          .getCredential(credential.credentialSubject['receiptId']);
       if (receipt != null) {
         var receiptVc =
             VerifiableCredential.fromJson(receipt.verifiableCredential);
         var target = PdfPreviewPage(
             paymentReceipt: receiptVc,
-            eventName: widget.credential.credentialSubject['event'] ?? '');
+            eventName: credential.credentialSubject['event'] ?? '');
         return ExpansionTile(
-          title: Text(AppLocalizations.of(context)!.invoice),
+          title:
+              Text(AppLocalizations.of(navigatorKey.currentContext!)!.invoice),
           trailing: InkWell(
               child: const Icon(Icons.picture_as_pdf),
               onTap: () => navigateClassic(target)),
@@ -160,28 +156,29 @@ class CredentialDetailState extends State<CredentialDetailView> {
 
   Widget _buildBody() {
     return SingleChildScrollView(
-        child: Column(
-      children: [
-        CredentialCard(
-          credential: widget.credential,
-          clickable: false,
-        ),
-        const SizedBox(
-          height: 10,
-        ),
-        CredentialInfo(credential: widget.credential),
-        buildReceipt(),
-        // issuerData,
-        // otherData,
-        const SizedBox(
-          height: 10,
-        ),
-        HistoryEntries(credential: widget.credential),
-        const SizedBox(
-          height: bottomPadding,
-        )
-      ],
-    ));
+      child: Column(
+        children: [
+          CredentialCard(
+            credential: credential,
+            clickable: false,
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          CredentialInfo(credential: credential),
+          buildReceipt(),
+          // issuerData,
+          // otherData,
+          const SizedBox(
+            height: 10,
+          ),
+          HistoryEntries(credential: credential),
+          const SizedBox(
+            height: bottomPadding,
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -190,12 +187,13 @@ class CredentialDetailState extends State<CredentialDetailView> {
       useBackSwipe: false,
       title: '',
       appBarActions: [
-        if (widget.credential.expirationDate?.isBefore(DateTime.now()) ?? true)
+        if (credential.expirationDate?.isBefore(DateTime.now()) ?? true)
           InkWell(
-              onTap: _deleteCredential,
-              child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Icon(Icons.delete_outline_sharp, size: 30)))
+            onTap: () => _deleteCredential(context),
+            child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Icon(Icons.delete_outline_sharp, size: 30)),
+          )
       ],
       child: _buildBody(),
     );
