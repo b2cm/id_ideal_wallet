@@ -15,7 +15,7 @@ class SecuredWidget extends StatefulWidget {
 }
 
 class SecuredWidgetState extends State<SecuredWidget> {
-  void onWillPop(bool didPop) {
+  void onWillPop(bool didPop, Object? o) {
     if (didPop) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       duration: const Duration(seconds: 1),
@@ -24,7 +24,7 @@ class SecuredWidgetState extends State<SecuredWidget> {
           Radius.circular(30.0),
         ),
       ),
-      backgroundColor: Colors.black.withOpacity(0.6),
+      backgroundColor: Colors.black.withAlpha(170),
       behavior: SnackBarBehavior.floating,
       content: Text(AppLocalizations.of(context)!.cancelWarning),
     ));
@@ -34,6 +34,6 @@ class SecuredWidgetState extends State<SecuredWidget> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-        canPop: false, onPopInvoked: onWillPop, child: widget.child);
+        canPop: false, onPopInvokedWithResult: onWillPop, child: widget.child);
   }
 }

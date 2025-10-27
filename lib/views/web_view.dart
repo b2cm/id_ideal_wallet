@@ -26,12 +26,15 @@ import 'package:share_plus/share_plus.dart';
 import '../l10n/app_localizations.dart';
 
 class WebViewWindow extends StatefulWidget {
-  final String initialUrl;
-  final String title;
-  final String? iconUrl;
+  final AboData webViewData;
+  final String? initialHtml;
+  final bool isSecure;
 
   const WebViewWindow(
-      {super.key, required this.initialUrl, required this.title, this.iconUrl});
+      {super.key,
+      required this.webViewData,
+      this.isSecure = true,
+      this.initialHtml});
 
   @override
   State<StatefulWidget> createState() => WebViewWindowState();
@@ -43,7 +46,8 @@ class WebViewWindowState extends State<WebViewWindow> {
   String? imageUrl;
   String title = '';
   String baseUrl = '';
-  List<String>? trustedSites;
+
+  //List<String>? trustedSites;
   bool mdocRunning = false;
   Color? titleBgColor, titleFontColor;
 
@@ -65,11 +69,11 @@ class WebViewWindowState extends State<WebViewWindow> {
   void initState() {
     super.initState();
 
-    imageUrl = widget.iconUrl;
-    title = widget.title;
-    baseUrl = widget.initialUrl;
+    imageUrl = widget.webViewData.pictureUrl;
+    title = widget.webViewData.name;
+    baseUrl = widget.webViewData.url;
 
-    checkAbo();
+    // checkAbo();
 
     pullToRefreshController = kIsWeb
         ? null
@@ -89,46 +93,46 @@ class WebViewWindowState extends State<WebViewWindow> {
           );
   }
 
-  Future<void> checkAbo() async {
-    var currentAbos =
-        Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-            .aboList;
-
-    List<String> allAbos =
-        currentAbos.map((e) => e.getComparableUrl()).toList();
-
-    var asUri = Uri.parse(widget.initialUrl);
-    var toCheck = removeTrailingSlash(
-        '${asUri.scheme.isEmpty ? 'https' : asUri.scheme}://${asUri.host}${asUri.path}');
-    bool inLocalAboList = allAbos.contains(toCheck);
-    logger.d('$allAbos contains? $toCheck');
-
-    var trustedData = await initTrustedSites();
-    trustedSites = trustedData.keys.toList();
-
-    imageUrl = trustedData[toCheck]?.pictureUrl;
-    titleBgColor = trustedData[toCheck]?.getTitleBgColor();
-    titleFontColor = trustedData[toCheck]?.getTitleFontColor();
-    baseUrl = toCheck;
-
-    if (title.isEmpty) {
-      title = trustedData[toCheck]?.name ?? '';
-    }
-
-    if (inLocalAboList) {
-      // we have already an abo
-      setState(() {});
-      return;
-    }
-
-    logger.d('$trustedSites contains? $toCheck');
-    if (trustedSites!.contains(toCheck)) {
-      Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
-          .addAbo(trustedData[toCheck]!);
-    }
-
-    setState(() {});
-  }
+  // Future<void> checkAbo() async {
+  //   var currentAbos =
+  //       Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
+  //           .aboList;
+  //
+  //   List<String> allAbos =
+  //       currentAbos.map((e) => e.getComparableUrl()).toList();
+  //
+  //   var asUri = Uri.parse(widget.initialUrl);
+  //   var toCheck = removeTrailingSlash(
+  //       '${asUri.scheme.isEmpty ? 'https' : asUri.scheme}://${asUri.host}${asUri.path}');
+  //   bool inLocalAboList = allAbos.contains(toCheck);
+  //   logger.d('$allAbos contains? $toCheck');
+  //
+  //   var trustedData = await initTrustedSites();
+  //   trustedSites = trustedData.keys.toList();
+  //
+  //   imageUrl = trustedData[toCheck]?.pictureUrl;
+  //   titleBgColor = trustedData[toCheck]?.getTitleBgColor();
+  //   titleFontColor = trustedData[toCheck]?.getTitleFontColor();
+  //   baseUrl = toCheck;
+  //
+  //   if (title.isEmpty) {
+  //     title = trustedData[toCheck]?.name ?? '';
+  //   }
+  //
+  //   if (inLocalAboList) {
+  //     // we have already an abo
+  //     setState(() {});
+  //     return;
+  //   }
+  //
+  //   logger.d('$trustedSites contains? $toCheck');
+  //   if (trustedSites!.contains(toCheck)) {
+  //     Provider.of<WalletProvider>(navigatorKey.currentContext!, listen: false)
+  //         .addAbo(trustedData[toCheck]!);
+  //   }
+  //
+  //   setState(() {});
+  // }
 
   Future<Map<String, AboData>> initTrustedSites() async {
     var res = await get(Uri.parse(applicationEndpoint));
@@ -140,37 +144,20 @@ class WebViewWindowState extends State<WebViewWindow> {
         available[data.getComparableUrl()] = data;
       }
     }
-
-    // Map<String, String> uriToImage = {};
-    // Map<String, String> uriToTitle = {};
-    // List<String> trusted = [];
-    // List<String> original = [];
-    // if (available.isNotEmpty) {
-    //   trusted = available.map((e) {
-    //     var u = Uri.parse(e['url']!);
-    //     var correctUri =
-    //         removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
-    //     uriToImage[correctUri] = e['mainbgimg'];
-    //     uriToTitle[correctUri] = e['name'] ?? '';
-    //     return removeTrailingSlash('${u.scheme}://${u.host}${u.path}');
-    //   }).toList();
-    //   original = available.map((e) {
-    //     return e['url']! as String;
-    //   }).toList();
-    // }
-
     return available;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, b) async {
+        if (didPop) return;
+        var nav = Navigator.of(context);
         if (webViewController != null && await webViewController!.canGoBack()) {
           webViewController?.goBack();
-          return false;
         } else {
-          return true;
+          if (mounted) nav.pop();
         }
       },
       child: Consumer<WalletProvider>(builder: (context, wallet, child) {
@@ -191,20 +178,21 @@ class WebViewWindowState extends State<WebViewWindow> {
                 child: MenuAnchor(
                   alignmentOffset: Offset(10, 2),
                   menuChildren: [
-                    MenuItemButton(
-                        trailingIcon: Icon(Icons.share),
-                        onPressed: () {
-                          SharePlus.instance.share(ShareParams(
-                              uri: Uri.parse(
-                                  'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.initialUrl)}&title=${widget.title}')));
-                        },
-                        child: Text('Teilen')),
+                    if (widget.isSecure)
+                      MenuItemButton(
+                          trailingIcon: Icon(Icons.share),
+                          onPressed: () {
+                            SharePlus.instance.share(ShareParams(
+                                uri: Uri.parse(
+                                    'https://wallet.bccm.dev/webview?url=${Uri.encodeFull(widget.webViewData.url)}&title=${widget.webViewData.name}')));
+                          },
+                          child: Text(AppLocalizations.of(context)!.share)),
                     MenuItemButton(
                       trailingIcon: Icon(Icons.refresh),
                       onPressed: () {
                         webViewController?.reload();
                       },
-                      child: Text('Laden'),
+                      child: Text(AppLocalizations.of(context)!.load),
                     ),
                     // TODO uncomment if rating feature ready to use
                     // MenuItemButton(
@@ -243,22 +231,21 @@ class WebViewWindowState extends State<WebViewWindow> {
             ],
             centerTitle: true,
             title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (imageUrl != null)
+              if (imageUrl != null && imageUrl!.isNotEmpty)
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.07,
-                  height: MediaQuery.of(context).size.width * 0.07,
+                  width: 27,
+                  height: 27,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.all(
                       Radius.circular(4),
                     ),
                     child: CachedImage(
-                      // key: UniqueKey(),
                       imageUrl: imageUrl!,
                       placeholder: title,
                     ),
                   ),
                 ),
-              if (imageUrl != null)
+              if (imageUrl != null && imageUrl!.isNotEmpty)
                 const SizedBox(
                   width: 3,
                 ),
@@ -278,124 +265,160 @@ class WebViewWindowState extends State<WebViewWindow> {
                   children: [
                     InAppWebView(
                       key: webViewKey,
-                      initialUrlRequest:
-                          URLRequest(url: WebUri(widget.initialUrl)),
+                      initialUrlRequest: widget.initialHtml == null
+                          ? URLRequest(url: WebUri(widget.webViewData.url))
+                          : null,
+                      initialData: widget.initialHtml != null
+                          ? InAppWebViewInitialData(
+                              data: widget.initialHtml!,
+                              baseUrl: WebUri(widget.webViewData.url),
+                            )
+                          : null,
                       initialSettings: settings,
                       pullToRefreshController: pullToRefreshController,
                       // Testing only: accept bad (self signed) certs
-                      onReceivedServerTrustAuthRequest:
-                          (controller, challenge) async {
-                        return ServerTrustAuthResponse(
-                            action: ServerTrustAuthResponseAction.PROCEED);
-                      },
+                      onReceivedServerTrustAuthRequest: testBuild
+                          ? (controller, challenge) async {
+                              return ServerTrustAuthResponse(
+                                  action:
+                                      ServerTrustAuthResponseAction.PROCEED);
+                            }
+                          : null,
                       onCreateWindow: (a, b) async {
                         logger.d('Open request');
                         return false;
                       },
                       onWebViewCreated: (controller) {
                         webViewController = controller;
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandlerAsync',
-                            callback: (args) async {
-                              await Future.delayed(const Duration(seconds: 2));
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'echoHandler',
-                            callback: (args) {
-                              return args;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'shareHandler',
-                            callback: (args) async {
-                              var res = await SharePlus.instance
-                                  .share(ShareParams(text: args.first));
-                              return res.status == ShareResultStatus.success;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'initiateProximitySharing',
-                            callback: (args) async {
-                              navigateClassic(
-                                  const IsoCredentialRequest(), true);
-                              return true;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'shareImageHandler',
-                            callback: (args) async {
-                              var d = UriData.fromUri(Uri.parse(args.first));
-                              var res = await SharePlus.instance
-                                  .share(ShareParams(files: [
-                                XFile.fromData(
-                                  d.contentAsBytes(),
-                                  mimeType: d.mimeType,
-                                )
-                              ], fileNameOverrides: [
-                                'hidyShare.${d.mimeType.split('/').last}'
-                              ]));
-                              return res.status == ShareResultStatus.success;
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestHandler',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationHandler(
-                                  args.first,
-                                  widget.initialUrl,
-                                  args[1],
-                                  args[2]);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'presentationRequestNoSignature',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await requestPresentationNoSign(
-                                  args.first, widget.initialUrl, trustedSites);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'initializeSigningKey',
-                            callback: (args) async {
-                              if (args.isEmpty) {
-                                return await getSigningKey(
-                                  true,
-                                  true,
-                                  2,
-                                );
-                              } else {
-                                return await getSigningKey(
-                                    args.first, args[1], args.last);
-                              }
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'signData',
-                            callback: (args) async {
-                              logger.d(args);
-                              return await signData(args.first, args.last);
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'scanQrCode',
-                            callback: (args) async {
-                              return await navigateClassic(QrScanner(
-                                inApp: false,
-                              ));
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'addAccount',
-                            callback: (args) async {
-                              var pseudo = await Provider.of<WalletProvider>(
-                                      context,
-                                      listen: false)
-                                  .generatePseudonym(baseUrl);
-                              logger.d(pseudo);
-                              return pseudo.toJson();
-                            });
-                        webViewController?.addJavaScriptHandler(
-                            handlerName: 'loginToAccount',
-                            callback: (args) {
-                              return Provider.of<WalletProvider>(context,
-                                      listen: false)
-                                  .accountVcs[baseUrl]
-                                  ?.toJson();
-                            });
+                        if (widget.isSecure) {
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandlerAsync',
+                              callback: (args) async {
+                                await Future.delayed(
+                                    const Duration(seconds: 2));
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'echoHandler',
+                              callback: (args) {
+                                return args;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'shareHandler',
+                              callback: (args) async {
+                                var res = await SharePlus.instance
+                                    .share(ShareParams(text: args.first));
+                                return res.status == ShareResultStatus.success;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'initiateProximitySharing',
+                              callback: (args) async {
+                                navigateClassic(
+                                    const IsoCredentialRequest(), true);
+                                return true;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'shareImageHandler',
+                              callback: (args) async {
+                                var d = UriData.fromUri(Uri.parse(args.first));
+                                var res = await SharePlus.instance
+                                    .share(ShareParams(files: [
+                                  XFile.fromData(
+                                    d.contentAsBytes(),
+                                    mimeType: d.mimeType,
+                                  )
+                                ], fileNameOverrides: [
+                                  'hidyShare.${d.mimeType.split('/').last}'
+                                ]));
+                                return res.status == ShareResultStatus.success;
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestHandler',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationHandler(
+                                    args.first,
+                                    widget.webViewData.url,
+                                    args[1],
+                                    args[2]);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'presentationRequestNoSignature',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await requestPresentationNoSign(
+                                    args.first, widget.webViewData.url);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'initializeSigningKey',
+                              callback: (args) async {
+                                if (args.isEmpty) {
+                                  return await getSigningKey(
+                                    true,
+                                    true,
+                                    2,
+                                  );
+                                } else {
+                                  return await getSigningKey(
+                                      args.first, args[1], args.last);
+                                }
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'signData',
+                              callback: (args) async {
+                                logger.d(args);
+                                return await signData(args.first, args.last);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'scanQrCode',
+                              callback: (args) async {
+                                return await navigateClassic(QrScanner(
+                                  inApp: false,
+                                ));
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'addAccount',
+                              callback: (args) async {
+                                var pseudo = await Provider.of<WalletProvider>(
+                                        context,
+                                        listen: false)
+                                    .generatePseudonym(baseUrl);
+                                logger.d(pseudo);
+                                return pseudo.toJson();
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'loginToAccount',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .accountVcs[baseUrl]
+                                    ?.toJson();
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'storeValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .storeWebViewValue(widget.webViewData.url,
+                                        args.first, jsonEncode(args.last));
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'getValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .getWebViewValue(
+                                        widget.webViewData.url, args.first);
+                              });
+                          webViewController?.addJavaScriptHandler(
+                              handlerName: 'deleteValue',
+                              callback: (args) {
+                                return Provider.of<WalletProvider>(context,
+                                        listen: false)
+                                    .deleteWebViewValue(
+                                        widget.webViewData.url, args.first);
+                              });
+                        }
                       },
                       onLoadStart: (controller, url) {
                         setState(() {});
@@ -415,7 +438,7 @@ class WebViewWindowState extends State<WebViewWindow> {
                           Provider.of<NavigationProvider>(context,
                                   listen: false)
                               .handleLink(
-                                  '${uri.toString()}&initialWebview=${widget.initialUrl}');
+                                  '${uri.toString()}&initialWebview=${widget.webViewData.url}');
                           return NavigationActionPolicy.CANCEL;
                         }
 
@@ -511,25 +534,27 @@ class WebViewWindowState extends State<WebViewWindow> {
   }
 
   Future<Map<String, dynamic>> requestPresentationNoSign(
-      dynamic request, String initialUrl, List<String>? trusted) async {
+    dynamic request,
+    String initialUrl,
+  ) async {
     var asUri = Uri.parse(initialUrl);
     var toCheck =
         removeTrailingSlash('${asUri.scheme}://${asUri.host}${asUri.path}');
 
-    if (trusted == null || trusted.isEmpty) {
-      var trustedData = await initTrustedSites();
-      trusted = trustedData.keys.toList();
-    }
-
-    if (testBuild) {
-      trusted.add('https://localhost');
-      trusted.add('http://localhost');
-    }
-
-    logger.d('$trusted contains? $toCheck');
-    if (!trusted.contains(toCheck)) {
-      return {'error': 'untrusted site'};
-    }
+    // if (trusted == null || trusted.isEmpty) {
+    //   var trustedData = await initTrustedSites();
+    //   trusted = trustedData.keys.toList();
+    // }
+    //
+    // if (testBuild) {
+    //   trusted.add('https://localhost');
+    //   trusted.add('http://localhost');
+    // }
+    //
+    // logger.d('$trusted contains? $toCheck');
+    // if (!trusted.contains(toCheck)) {
+    //   return {'error': 'untrusted site'};
+    // }
 
     var definition = PresentationDefinition.fromJson(request);
     var wallet = Provider.of<WalletProvider>(navigatorKey.currentContext!,

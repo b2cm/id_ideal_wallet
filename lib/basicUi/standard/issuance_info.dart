@@ -8,7 +8,6 @@ import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:json_schema/json_schema.dart';
 import 'package:provider/provider.dart';
 
@@ -77,11 +76,8 @@ class IssuanceInfoState extends State<IssuanceInfo> {
               var nav = Provider.of<NavigationProvider>(context, listen: false);
               nav.redirectWebViewUrl = nav.webViewUrl;
               nav.changePage([NavigationPage.credential], track: false);
-              Timer(
-                  const Duration(milliseconds: 5),
-                  () => navigateClassic(WebViewWindow(
-                      initialUrl: layout['issuerUrl']!,
-                      title: 'Aussteller-Info')));
+              Timer(const Duration(milliseconds: 5),
+                  () => handleWebViewLink(Uri.parse(layout['issuerUrl']!)));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,

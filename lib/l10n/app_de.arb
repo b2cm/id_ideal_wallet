@@ -13,7 +13,8 @@
   "forSale": "zum Kauf anbieten",
   "forShow": "zum Vorzeigen anbieten",
   "delete": "Löschen",
-  "deletionNote": "Sind Sie sicher, dass Sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+  "deletionNote1": "Sind Sie sicher, dass Sie diesen Nachweis löschen möchten?",
+  "deletionNote2": "Dieser Vorgang kann nicht rückgängig gemacht werden.",
   "deletionNoteApp": "Sind Sie sicher, dass Sie diese Anwendung löschen möchten?",
   "issuer": "Aussteller",
   "otherData": "Sonstige Daten",
@@ -184,7 +185,7 @@
   "oidcTanInfo": "Der Aussteller hat Ihnen für diesen Vorgang eine Vorgangsnummer übermittelt. Bitte tragen Sie diese hier ein.",
   "noAppNote": "Sie haben noch keine Anwendungen hinzugefügt",
   "newAppTitle": "Neue Anwendungen",
-  "newAppNote": "Keine neuen Anwendungen verfügbar",
+  "newAppNote": "Keine Anwendungen gefunden",
   "unknownQrCode": "Unbekannter Qr-Code",
   "unknownQrCodeNote": "Der gescannte Qr-Code enthält Daten, die nicht verarbeitet werden können.",
   "subscribe": "Abonieren",
@@ -293,5 +294,11 @@
   "sendSuccess": "Senden Erfolgreich",
   "finish": "Fertig",
   "frontside": "Vorderseite",
-  "backside": "Rückseite"
+  "backside": "Rückseite",
+  "failedLoad": "Laden fehlgeschlagen",
+  "failedLoadNote": "Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?",
+  "share": "Teilen",
+  "load": "Laden",
+  "open": "Öffnen",
+  "get": "Holen"
 }

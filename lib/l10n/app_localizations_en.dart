@@ -52,8 +52,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'delete';
 
   @override
-  String get deletionNote =>
-      'Are you sure you want to delete this credential? This operation cannot be undone.';
+  String get deletionNote1 =>
+      'Are you sure you want to delete this credential?';
+
+  @override
+  String get deletionNote2 => 'This operation cannot be undone.';
 
   @override
   String get deletionNoteApp =>
@@ -566,7 +569,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newAppTitle => 'New applications';
 
   @override
-  String get newAppNote => 'No new applications available';
+  String get newAppNote => 'No applications found';
 
   @override
   String get unknownQrCode => 'Unknown Qr-Code';
@@ -895,4 +898,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backside => 'Back';
+
+  @override
+  String get failedLoad => 'Loading failed';
+
+  @override
+  String get failedLoadNote =>
+      'The application cannot be opened. Could it be that your device does not have an Internet connection?';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get load => 'Load';
+
+  @override
+  String get open => 'Open';
+
+  @override
+  String get get => 'Get';
 }

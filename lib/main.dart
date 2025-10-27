@@ -31,7 +31,6 @@ import 'package:id_ideal_wallet/views/qr_scanner.dart';
 import 'package:id_ideal_wallet/views/search_new_abo.dart';
 import 'package:id_ideal_wallet/views/send_satoshi_screen.dart';
 import 'package:id_ideal_wallet/views/settings_page.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:id_ideal_wallet/views/welcome_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -250,8 +249,6 @@ class HomeScreen extends StatelessWidget {
         return const PaymentCardOverview();
       case NavigationPage.settings:
         return const SettingsPage();
-      case NavigationPage.webView:
-        return WebViewWindow(initialUrl: navigator.webViewUrl, title: '');
       case NavigationPage.credentialDetail:
         return CredentialDetailView(credential: navigator.credential!);
       case NavigationPage.authorizedApps:

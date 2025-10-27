@@ -51,7 +51,6 @@ class CredentialPageState extends State<CredentialPage> {
                 .where((element) => element.type.contains(selectedItem))
                 .toList();
         return StyledScaffoldTitle(
-            currentlyActive: 0,
             title: DropdownMenu<String>(
                 initialSelection: AppLocalizations.of(context)!.allCredentials,
                 inputDecorationTheme:
@@ -118,7 +117,7 @@ class CredentialPageState extends State<CredentialPage> {
 
 bool isBinaryList(List<dynamic> value) {
   try {
-    value.cast<int>();
+    Uint8List.fromList(value.cast<int>());
     return true;
   } catch (_) {
     return false;
@@ -183,8 +182,16 @@ ListTile generateTile(String? before, String key, dynamic value) {
           },
         )
       : value is String
-          ? Text(uriDecode(value))
-          : Text(value?.toString() ?? '');
+          ? Text(
+              uriDecode(value),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            )
+          : Text(
+              value?.toString() ?? '',
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            );
 
   return ListTile(
     visualDensity: const VisualDensity(horizontal: 0, vertical: -2.5),
@@ -278,7 +285,7 @@ class ContextCardState extends State<ContextCard> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.delete),
-        content: Card(child: Text(AppLocalizations.of(context)!.deletionNote)),
+        content: Card(child: Text(AppLocalizations.of(context)!.deletionNote1)),
         actions: [
           TextButton(
               onPressed: () {

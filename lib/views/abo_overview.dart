@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:id_ideal_wallet/basicUi/standard/cached_image.dart';
+import 'package:id_ideal_wallet/basicUi/standard/delete_dialog.dart';
 import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
@@ -58,246 +58,227 @@ class AboOverviewState extends State<AboOverview>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-            child: Consumer<WalletProvider>(builder: (context, wallet, child) {
-              return wallet.aboList.isNotEmpty
-                  ? SizedBox.expand(
-                      child: SingleChildScrollView(
-                        child: GridView.count(
-                          shrinkWrap: true,
-                          crossAxisSpacing: 15,
-                          crossAxisCount: 3,
-                          children:
-                              List.generate(wallet.aboList.length + 1, (index) {
-                            if (index == 0) {
-                              return InkWell(
-                                onTap: () {
-                                  Provider.of<NavigationProvider>(context,
-                                          listen: false)
-                                      .changePage(
-                                          [NavigationPage.searchNewAbo]);
-                                },
-                                child: Column(children: [
-                                  Container(
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.2,
-                                    height:
-                                        MediaQuery.of(context).size.width * 0.2,
-                                    decoration: BoxDecoration(
-                                        color: Colors.black12,
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    child: const Icon(
-                                      Icons.add,
-                                      size: 45,
-                                    ),
-                                  ),
-                                  Text(AppLocalizations.of(context)!.add)
-                                ]),
-                              );
-                            }
-                            var e = wallet.aboList[index - 1];
-                            return GestureDetector(
-                              onTapDown: (details) {
-                                tapPosition = details.globalPosition;
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          child: Consumer<WalletProvider>(builder: (context, wallet, child) {
+            return wallet.aboList.isNotEmpty
+                ? SizedBox.expand(
+                    child: SingleChildScrollView(
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        crossAxisSpacing: 15,
+                        crossAxisCount: 3,
+                        children:
+                            List.generate(wallet.aboList.length + 1, (index) {
+                          if (index == 0) {
+                            return InkWell(
+                              onTap: () {
+                                Provider.of<NavigationProvider>(context,
+                                        listen: false)
+                                    .changePage([NavigationPage.searchNewAbo]);
                               },
-                              onLongPress: () {
-                                controllers[index - 1].forward();
-                                controllers[index - 1].repeat(reverse: true);
-
-                                final RenderBox overlay = Overlay.of(context)
-                                    .context
-                                    .findRenderObject() as RenderBox;
-
-                                final RenderBox card = cardKeys[index - 1]
-                                    .currentContext!
-                                    .findRenderObject() as RenderBox;
-
-                                final RelativeRect position =
-                                    RelativeRect.fromRect(
-                                  Rect.fromPoints(
-                                    card.localToGlobal(
-                                      const Offset(0, -50),
-                                    ),
-                                    card.localToGlobal(
-                                      card.size.topLeft(Offset.zero) +
-                                          const Offset(55, 0),
-                                    ),
+                              child: Column(children: [
+                                Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.2,
+                                  height:
+                                      MediaQuery.of(context).size.width * 0.2,
+                                  decoration: BoxDecoration(
+                                      color: Colors.black12,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  child: const Icon(
+                                    Icons.add,
+                                    size: 45,
                                   ),
-                                  Offset.zero & overlay.size,
-                                );
+                                ),
+                                Text(AppLocalizations.of(context)!.add)
+                              ]),
+                            );
+                          }
+                          var e = wallet.aboList[index - 1];
+                          return GestureDetector(
+                            onTapDown: (details) {
+                              tapPosition = details.globalPosition;
+                            },
+                            onLongPress: e.delete
+                                ? () {
+                                    controllers[index - 1].forward();
+                                    controllers[index - 1]
+                                        .repeat(reverse: true);
 
-                                showMenu(
-                                  color: Colors.white,
-                                  surfaceTintColor: Colors.white,
-                                  context: context,
-                                  position: position,
-                                  constraints: const BoxConstraints(
-                                      minWidth: 30, minHeight: 30),
-                                  items: [
-                                    CustomPopupMenuItem(
-                                      onTap: () {
-                                        deleteSelected = true;
-                                      },
-                                      color: Colors.white,
-                                      child: const SizedBox(
-                                        width: 30,
-                                        height: 30,
-                                        child: Icon(
-                                          Icons.delete,
+                                    final RenderBox overlay =
+                                        Overlay.of(context)
+                                            .context
+                                            .findRenderObject() as RenderBox;
+
+                                    final RenderBox card = cardKeys[index - 1]
+                                        .currentContext!
+                                        .findRenderObject() as RenderBox;
+
+                                    final RelativeRect position =
+                                        RelativeRect.fromRect(
+                                      Rect.fromPoints(
+                                        card.localToGlobal(
+                                          const Offset(0, -50),
+                                        ),
+                                        card.localToGlobal(
+                                          card.size.topLeft(Offset.zero) +
+                                              const Offset(55, 0),
                                         ),
                                       ),
-                                    )
-                                  ],
-                                ).then((value) async {
-                                  if (deleteSelected) {
-                                    await showDialog(
-                                      context: navigatorKey.currentContext!,
-                                      builder: (context) => AlertDialog(
-                                        title: Text(
-                                            AppLocalizations.of(context)!
-                                                .delete),
-                                        content: Card(
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .deletionNoteApp)),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text(
+                                      Offset.zero & overlay.size,
+                                    );
+
+                                    showMenu(
+                                      color: Colors.white,
+                                      surfaceTintColor: Colors.white,
+                                      context: context,
+                                      position: position,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 30, minHeight: 30),
+                                      items: [
+                                        CustomPopupMenuItem(
+                                          onTap: () {
+                                            deleteSelected = true;
+                                          },
+                                          color: Colors.white,
+                                          child: const SizedBox(
+                                            width: 30,
+                                            height: 30,
+                                            child: Icon(
+                                              Icons.delete,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ).then((value) async {
+                                      if (deleteSelected) {
+                                        await showDialog(
+                                          context: navigatorKey.currentContext!,
+                                          builder: (context) => DeleteDialog(
+                                              deleteNote: Text(
                                                   AppLocalizations.of(context)!
-                                                      .cancel)),
-                                          TextButton(
-                                              onPressed: () async {
+                                                      .deletionNoteApp,
+                                                  maxLines: 4,
+                                                  style: Theme.of(context)
+                                                      .primaryTextTheme
+                                                      .bodySmall),
+                                              deleteFunction: () async {
                                                 wallet.deleteAbo(index - 1);
                                                 Navigator.of(context).pop();
-                                              },
-                                              child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .delete))
-                                        ],
-                                      ),
-                                    );
+                                              }),
+                                        );
+                                      }
+                                      controllers[index - 1].reset();
+                                      deleteSelected = false;
+                                    });
                                   }
-                                  controllers[index - 1].reset();
-                                  deleteSelected = false;
-                                });
-                              },
-                              onTap: () {
-                                wallet.removeOutstandingMessages(
-                                    e.getComparableUrl());
-                                navigateClassic(WebViewWindow(
-                                  initialUrl: e.url.replaceAll(
-                                      'wid=', 'wid=${wallet.lndwId}'),
-                                  title: e.name,
-                                  iconUrl: e.pictureUrl,
-                                ));
-                              },
-                              child: SlideTransition(
-                                position: animations[index - 1],
-                                child: Column(children: [
-                                  Stack(
-                                      alignment: AlignmentDirectional.topEnd,
-                                      children: [
-                                        SizedBox(
-                                          key: cardKeys[index - 1],
+                                : null,
+                            onTap: () {
+                              wallet.removeOutstandingMessages(
+                                  e.getComparableUrl());
+                              loadWebview(e);
+                            },
+                            child: SlideTransition(
+                              position: animations[index - 1],
+                              child: Column(children: [
+                                Stack(
+                                    alignment: AlignmentDirectional.topEnd,
+                                    children: [
+                                      SizedBox(
+                                        key: cardKeys[index - 1],
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.2,
+                                        height:
+                                            MediaQuery.of(context).size.width *
+                                                0.2,
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                          child: CachedImage(
+                                            key: ValueKey(
+                                                '${e.pictureUrl}_${e.name}'),
+                                            imageUrl: e.pictureUrl,
+                                            placeholder: e.name,
+                                          ),
+                                        ),
+                                      ),
+                                      if (wallet.outstandingMessages
+                                          .containsKey(e.getComparableUrl()))
+                                        Container(
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.2,
+                                              0.05,
                                           height: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.2,
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                const BorderRadius.all(
-                                              Radius.circular(10),
-                                            ),
-                                            child: CachedImage(
-                                              key: UniqueKey(),
-                                              imageUrl: e.pictureUrl,
-                                              placeholder: e.name,
-                                            ),
+                                              0.05,
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
                                           ),
-                                        ),
-                                        if (wallet.outstandingMessages
-                                            .containsKey(e.getComparableUrl()))
-                                          Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.05,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.05,
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                wallet
-                                                        .outstandingMessages[e
-                                                            .getComparableUrl()]
-                                                        ?.length
-                                                        .toString() ??
-                                                    '0',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                          child: Center(
+                                            child: Text(
+                                              wallet
+                                                      .outstandingMessages[
+                                                          e.getComparableUrl()]
+                                                      ?.length
+                                                      .toString() ??
+                                                  '0',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
-                                      ]),
-                                  Text(
-                                    e.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )
-                                ]),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 20),
-                      child: InkWell(
-                        onTap: () {
-                          Provider.of<NavigationProvider>(context,
-                                  listen: false)
-                              .changePage([NavigationPage.searchNewAbo]);
-                        },
-                        child: Column(children: [
-                          Container(
-                            width: MediaQuery.of(context).size.width * 0.2,
-                            height: MediaQuery.of(context).size.width * 0.2,
-                            decoration: BoxDecoration(
-                                color: Colors.black12,
-                                borderRadius: BorderRadius.circular(10)),
-                            child: const Icon(
-                              Icons.add,
-                              size: 45,
+                                        ),
+                                    ]),
+                                Text(
+                                  e.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              ]),
                             ),
-                          ),
-                          Text(AppLocalizations.of(context)!.add)
-                        ]),
+                          );
+                        }).toList(),
                       ),
-                    );
-            }),
-          ),
-        ));
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 20),
+                    child: InkWell(
+                      onTap: () {
+                        Provider.of<NavigationProvider>(context, listen: false)
+                            .changePage([NavigationPage.searchNewAbo]);
+                      },
+                      child: Column(children: [
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.2,
+                          height: MediaQuery.of(context).size.width * 0.2,
+                          decoration: BoxDecoration(
+                              color: Colors.black12,
+                              borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(
+                            Icons.add,
+                            size: 45,
+                          ),
+                        ),
+                        Text(AppLocalizations.of(context)!.add)
+                      ]),
+                    ),
+                  );
+          }),
+        ),
+      ),
+    );
   }
 }
 

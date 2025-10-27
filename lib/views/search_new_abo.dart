@@ -7,7 +7,6 @@ import 'package:id_ideal_wallet/basicUi/standard/styled_scaffold_title.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/util.dart';
 import 'package:id_ideal_wallet/provider/wallet_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
@@ -30,14 +29,29 @@ class SearchNewAboState extends State<SearchNewAbo> {
   }
 
   Future<void> searchAbos() async {
-    var res = await get(Uri.parse(applicationEndpoint));
-    List<AboData> available = [];
-    if (res.statusCode == 200) {
-      List dec = jsonDecode(res.body);
-      available = dec.map((e) => AboData.fromJson(e)).toList();
-    }
+    try {
+      var res = await get(Uri.parse(applicationEndpoint))
+          .timeout(Duration(seconds: 120));
+      List<AboData> available = [];
+      if (res.statusCode == 200) {
+        List dec = jsonDecode(res.body);
+        available = dec.map((e) => AboData.fromJson(e)).toList();
+      }
 
-    toShow = available;
+      toShow = [];
+      var credTypes = Provider.of<WalletProvider>(navigatorKey.currentContext!,
+              listen: false)
+          .credentialsTypes;
+      for (var e in available) {
+        if (e.credentialsRequired == null) {
+          toShow.add(e);
+        } else if (credTypes.intersection(e.credentialsRequired!).isNotEmpty) {
+          toShow.add(e);
+        }
+      }
+    } catch (_) {
+      toShow = <AboData>[];
+    }
 
     // if (available.isNotEmpty) {
     //   for (var entry in available) {
@@ -61,6 +75,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
           : toShow.isEmpty
               ? Center(child: Text(AppLocalizations.of(context)!.newAppNote))
               : ListView.separated(
+                  padding: EdgeInsets.only(bottom: 40),
                   itemCount: toShow.length,
                   itemBuilder: (context, index) {
                     var wallet =
@@ -83,7 +98,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                             Radius.circular(10),
                           ),
                           child: CachedImage(
-                            key: UniqueKey(),
+                            key: ValueKey('${e.pictureUrl}_${e.name}'),
                             imageUrl: e.pictureUrl,
                             placeholder: e.name,
                           ),
@@ -94,14 +109,9 @@ class SearchNewAboState extends State<SearchNewAbo> {
                       trailing: inAbo.contains(e.getComparableUrl())
                           ? ElevatedButton(
                               onPressed: () {
-                                navigateClassic(WebViewWindow(
-                                  initialUrl: e.url.replaceAll(
-                                      'wid=', 'wid=${wallet.lndwId}'),
-                                  title: e.name,
-                                  iconUrl: e.pictureUrl,
-                                ));
+                                loadWebview(e);
                               },
-                              child: Text('Öffnen'))
+                              child: Text(AppLocalizations.of(context)!.open))
                           : ElevatedButton(
                               onPressed: () {
                                 Provider.of<WalletProvider>(context,
@@ -109,7 +119,7 @@ class SearchNewAboState extends State<SearchNewAbo> {
                                     .addAbo(e);
                                 setState(() {});
                               },
-                              child: Text('Holen')),
+                              child: Text(AppLocalizations.of(context)!.get)),
                     );
                   },
                   separatorBuilder: (BuildContext context, int index) {

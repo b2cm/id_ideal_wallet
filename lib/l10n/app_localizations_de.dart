@@ -52,8 +52,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get delete => 'Löschen';
 
   @override
-  String get deletionNote =>
-      'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.';
+  String get deletionNote1 =>
+      'Sind Sie sicher, dass Sie diesen Nachweis löschen möchten?';
+
+  @override
+  String get deletionNote2 =>
+      'Dieser Vorgang kann nicht rückgängig gemacht werden.';
 
   @override
   String get deletionNoteApp =>
@@ -568,7 +572,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newAppTitle => 'Neue Anwendungen';
 
   @override
-  String get newAppNote => 'Keine neuen Anwendungen verfügbar';
+  String get newAppNote => 'Keine Anwendungen gefunden';
 
   @override
   String get unknownQrCode => 'Unbekannter Qr-Code';
@@ -901,4 +905,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get backside => 'Rückseite';
+
+  @override
+  String get failedLoad => 'Laden fehlgeschlagen';
+
+  @override
+  String get failedLoadNote =>
+      'Die Anwendung kann nicht geöffnet werden. Kann es sein, dass ihr Gerät keine Internetverbindung hat?';
+
+  @override
+  String get share => 'Teilen';
+
+  @override
+  String get load => 'Laden';
+
+  @override
+  String get open => 'Öffnen';
+
+  @override
+  String get get => 'Holen';
 }

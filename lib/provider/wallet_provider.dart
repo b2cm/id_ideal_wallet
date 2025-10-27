@@ -23,7 +23,6 @@ import 'package:id_ideal_wallet/functions/payment_utils.dart';
 import 'package:id_ideal_wallet/provider/mdoc_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:id_ideal_wallet/provider/notification_provider.dart';
-import 'package:id_ideal_wallet/views/web_view.dart';
 import 'package:pkcs7/pkcs7.dart';
 import 'package:pointycastle/export.dart';
 import 'package:provider/provider.dart';
@@ -439,10 +438,7 @@ class WalletProvider extends ChangeNotifier {
   void onMessageOpen(SimplifiedNotification message) {
     var vc = accountVcs.values.firstWhere((v) => v.id == message.targetAccount);
     removeOutstandingMessages(vc.credentialSubject['webview']);
-    my_util.navigateClassic(WebViewWindow(
-      initialUrl: vc.credentialSubject['webview'],
-      title: '',
-    ));
+    my_util.handleWebViewLink(Uri.parse(vc.credentialSubject['webview']));
   }
 
   void removeOutstandingMessages(String webviewUrl) {
@@ -503,6 +499,7 @@ class WalletProvider extends ChangeNotifier {
       logger.d('with request');
       generateCredentialStyling(true);
       updateTosUrl();
+      await _updateAllAbos();
       _wallet.storeConfigEntry(
           'lastUpdateCheck', DateTime.now().toIso8601String());
     } else {
@@ -558,8 +555,6 @@ class WalletProvider extends ChangeNotifier {
       credentialStyling = (jsonDecode(s) as Map<String, dynamic>).map(
           (key, value) => MapEntry(key, (value as Map).cast<String, String>()));
     }
-
-    logger.d(credentialStyling);
   }
 
   Future<void> updateTosUrl() async {
@@ -593,6 +588,47 @@ class WalletProvider extends ChangeNotifier {
         'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
 
     if (notify) notifyListeners();
+  }
+
+  void updateAbo(my_util.AboData newAbo) {
+    var toUpdate = aboList
+        .firstWhere((e) => e.getComparableUrl() == newAbo.getComparableUrl());
+    toUpdate.offlineVersion = newAbo.offlineVersion;
+    toUpdate.name = newAbo.name;
+    toUpdate.titleBgColorCode = newAbo.titleBgColorCode;
+    toUpdate.titleFontColorCode = newAbo.titleFontColorCode;
+    toUpdate.pictureUrl = newAbo.pictureUrl;
+    toUpdate.credentialsRequired = newAbo.credentialsRequired;
+    toUpdate.delete = newAbo.delete;
+    wallet.storeConfigEntry(
+        'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
+  }
+
+  Future<void> _updateAllAbos() async {
+    try {
+      var res = await get(Uri.parse(applicationEndpoint))
+          .timeout(Duration(seconds: 120));
+      if (res.statusCode == 200) {
+        List dec = jsonDecode(res.body);
+        Map<String, my_util.AboData> available = {};
+        for (var e in dec) {
+          var tmp = my_util.AboData.fromJson(e);
+          available[tmp.getComparableUrl()] = e;
+        }
+        var newAboList = <my_util.AboData>[];
+        for (var entry in aboList) {
+          var newData = available[entry.getComparableUrl()];
+          if (newData == null) {
+            newAboList.add(entry);
+          } else {
+            newAboList.add(newData);
+          }
+        }
+        aboList = newAboList;
+        wallet.storeConfigEntry(
+            'aboList', jsonEncode(aboList.map((e) => e.toJson()).toList()));
+      }
+    } catch (_) {}
   }
 
   List<String> getAuthorizedApps() {
@@ -1005,8 +1041,14 @@ class WalletProvider extends ChangeNotifier {
       }).toList();
       if (!allAbos.contains('https://test.hidy.app/kigallery')) {
         addAbo(
-            my_util.AboData('KI-Galerie', 'https://test.hidy.app/kigallery',
-                'https://hidy.app/styles/kigalerie_contextbg.jpg', '', ''),
+            my_util.AboData(
+                'KI-Galerie',
+                'https://test.hidy.app/kigallery',
+                'https://hidy.app/styles/kigalerie_contextbg.jpg',
+                '',
+                '',
+                null,
+                null),
             true,
             false);
       }
@@ -1018,8 +1060,7 @@ class WalletProvider extends ChangeNotifier {
     if (nav.redirectWebViewUrl != null) {
       nav.changePage([NavigationPage.credential], track: false);
       Timer(const Duration(milliseconds: 10), () {
-        my_util.navigateClassic(
-            WebViewWindow(initialUrl: nav.redirectWebViewUrl!, title: ''));
+        my_util.handleWebViewLink(Uri.parse(nav.redirectWebViewUrl!));
         nav.redirectWebViewUrl = null;
       });
     }
@@ -1078,6 +1119,36 @@ class WalletProvider extends ChangeNotifier {
     await vc.sign(signer, proofType);
     storeCredential(vc, did);
     wallet.storeExchangeHistoryEntry(did, DateTime.now(), 'issue', did);
+  }
+
+  Future<bool> storeWebViewValue(
+      String webViewUrl, String key, String value) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      await _wallet.storeConfigEntry(generatedKey, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteWebViewValue(String webViewUrl, String key) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      await _wallet.deleteConfigEntry(generatedKey);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> getWebViewValue(String webViewUrl, String key) async {
+    try {
+      var generatedKey = '$webViewUrl:~:$key';
+      return _wallet.getConfigEntry(generatedKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   WalletStore get wallet => _wallet;

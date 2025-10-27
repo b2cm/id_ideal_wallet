@@ -8,7 +8,6 @@ import 'package:id_ideal_wallet/constants/navigation_pages.dart';
 import 'package:id_ideal_wallet/constants/server_address.dart';
 import 'package:id_ideal_wallet/functions/backup_functions.dart';
 import 'package:id_ideal_wallet/functions/didcomm_message_handler.dart';
-import 'package:id_ideal_wallet/provider/encryption_provider.dart';
 import 'package:id_ideal_wallet/provider/navigation_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -97,7 +96,7 @@ class _BackupWidgetState extends State<BackupWidget> {
   }
 
   Future<void> initialize() async {
-    _generateMemonic = EncryptionService.createMnemonic();
+    _generateMemonic = createMnemonic();
     var (data, notInBackUp) = await getBackupableData();
     this.data = data;
     this.notInBackUp = notInBackUp;
@@ -349,8 +348,8 @@ void showConfirmationDialog(
             child: Text(AppLocalizations.of(context)!.yes),
             onPressed: () {
               Navigator.of(context2).pop();
-              askForMnemonic(context)
-                  .then((mnemonic) => {onConfirmed(context, mnemonic!)});
+              askForMnemonic(context).then((mnemonic) =>
+                  {onConfirmed(navigatorKey.currentContext!, mnemonic!)});
             },
           ),
         ],
